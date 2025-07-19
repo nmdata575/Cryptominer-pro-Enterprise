@@ -373,6 +373,9 @@ class CryptoMinerAPITester:
         self.test_system_stats()
         self.test_mining_status_initial()
         
+        # NEW: Wallet validation tests
+        self.test_wallet_validation()
+        
         # Core mining functionality
         self.test_mining_start_stop_cycle()
         self.test_scrypt_algorithm()

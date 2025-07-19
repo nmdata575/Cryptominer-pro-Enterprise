@@ -52,7 +52,10 @@ function App() {
     threads: 4,
     intensity: 1.0,
     auto_optimize: true,
-    ai_enabled: true
+    ai_enabled: true,
+    wallet_address: '',
+    pool_username: '',
+    pool_password: 'x'
   });
   
   const [websocket, setWebsocket] = useState(null);

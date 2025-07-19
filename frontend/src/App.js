@@ -347,12 +347,14 @@ function App() {
             />
           </div>
 
-          {/* Right Sidebar - AI Insights */}
+          {/* Right Sidebar - AI Insights & System Monitor */}
           <div className="xl:col-span-3 space-y-6">
             <AIInsights 
               insights={aiInsights.insights}
               predictions={aiInsights.predictions}
             />
+            
+            <SystemMonitor stats={systemStats} />
           </div>
         </div>
       </main>

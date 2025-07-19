@@ -187,7 +187,32 @@ class CryptoMinerAPITester:
             "wallet_address": "LhK1Nk7QidqUBKLMBKVr8fWsNu4gp7rqLs"  # Valid Litecoin address
         }
         
-        # Test mining start
+        # Test pool mining with credentials
+        pool_config = {
+            "coin": litecoin_config,
+            "mode": "pool",
+            "threads": 2,
+            "intensity": 0.5,
+            "auto_optimize": True,
+            "ai_enabled": True,
+            "wallet_address": "",
+            "pool_username": "test_user.worker1",
+            "pool_password": "x"
+        }
+        
+        pool_start_success, pool_start_response = self.make_request('POST', '/api/mining/start', pool_config)
+        
+        if pool_start_success and pool_start_response.get('success'):
+            self.log_test("Pool Mining Start", True, "- Pool mining started successfully")
+            
+            # Stop pool mining
+            self.make_request('POST', '/api/mining/stop')
+            time.sleep(1)
+        else:
+            self.log_test("Pool Mining Start", False, f"- Pool mining failed: {pool_start_response}")
+        
+        # Test mining start with valid wallet
+        start_success, start_response = self.make_request('POST', '/api/mining/start', mining_config)
         start_success, start_response = self.make_request('POST', '/api/mining/start', mining_config)
         
         if not start_success:

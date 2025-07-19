@@ -749,7 +749,9 @@ async def get_coin_presets():
             network_difficulty=5000000.0,
             block_reward=12.5,
             block_time_target=150,
-            scrypt_params={"N": 1024, "r": 1, "p": 1}
+            scrypt_params={"N": 1024, "r": 1, "p": 1},
+            wallet_address_format="legacy",
+            address_prefix="L"
         ),
         "dogecoin": CoinConfig(
             name="Dogecoin",
@@ -758,7 +760,9 @@ async def get_coin_presets():
             network_difficulty=3000000.0,
             block_reward=10000.0,
             block_time_target=60,
-            scrypt_params={"N": 1024, "r": 1, "p": 1}
+            scrypt_params={"N": 1024, "r": 1, "p": 1},
+            wallet_address_format="dogecoin",
+            address_prefix="D"
         ),
         "feathercoin": CoinConfig(
             name="Feathercoin",
@@ -767,7 +771,9 @@ async def get_coin_presets():
             network_difficulty=1000000.0, 
             block_reward=200.0,
             block_time_target=60,
-            scrypt_params={"N": 1024, "r": 1, "p": 1}
+            scrypt_params={"N": 1024, "r": 1, "p": 1},
+            wallet_address_format="legacy",
+            address_prefix="6"
         )
     }
     

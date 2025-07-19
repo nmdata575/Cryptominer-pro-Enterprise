@@ -174,13 +174,28 @@ function App() {
         return;
       }
 
+      // Validate wallet address for solo mining
+      if (miningConfig.mode === 'solo' && !miningConfig.wallet_address.trim()) {
+        setErrorMessage('Wallet address is required for solo mining');
+        return;
+      }
+
+      // Validate pool credentials for pool mining
+      if (miningConfig.mode === 'pool' && !miningConfig.pool_username.trim()) {
+        setErrorMessage('Pool username is required for pool mining');
+        return;
+      }
+
       const fullConfig = {
         coin: coinConfig,
         mode: miningConfig.mode,
         threads: miningConfig.threads,
         intensity: miningConfig.intensity,
         auto_optimize: miningConfig.auto_optimize,
-        ai_enabled: miningConfig.ai_enabled
+        ai_enabled: miningConfig.ai_enabled,
+        wallet_address: miningConfig.wallet_address.trim(),
+        pool_username: miningConfig.pool_username.trim(),
+        pool_password: miningConfig.pool_password || 'x'
       };
 
       const response = await axios.post(`${BACKEND_URL}/api/mining/start`, fullConfig);

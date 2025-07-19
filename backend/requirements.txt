@@ -5,7 +5,6 @@ pymongo==4.6.0
 motor==3.3.2
 pydantic==2.5.0
 python-multipart==0.0.6
-hashlib
 psutil==5.9.6
 numpy==1.24.3
 tensorflow==2.15.0
@@ -16,9 +15,3 @@ cryptography==41.0.8
 requests==2.31.0
 aiohttp==3.9.1
 python-dotenv==1.0.0
-threading
-asyncio
-time
-json
-logging
-concurrent.futures

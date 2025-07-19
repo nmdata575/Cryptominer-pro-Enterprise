@@ -698,13 +698,46 @@ async def start_mining(config: MiningConfig):
     global mining_engine
     
     try:
+        # Validate wallet address if provided
+        if config.wallet_address and config.wallet_address.strip():
+            validation_result = WalletValidator.validate_address(
+                config.wallet_address, 
+                config.coin.symbol
+            )
+            
+            if not validation_result["valid"]:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Invalid wallet address: {validation_result['error']}"
+                )
+            
+            logger.info(f"Wallet address validated: {config.wallet_address} ({validation_result.get('format', 'unknown')})")
+        elif config.mode == "solo":
+            raise HTTPException(
+                status_code=400,
+                detail="Wallet address is required for solo mining"
+            )
+        
+        # Validate pool credentials for pool mining
+        if config.mode == "pool":
+            if not config.pool_username:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Pool username is required for pool mining"
+                )
+        
         mining_engine = MiningEngine(config)
         mining_engine.start_mining()
         
         return {
             "success": True,
             "message": f"Mining started for {config.coin.name}",
-            "config": config.dict()
+            "config": config.dict(),
+            "wallet_info": {
+                "address": config.wallet_address,
+                "mode": config.mode,
+                "validation": "passed" if config.wallet_address else "not_required"
+            }
         }
     
     except Exception as e:

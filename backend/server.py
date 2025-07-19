@@ -432,7 +432,17 @@ class MiningEngine:
         # Simplified block header structure
         version = 1
         prev_hash = b"0" * 32
-        merkle_root = b"0" * 32
+        
+        # Create coinbase transaction with wallet address if available
+        if self.config.wallet_address:
+            coinbase_data = f"Mining to {self.config.wallet_address}".encode()[:75]
+        else:
+            coinbase_data = b"CryptoMiner Pro"
+        
+        # Pad coinbase to standard size
+        coinbase_padded = coinbase_data.ljust(76, b'\x00')[:76]
+        merkle_root = hashlib.sha256(coinbase_padded).digest()
+        
         timestamp = int(time.time())
         bits = 0x1d00ffff  # Difficulty bits
         

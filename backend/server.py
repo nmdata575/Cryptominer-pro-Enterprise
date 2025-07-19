@@ -90,6 +90,8 @@ class CoinConfig(BaseModel):
     rpc_url: Optional[str] = None
     pool_url: Optional[str] = None
     scrypt_params: Dict[str, int] = {"N": 1024, "r": 1, "p": 1}
+    wallet_address_format: str = "legacy"  # "legacy", "segwit", "dogecoin"
+    address_prefix: str = "L"  # Address prefix for validation
 
 class MiningConfig(BaseModel):
     coin: CoinConfig
@@ -98,6 +100,9 @@ class MiningConfig(BaseModel):
     intensity: float = 1.0
     auto_optimize: bool = True
     ai_enabled: bool = True
+    wallet_address: str = ""  # Mining reward address
+    pool_username: Optional[str] = None  # Pool mining username
+    pool_password: Optional[str] = "x"  # Pool mining password
 
 class MiningStats(BaseModel):
     hashrate: float = 0.0

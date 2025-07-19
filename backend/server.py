@@ -779,6 +779,27 @@ async def get_coin_presets():
     
     return {"presets": {k: v.dict() for k, v in presets.items()}}
 
+@app.post("/api/wallet/validate")
+async def validate_wallet_address(request: dict):
+    """Validate wallet address for specific coin"""
+    try:
+        address = request.get("address", "").strip()
+        coin_symbol = request.get("coin_symbol", "").upper()
+        
+        if not address:
+            return {"valid": False, "error": "Wallet address is required"}
+        
+        if not coin_symbol:
+            return {"valid": False, "error": "Coin symbol is required"}
+        
+        validation_result = WalletValidator.validate_address(address, coin_symbol)
+        
+        return validation_result
+        
+    except Exception as e:
+        logger.error(f"Wallet validation error: {e}")
+        return {"valid": False, "error": "Validation failed"}
+
 @app.get("/api/system/stats")
 async def get_system_stats():
     """Get system resource statistics"""

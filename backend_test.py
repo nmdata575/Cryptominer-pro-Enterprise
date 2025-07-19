@@ -105,22 +105,86 @@ class CryptoMinerAPITester:
         else:
             return self.log_test("Initial Mining Status", False, f"- Response: {response}")
 
+    def test_wallet_validation(self) -> bool:
+        """Test wallet address validation endpoint"""
+        test_cases = [
+            # Litecoin valid addresses
+            {"address": "LhK1Nk7QidqUBKLMBKVr8fWsNu4gp7rqLs", "coin_symbol": "LTC", "should_be_valid": True},
+            {"address": "ltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "coin_symbol": "LTC", "should_be_valid": True},
+            {"address": "M8T1B2Z97gVdvmfkQcAtYbEepune1tzGua", "coin_symbol": "LTC", "should_be_valid": True},
+            
+            # Dogecoin valid addresses
+            {"address": "DQVpNjNVHjTgHaE4Y1oqRxCLe6rKVrUUgJ", "coin_symbol": "DOGE", "should_be_valid": True},
+            {"address": "A1bvP1Lqtj3rSxGsMLQ9Tt2DVbWnQQjKvW", "coin_symbol": "DOGE", "should_be_valid": True},
+            
+            # Feathercoin valid addresses
+            {"address": "6nsHHMiUexBgE8GZzw5EBVL8Lz2sJEzQRc", "coin_symbol": "FTC", "should_be_valid": True},
+            
+            # Invalid addresses
+            {"address": "invalid_address", "coin_symbol": "LTC", "should_be_valid": False},
+            {"address": "BTC1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4", "coin_symbol": "LTC", "should_be_valid": False},
+            {"address": "", "coin_symbol": "LTC", "should_be_valid": False},
+        ]
+        
+        passed_tests = 0
+        total_tests = len(test_cases)
+        
+        for i, test_case in enumerate(test_cases):
+            success, response = self.make_request('POST', '/api/wallet/validate', {
+                "address": test_case["address"],
+                "coin_symbol": test_case["coin_symbol"]
+            })
+            
+            if success:
+                is_valid = response.get("valid", False)
+                expected = test_case["should_be_valid"]
+                
+                if is_valid == expected:
+                    passed_tests += 1
+                    print(f"  ✅ Test {i+1}: {test_case['address'][:20]}... -> {is_valid} (expected {expected})")
+                else:
+                    print(f"  ❌ Test {i+1}: {test_case['address'][:20]}... -> {is_valid} (expected {expected})")
+            else:
+                print(f"  ❌ Test {i+1}: Request failed for {test_case['address'][:20]}...")
+        
+        success_rate = (passed_tests / total_tests) * 100
+        return self.log_test("Wallet Validation", passed_tests == total_tests, 
+                           f"- {passed_tests}/{total_tests} tests passed ({success_rate:.1f}%)")
+
     def test_mining_start_stop_cycle(self) -> bool:
-        """Test complete mining start/stop cycle"""
+        """Test complete mining start/stop cycle with wallet validation"""
         # First get coin presets
         success, presets_response = self.make_request('GET', '/api/coins/presets')
         if not success:
             return self.log_test("Mining Cycle", False, "- Failed to get coin presets")
         
-        # Prepare mining configuration
+        # Test solo mining without wallet (should fail)
         litecoin_config = presets_response['presets']['litecoin']
+        mining_config_no_wallet = {
+            "coin": litecoin_config,
+            "mode": "solo",
+            "threads": 2,
+            "intensity": 0.5,
+            "auto_optimize": True,
+            "ai_enabled": True,
+            "wallet_address": ""
+        }
+        
+        start_success, start_response = self.make_request('POST', '/api/mining/start', mining_config_no_wallet)
+        if start_success:
+            self.log_test("Solo Mining Validation", False, "- Should fail without wallet address")
+        else:
+            self.log_test("Solo Mining Validation", True, "- Correctly rejected solo mining without wallet")
+        
+        # Test solo mining with valid wallet
         mining_config = {
             "coin": litecoin_config,
             "mode": "solo",
             "threads": 2,  # Use fewer threads for testing
             "intensity": 0.5,  # Lower intensity for testing
             "auto_optimize": True,
-            "ai_enabled": True
+            "ai_enabled": True,
+            "wallet_address": "LhK1Nk7QidqUBKLMBKVr8fWsNu4gp7rqLs"  # Valid Litecoin address
         }
         
         # Test mining start

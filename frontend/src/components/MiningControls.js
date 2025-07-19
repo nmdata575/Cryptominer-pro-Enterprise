@@ -17,28 +17,8 @@ const MiningControls = ({ config, onConfigChange, isMining, onStart, onStop }) =
 
   return (
     <div className="mining-card">
-      <h3 className="text-xl font-bold text-white mb-4">Mining Controls</h3>
+      <h3 className="text-xl font-bold text-white mb-4">⚙️ Mining Performance</h3>
       
-      {/* Mining Mode */}
-      <div className="form-group mb-4">
-        <label className="form-label">Mining Mode</label>
-        <select
-          className="form-select"
-          value={config.mode}
-          onChange={(e) => handleConfigChange('mode', e.target.value)}
-          disabled={isMining}
-        >
-          <option value="solo">Solo Mining</option>
-          <option value="pool">Pool Mining</option>
-        </select>
-        <p className="text-xs text-gray-400 mt-1">
-          {config.mode === 'solo' 
-            ? 'Mine directly to your wallet (requires full node)' 
-            : 'Mine through a mining pool (recommended)'
-          }
-        </p>
-      </div>
-
       {/* Thread Count */}
       <div className="form-group mb-4">
         <label className="form-label">

@@ -145,10 +145,12 @@ class WalletValidator:
             return {"valid": False, "error": "Invalid address length"}
         
         # Coin-specific validation
-        if coin_symbol in ["LTC", "FTC"]:
+        if coin_symbol == "LTC":
             return WalletValidator._validate_litecoin_address(address)
         elif coin_symbol == "DOGE":
             return WalletValidator._validate_dogecoin_address(address)
+        elif coin_symbol == "FTC":
+            return WalletValidator._validate_feathercoin_address(address)
         else:
             return WalletValidator._validate_generic_address(address)
     

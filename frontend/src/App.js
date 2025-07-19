@@ -8,6 +8,7 @@ import CoinSelector from './components/CoinSelector';
 import AIInsights from './components/AIInsights';
 import SystemMonitor from './components/SystemMonitor';
 import MiningControls from './components/MiningControls';
+import WalletConfig from './components/WalletConfig';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 

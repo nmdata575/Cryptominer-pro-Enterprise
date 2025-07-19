@@ -1,0 +1,260 @@
+/* Custom component styles for the crypto mining dashboard */
+
+.mining-card {
+  @apply bg-crypto-blue/50 backdrop-blur-sm border border-crypto-accent/30 rounded-xl p-6 shadow-xl;
+  transition: all 0.3s ease;
+}
+
+.mining-card:hover {
+  @apply border-crypto-gold/50 shadow-2xl;
+  transform: translateY(-2px);
+}
+
+.stat-card {
+  @apply bg-gradient-to-br from-crypto-blue/30 to-crypto-accent/30 backdrop-blur-sm border border-crypto-accent/20 rounded-lg p-4 shadow-lg;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  @apply border-crypto-gold/30;
+  transform: translateY(-1px);
+}
+
+.mining-button {
+  @apply px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 transform;
+}
+
+.mining-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.mining-button.start {
+  @apply bg-gradient-to-r from-crypto-green to-green-600;
+}
+
+.mining-button.start:hover {
+  @apply from-green-500 to-green-700;
+}
+
+.mining-button.stop {
+  @apply bg-gradient-to-r from-crypto-red to-red-600;
+}
+
+.mining-button.stop:hover {
+  @apply from-red-500 to-red-700;
+}
+
+.mining-button:disabled {
+  @apply opacity-50 cursor-not-allowed transform-none;
+}
+
+/* Hash rate animation */
+.hashrate-display {
+  @apply text-4xl font-bold bg-gradient-to-r from-crypto-gold via-yellow-400 to-crypto-gold bg-clip-text text-transparent;
+  animation: shimmer 2s ease-in-out infinite alternate;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+/* Mining status indicators */
+.status-indicator {
+  @apply flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-indicator.mining {
+  @apply bg-crypto-green/20 text-crypto-green;
+}
+
+.status-indicator.stopped {
+  @apply bg-gray-500/20 text-gray-400;
+}
+
+.status-indicator.error {
+  @apply bg-crypto-red/20 text-crypto-red;
+}
+
+/* Progress bars */
+.progress-bar {
+  @apply w-full bg-crypto-accent/30 rounded-full h-2 overflow-hidden;
+}
+
+.progress-fill {
+  @apply h-full bg-gradient-to-r from-crypto-gold to-yellow-500 rounded-full transition-all duration-500;
+}
+
+/* Chart containers */
+.chart-container {
+  @apply bg-crypto-blue/30 backdrop-blur-sm rounded-lg p-4 border border-crypto-accent/20;
+  min-height: 200px;
+}
+
+/* AI insights styling */
+.ai-insight {
+  @apply bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-4;
+}
+
+.ai-prediction {
+  @apply bg-gradient-to-r from-crypto-gold/10 to-yellow-500/10 border border-crypto-gold/20 rounded-lg p-3 text-sm;
+}
+
+/* System monitor styling */
+.system-metric {
+  @apply flex items-center justify-between py-2 border-b border-crypto-accent/20 last:border-b-0;
+}
+
+.metric-label {
+  @apply text-gray-300 text-sm;
+}
+
+.metric-value {
+  @apply text-white font-semibold;
+}
+
+/* Coin selector styling */
+.coin-option {
+  @apply flex items-center space-x-3 p-3 rounded-lg border border-crypto-accent/20 cursor-pointer transition-all duration-200;
+}
+
+.coin-option:hover {
+  @apply border-crypto-gold/50 bg-crypto-gold/10;
+}
+
+.coin-option.selected {
+  @apply border-crypto-gold bg-crypto-gold/20;
+}
+
+.coin-icon {
+  @apply w-8 h-8 rounded-full bg-gradient-to-br from-crypto-gold to-yellow-600 flex items-center justify-center text-white font-bold;
+}
+
+/* Form controls */
+.form-group {
+  @apply space-y-2;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-300;
+}
+
+.form-input {
+  @apply w-full px-3 py-2 bg-crypto-blue/30 border border-crypto-accent/30 rounded-lg text-white placeholder-gray-400 focus:border-crypto-gold focus:ring-1 focus:ring-crypto-gold outline-none transition-all duration-200;
+}
+
+.form-select {
+  @apply w-full px-3 py-2 bg-crypto-blue/30 border border-crypto-accent/30 rounded-lg text-white focus:border-crypto-gold focus:ring-1 focus:ring-crypto-gold outline-none transition-all duration-200 cursor-pointer;
+}
+
+.form-checkbox {
+  @apply w-4 h-4 text-crypto-gold bg-crypto-blue/30 border border-crypto-accent/30 rounded focus:ring-crypto-gold focus:ring-2;
+}
+
+/* Loading animations */
+.loading-spinner {
+  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-crypto-gold;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60% { content: '...'; }
+  80%, 100% { content: ''; }
+}
+
+/* Notification styles */
+.notification {
+  @apply fixed top-4 right-4 p-4 rounded-lg shadow-xl z-50 border max-w-sm;
+  animation: slide-in 0.3s ease-out;
+}
+
+.notification.success {
+  @apply bg-crypto-green/20 border-crypto-green text-crypto-green;
+}
+
+.notification.error {
+  @apply bg-crypto-red/20 border-crypto-red text-crypto-red;
+}
+
+.notification.warning {
+  @apply bg-yellow-500/20 border-yellow-500 text-yellow-500;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Mining effects */
+.mining-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.mining-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(243, 156, 18, 0.1),
+    transparent
+  );
+  animation: mining-scan 2s infinite;
+}
+
+@keyframes mining-scan {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mining-card {
+    @apply p-4;
+  }
+  
+  .stat-card {
+    @apply p-3;
+  }
+  
+  .hashrate-display {
+    @apply text-2xl;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mining-card {
+    @apply border-white/50;
+  }
+  
+  .stat-card {
+    @apply border-white/30;
+  }
+  
+  .text-crypto-gold {
+    @apply text-yellow-400;
+  }
+}

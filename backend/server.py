@@ -122,6 +122,88 @@ class AIInsights(BaseModel):
     optimization_suggestions: List[str] = []
 
 # ============================================================================
+# WALLET ADDRESS VALIDATION
+# ============================================================================
+
+class WalletValidator:
+    """
+    Wallet address validation for different cryptocurrency formats
+    """
+    
+    @staticmethod
+    def validate_address(address: str, coin_symbol: str) -> Dict[str, Any]:
+        """
+        Validate wallet address format for specific cryptocurrency
+        """
+        if not address or len(address.strip()) == 0:
+            return {"valid": False, "error": "Wallet address cannot be empty"}
+        
+        address = address.strip()
+        
+        # Basic length checks
+        if len(address) < 25 or len(address) > 62:
+            return {"valid": False, "error": "Invalid address length"}
+        
+        # Coin-specific validation
+        if coin_symbol in ["LTC", "FTC"]:
+            return WalletValidator._validate_litecoin_address(address)
+        elif coin_symbol == "DOGE":
+            return WalletValidator._validate_dogecoin_address(address)
+        else:
+            return WalletValidator._validate_generic_address(address)
+    
+    @staticmethod
+    def _validate_litecoin_address(address: str) -> Dict[str, Any]:
+        """Validate Litecoin address format"""
+        # Litecoin addresses start with L (legacy) or M (multisig) or ltc1 (bech32)
+        if address.startswith('ltc1'):
+            # Bech32 format
+            if len(address) >= 39 and len(address) <= 62:
+                return {"valid": True, "format": "bech32", "type": "segwit"}
+            else:
+                return {"valid": False, "error": "Invalid bech32 address length"}
+        elif address.startswith('L'):
+            # Legacy P2PKH
+            if len(address) >= 26 and len(address) <= 35:
+                return {"valid": True, "format": "base58", "type": "legacy"}
+            else:
+                return {"valid": False, "error": "Invalid legacy address length"}
+        elif address.startswith('M') or address.startswith('3'):
+            # P2SH (multisig)
+            if len(address) >= 26 and len(address) <= 35:
+                return {"valid": True, "format": "base58", "type": "multisig"}
+            else:
+                return {"valid": False, "error": "Invalid multisig address length"}
+        else:
+            return {"valid": False, "error": "Address must start with L, M, 3, or ltc1"}
+    
+    @staticmethod
+    def _validate_dogecoin_address(address: str) -> Dict[str, Any]:
+        """Validate Dogecoin address format"""
+        # Dogecoin addresses start with D (standard) or A (multisig)
+        if address.startswith('D'):
+            if len(address) >= 27 and len(address) <= 35:
+                return {"valid": True, "format": "base58", "type": "standard"}
+            else:
+                return {"valid": False, "error": "Invalid Dogecoin address length"}
+        elif address.startswith('A') or address.startswith('9'):
+            if len(address) >= 27 and len(address) <= 35:
+                return {"valid": True, "format": "base58", "type": "multisig"}
+            else:
+                return {"valid": False, "error": "Invalid multisig address length"}
+        else:
+            return {"valid": False, "error": "Dogecoin address must start with D, A, or 9"}
+    
+    @staticmethod
+    def _validate_generic_address(address: str) -> Dict[str, Any]:
+        """Generic address validation for unknown coin types"""
+        # Basic alphanumeric check
+        if address.isalnum():
+            return {"valid": True, "format": "unknown", "type": "generic"}
+        else:
+            return {"valid": False, "error": "Address contains invalid characters"}
+
+# ============================================================================
 # CORE SCRYPT IMPLEMENTATION
 # ============================================================================
 

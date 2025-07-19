@@ -321,6 +321,14 @@ function App() {
               onCoinChange={setSelectedCoin}
             />
             
+            <WalletConfig
+              config={miningConfig}
+              onConfigChange={setMiningConfig}
+              selectedCoin={selectedCoin}
+              coinPresets={coinPresets}
+              isMining={miningStatus.is_mining}
+            />
+            
             <MiningControls
               config={miningConfig}
               onConfigChange={setMiningConfig}
@@ -328,8 +336,6 @@ function App() {
               onStart={startMining}
               onStop={stopMining}
             />
-            
-            <SystemMonitor stats={systemStats} />
           </div>
 
           {/* Center - Main Dashboard */}

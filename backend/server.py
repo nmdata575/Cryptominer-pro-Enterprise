@@ -155,6 +155,23 @@ class WalletValidator:
             return WalletValidator._validate_generic_address(address)
     
     @staticmethod
+    def _validate_feathercoin_address(address: str) -> Dict[str, Any]:
+        """Validate Feathercoin address format"""
+        # Feathercoin addresses start with 6 (standard) or 3 (multisig)
+        if address.startswith('6'):
+            if len(address) >= 27 and len(address) <= 35:
+                return {"valid": True, "format": "base58", "type": "standard"}
+            else:
+                return {"valid": False, "error": "Invalid Feathercoin address length"}
+        elif address.startswith('3'):
+            if len(address) >= 27 and len(address) <= 35:
+                return {"valid": True, "format": "base58", "type": "multisig"}
+            else:
+                return {"valid": False, "error": "Invalid multisig address length"}
+        else:
+            return {"valid": False, "error": "Feathercoin address must start with 6 or 3"}
+    
+    @staticmethod
     def _validate_litecoin_address(address: str) -> Dict[str, Any]:
         """Validate Litecoin address format"""
         # Litecoin addresses start with L (legacy) or M (multisig) or ltc1 (bech32)

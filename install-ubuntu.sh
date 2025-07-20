@@ -444,29 +444,19 @@ setup_python() {
     
     # Handle externally-managed-environment in Ubuntu 24.04+
     if python3 -c "import sys; exit(0 if sys.version_info >= (3, 11) else 1)" 2>/dev/null; then
-        print_info "Python 3.11+ detected - using system package management approach"
+        print_info "Python 3.11+ detected - using virtual environment approach"
         
         # Install pip packages via apt where possible
         print_substep "Installing Python packages via system package manager"
         apt install -y python3-pip python3-setuptools python3-wheel python3-build >> "$LOG_FILE" 2>&1 || \
             print_warning "Some Python packages may not be available via apt"
         
-        # Create a project-specific virtual environment for user packages
-        print_substep "Creating project virtual environment"
-        sudo -u "$SUDO_USER" python3 -m venv "$PROJECT_DIR/venv" >> "$LOG_FILE" 2>&1 || \
-            error_exit "Failed to create virtual environment"
-        
-        # Upgrade pip inside the virtual environment
-        print_substep "Upgrading pip in virtual environment"
-        sudo -u "$SUDO_USER" "$PROJECT_DIR/venv/bin/pip" install --upgrade pip >> "$LOG_FILE" 2>&1 || \
-            error_exit "Failed to upgrade pip in virtual environment"
-        
-        print_success "Python package management configured with virtual environment"
-        
         # Set environment variable for later use
         export USE_VENV=true
         export PYTHON_EXECUTABLE="$PROJECT_DIR/venv/bin/python"
         export PIP_EXECUTABLE="$PROJECT_DIR/venv/bin/pip"
+        
+        print_success "Python package management configured for virtual environment"
         
     else
         print_info "Python 3.10 or older detected - using traditional pip approach"

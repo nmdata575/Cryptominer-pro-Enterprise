@@ -4,6 +4,12 @@
 # Complete automated installation with all dependencies and database setup
 # Compatible with Ubuntu 24.04 LTS and later versions
 
+# Ensure we're using bash, not sh/dash
+if [ -z "$BASH_VERSION" ]; then
+    echo "This script requires bash. Please run with: bash $0"
+    exit 1
+fi
+
 set -e  # Exit on any error
 
 # Configuration

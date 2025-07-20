@@ -984,6 +984,10 @@ show_completion_info() {
     echo -e "    ${BLUE}• Backend Config:${NC}   $PROJECT_DIR/backend/.env"
     echo -e "    ${BLUE}• Frontend Config:${NC}  $PROJECT_DIR/frontend/.env"
     
+    if [ "$USE_VENV" = "true" ]; then
+        echo -e "    ${BLUE}• Python Virtual Env:${NC} $PROJECT_DIR/venv"
+    fi
+    
     echo ""
     echo -e "${YELLOW}🚀 Quick Start Guide:${NC}"
     echo -e "    ${GREEN}1.${NC} Open your web browser"

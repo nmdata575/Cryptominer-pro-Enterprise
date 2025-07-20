@@ -337,17 +337,40 @@ class ScryptEngine:
         V = []
         X = bytearray(block)
         
+        # Ensure minimum block size
+        if len(X) < 128:
+            X = bytearray(X + b'\x00' * (128 - len(X)))
+        
         # First loop: store N values
         for i in range(N):
             V.append(bytearray(X))
             X = self._scrypt_blockmix(X)
+            # Ensure X maintains minimum size after blockmix
+            if len(X) < 128:
+                X = bytearray(X + b'\x00' * (128 - len(X)))
         
         # Second loop: mix with stored values
         for i in range(N):
-            j = struct.unpack('<Q', X[-8:])[0] % N
-            for k in range(len(X)):
+            # Add bounds checking before accessing X[-8:]
+            if len(X) < 8:
+                # If X is too small, pad it or use a safe default
+                j = 0
+            else:
+                try:
+                    j = struct.unpack('<Q', X[-8:])[0] % N
+                except struct.error:
+                    # Fallback if unpack fails
+                    j = i % N
+            
+            # Ensure both X and V[j] have same length before XOR
+            min_len = min(len(X), len(V[j]))
+            for k in range(min_len):
                 X[k] ^= V[j][k]
+            
             X = self._scrypt_blockmix(X)
+            # Ensure X maintains minimum size after blockmix
+            if len(X) < 128:
+                X = bytearray(X + b'\x00' * (128 - len(X)))
         
         return X
     

@@ -653,6 +653,13 @@ EOF
             print_info "Virtual environment already exists"
         fi
         
+        # Upgrade build tools in virtual environment before installing packages
+        print_substep "Upgrading build tools in virtual environment"
+        sudo -u "$SUDO_USER" "$PROJECT_DIR/venv/bin/pip" install --upgrade pip setuptools wheel >> "$LOG_FILE" 2>&1 || \
+            error_exit "Failed to upgrade build tools in virtual environment"
+        
+        print_success "Build tools upgraded successfully"
+        
         # Install packages in virtual environment
         sudo -u "$SUDO_USER" "$PIP_EXECUTABLE" install -r requirements.txt >> "$LOG_FILE" 2>&1 || \
             error_exit "Failed to install Python dependencies in virtual environment"

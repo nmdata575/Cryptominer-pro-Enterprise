@@ -228,16 +228,16 @@ check_python_versions() {
     # Check for other Python versions
     print_substep "Available Python versions on system:"
     
-    AVAILABLE_PYTHONS=()
+    AVAILABLE_PYTHONS=""
     for version in 3.8 3.9 3.10 3.11 3.12 3.13 3.14; do
         if command -v python$version &> /dev/null; then
             FULL_VERSION=$(python$version --version 2>&1 | cut -d' ' -f2)
             print_success "Python $version: $FULL_VERSION"
-            AVAILABLE_PYTHONS+=("python$version:$FULL_VERSION")
+            AVAILABLE_PYTHONS="${AVAILABLE_PYTHONS}python$version:$FULL_VERSION "
         fi
     done
     
-    if [ ${#AVAILABLE_PYTHONS[@]} -eq 0 ] && [ -z "$DEFAULT_PYTHON_VERSION" ]; then
+    if [ -z "$AVAILABLE_PYTHONS" ] && [ -z "$DEFAULT_PYTHON_VERSION" ]; then
         print_error "No Python installations found"
         return 1
     fi

@@ -704,16 +704,26 @@ setup_supervisor() {
     print_step "Configuring Service Management"
     
     print_substep "Creating supervisor configuration"
+    
+    # Determine Python executable path
+    if [ "$USE_VENV" = "true" ]; then
+        PYTHON_CMD="$PROJECT_DIR/venv/bin/python"
+        PYTHON_PATH="$PROJECT_DIR/venv/bin:/home/$SUDO_USER/.local/bin:/usr/bin:/bin"
+    else
+        PYTHON_CMD="python3"
+        PYTHON_PATH="/home/$SUDO_USER/.local/bin:/usr/bin:/bin"
+    fi
+    
     cat > /etc/supervisor/conf.d/cryptominer-pro.conf << EOF
 [program:cryptominer-backend]
-command=python3 -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+command=$PYTHON_CMD -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 directory=$PROJECT_DIR/backend
 user=$SUDO_USER
 autostart=true
 autorestart=true
 stderr_logfile=$PROJECT_DIR/logs/backend.err.log
 stdout_logfile=$PROJECT_DIR/logs/backend.out.log
-environment=PATH="/home/$SUDO_USER/.local/bin:/usr/bin:/bin",PYTHONPATH="$PROJECT_DIR/backend"
+environment=PATH="$PYTHON_PATH",PYTHONPATH="$PROJECT_DIR/backend"
 
 [program:cryptominer-frontend]
 command=npm start

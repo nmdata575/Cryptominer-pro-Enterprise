@@ -977,8 +977,8 @@ main() {
     # Start installation process
     check_ubuntu_version
     update_system
+    setup_python  # Enhanced with version checking
     install_nodejs
-    setup_python
     install_mongodb
     create_project_structure
     install_application

@@ -975,7 +975,7 @@ main() {
     echo ""
     read -p "Do you want to continue? [y/N]: " -r
     echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    if [ ! "$REPLY" = "y" ] && [ ! "$REPLY" = "Y" ]; then
         echo -e "${CYAN}Installation cancelled by user${NC}"
         exit 0
     fi

@@ -637,6 +637,23 @@ EOF
     
     if [ "$USE_VENV" = "true" ]; then
         print_info "Using virtual environment for Python packages"
+        
+        # Create virtual environment if it doesn't exist
+        if [ ! -d "$PROJECT_DIR/venv" ]; then
+            print_substep "Creating Python virtual environment"
+            sudo -u "$SUDO_USER" python3 -m venv "$PROJECT_DIR/venv" >> "$LOG_FILE" 2>&1 || \
+                error_exit "Failed to create virtual environment at $PROJECT_DIR/venv"
+            
+            print_substep "Setting virtual environment permissions"
+            chown -R "$SUDO_USER:$SUDO_USER" "$PROJECT_DIR/venv" || \
+                error_exit "Failed to set virtual environment permissions"
+            
+            print_success "Virtual environment created at $PROJECT_DIR/venv"
+        else
+            print_info "Virtual environment already exists"
+        fi
+        
+        # Install packages in virtual environment
         sudo -u "$SUDO_USER" "$PIP_EXECUTABLE" install -r requirements.txt >> "$LOG_FILE" 2>&1 || \
             error_exit "Failed to install Python dependencies in virtual environment"
     else

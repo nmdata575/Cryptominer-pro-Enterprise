@@ -299,22 +299,36 @@ class ScryptEngine:
     
     def _scrypt_blockmix(self, block: bytearray) -> bytearray:
         """scryptBlockMix function"""
-        X = bytearray(block[-64:])  # Last 64 bytes
-        Y = bytearray(len(block))
+        if len(block) < 128:
+            # Ensure minimum block size for scrypt
+            block = bytearray(block + b'\x00' * (128 - len(block)))
         
-        for i in range(0, len(block), 64):
+        X = bytearray(block[-64:])  # Last 64 bytes
+        Y = bytearray(len(block))  # Same size as input
+        
+        block_count = len(block) // 64
+        
+        for i in range(block_count):
             # XOR with X
+            block_offset = i * 64
             for j in range(64):
-                X[j] ^= block[i + j]
+                if block_offset + j < len(block):
+                    X[j] ^= block[block_offset + j]
             
             # Apply Salsa20
             X = self._salsa20_core(X)
             
-            # Store result
-            if i % 128 == 0:
-                Y[i//2:i//2+64] = X
+            # Store result in correct position
+            if i % 2 == 0:
+                # Even blocks go to first half
+                target_offset = (i // 2) * 64
             else:
-                Y[len(block)//2 + i//2:len(block)//2 + i//2+64] = X
+                # Odd blocks go to second half
+                target_offset = (block_count // 2 + i // 2) * 64
+            
+            # Ensure we don't exceed buffer bounds
+            if target_offset + 64 <= len(Y):
+                Y[target_offset:target_offset + 64] = X
         
         return Y
     

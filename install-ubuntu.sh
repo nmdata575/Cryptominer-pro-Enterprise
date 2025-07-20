@@ -197,21 +197,253 @@ install_nodejs() {
     print_success "Yarn $YARN_VERSION installed"
 }
 
+# Check current Python versions
+check_python_versions() {
+    print_step "Checking Python Versions"
+    
+    print_substep "Current Python installations:"
+    
+    # Check default python3
+    if command -v python3 &> /dev/null; then
+        DEFAULT_PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
+        print_info "Default Python3: $DEFAULT_PYTHON_VERSION"
+        
+        # Parse version numbers for comparison
+        PYTHON_MAJOR=$(echo "$DEFAULT_PYTHON_VERSION" | cut -d'.' -f1)
+        PYTHON_MINOR=$(echo "$DEFAULT_PYTHON_VERSION" | cut -d'.' -f2)
+        PYTHON_PATCH=$(echo "$DEFAULT_PYTHON_VERSION" | cut -d'.' -f3)
+        
+        print_info "  • Version components: $PYTHON_MAJOR.$PYTHON_MINOR.$PYTHON_PATCH"
+    else
+        print_warning "No default python3 found"
+        DEFAULT_PYTHON_VERSION=""
+    fi
+    
+    # Check for other Python versions
+    print_substep "Available Python versions on system:"
+    
+    AVAILABLE_PYTHONS=()
+    for version in 3.8 3.9 3.10 3.11 3.12 3.13 3.14; do
+        if command -v python$version &> /dev/null; then
+            FULL_VERSION=$(python$version --version 2>&1 | cut -d' ' -f2)
+            print_success "Python $version: $FULL_VERSION"
+            AVAILABLE_PYTHONS+=("python$version:$FULL_VERSION")
+        fi
+    done
+    
+    if [ ${#AVAILABLE_PYTHONS[@]} -eq 0 ] && [ -z "$DEFAULT_PYTHON_VERSION" ]; then
+        print_error "No Python installations found"
+        return 1
+    fi
+    
+    # Check pip availability
+    print_substep "Python package managers:"
+    if command -v pip3 &> /dev/null; then
+        PIP_VERSION=$(pip3 --version | cut -d' ' -f2)
+        print_success "pip3: $PIP_VERSION"
+    else
+        print_warning "pip3 not found"
+    fi
+    
+    # Check development packages
+    print_substep "Python development packages:"
+    if dpkg -l | grep -q python3-dev; then
+        print_success "python3-dev installed"
+    else
+        print_warning "python3-dev not installed"
+    fi
+    
+    if dpkg -l | grep -q python3-venv; then
+        print_success "python3-venv installed"
+    else
+        print_warning "python3-venv not installed"
+    fi
+    
+    return 0
+}
+
+# Determine if deadsnakes PPA is needed
+check_python_requirements() {
+    print_step "Analyzing Python Requirements"
+    
+    # Define minimum required version for CryptoMiner Pro
+    REQUIRED_MAJOR=3
+    REQUIRED_MINOR=8
+    REQUIRED_PATCH=0
+    
+    # Preferred version
+    PREFERRED_MAJOR=3
+    PREFERRED_MINOR=12
+    PREFERRED_PATCH=0
+    
+    print_info "CryptoMiner Pro requirements:"
+    echo "    • Minimum: Python $REQUIRED_MAJOR.$REQUIRED_MINOR.$REQUIRED_PATCH+"
+    echo "    • Preferred: Python $PREFERRED_MAJOR.$PREFERRED_MINOR.$PREFERRED_PATCH+"
+    
+    # Check if current Python meets requirements
+    if [ -n "$DEFAULT_PYTHON_VERSION" ]; then
+        # Compare versions
+        if python3 -c "import sys; exit(0 if sys.version_info >= ($REQUIRED_MAJOR, $REQUIRED_MINOR, $REQUIRED_PATCH) else 1)" 2>/dev/null; then
+            print_success "Current Python ($DEFAULT_PYTHON_VERSION) meets minimum requirements"
+            
+            # Check if it meets preferred version
+            if python3 -c "import sys; exit(0 if sys.version_info >= ($PREFERRED_MAJOR, $PREFERRED_MINOR, $PREFERRED_PATCH) else 1)" 2>/dev/null; then
+                print_success "Current Python meets preferred requirements"
+                NEED_DEADSNAKES=false
+            else
+                print_warning "Current Python below preferred version"
+                print_info "Will attempt to install Python $PREFERRED_MAJOR.$PREFERRED_MINOR via deadsnakes PPA"
+                NEED_DEADSNAKES=true
+            fi
+        else
+            print_error "Current Python ($DEFAULT_PYTHON_VERSION) below minimum requirements"
+            print_info "Must install newer Python version via deadsnakes PPA"
+            NEED_DEADSNAKES=true
+        fi
+    else
+        print_error "No Python installation found"
+        print_info "Must install Python via deadsnakes PPA"
+        NEED_DEADSNAKES=true
+    fi
+    
+    # Check Ubuntu version to determine deadsnakes compatibility
+    UBUNTU_VERSION=$(lsb_release -rs)
+    print_info "Ubuntu version: $UBUNTU_VERSION"
+    
+    # Ubuntu 24.04+ comes with Python 3.12+, might not need deadsnakes
+    if [ "$(printf '%s\n' "24.04" "$UBUNTU_VERSION" | sort -V | head -n1)" = "24.04" ]; then
+        if [ "$NEED_DEADSNAKES" = "false" ]; then
+            print_info "Ubuntu $UBUNTU_VERSION with suitable Python - no deadsnakes needed"
+        else
+            print_info "Ubuntu $UBUNTU_VERSION but need newer Python - will use deadsnakes"
+        fi
+    else
+        print_info "Older Ubuntu version - deadsnakes PPA recommended for latest Python"
+        NEED_DEADSNAKES=true
+    fi
+    
+    export NEED_DEADSNAKES
+}
+
+# Enhanced deadsnakes PPA installation
+install_deadsnakes_ppa() {
+    print_step "Installing Deadsnakes PPA"
+    
+    print_substep "Adding deadsnakes repository key"
+    
+    # Try multiple methods to add the GPG key
+    local key_added=false
+    
+    # Method 1: Standard keyserver
+    if sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys BA6932366A755776 >> "$LOG_FILE" 2>&1; then
+        print_success "GPG key imported from standard keyserver"
+        key_added=true
+    else
+        print_warning "Standard keyserver failed, trying alternatives"
+        
+        # Method 2: Alternative keyserver with HKP protocol
+        if sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys BA6932366A755776 >> "$LOG_FILE" 2>&1; then
+            print_success "GPG key imported from HKP keyserver"
+            key_added=true
+        else
+            # Method 3: Modern GPG approach
+            print_substep "Trying modern GPG key management"
+            sudo mkdir -p /etc/apt/keyrings
+            
+            if wget -qO- "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xBA6932366A755776" | sudo gpg --dearmor -o /etc/apt/keyrings/deadsnakes.gpg 2>>"$LOG_FILE"; then
+                print_success "GPG key added using modern approach"
+                
+                # Add repository with keyring reference
+                echo "deb [signed-by=/etc/apt/keyrings/deadsnakes.gpg] http://ppa.launchpad.net/deadsnakes/ppa/ubuntu $(lsb_release -cs) main" | \
+                    tee /etc/apt/sources.list.d/deadsnakes.list >> "$LOG_FILE" 2>&1
+                key_added=true
+            fi
+        fi
+    fi
+    
+    if [ "$key_added" = false ]; then
+        print_warning "Could not import deadsnakes GPG key - will use system Python"
+        return 1
+    fi
+    
+    # Add repository if not already added
+    if [ ! -f /etc/apt/sources.list.d/deadsnakes.list ]; then
+        print_substep "Adding deadsnakes repository"
+        if ! add-apt-repository -y ppa:deadsnakes/ppa >> "$LOG_FILE" 2>&1; then
+            print_warning "Failed to add deadsnakes PPA repository"
+            return 1
+        fi
+    fi
+    
+    print_substep "Updating package lists"
+    apt update >> "$LOG_FILE" 2>&1 || {
+        print_warning "Failed to update package lists after adding deadsnakes PPA"
+        return 1
+    }
+    
+    print_success "Deadsnakes PPA added successfully"
+    return 0
+}
+
 # Install Python dependencies
 setup_python() {
     print_step "Setting up Python Environment"
     
-    print_substep "Installing Python development packages"
-    apt install -y python3.12 python3.12-dev python3.12-venv python3-pip >> "$LOG_FILE" 2>&1 || \
-        error_exit "Failed to install Python packages"
+    # First check what we have
+    check_python_versions
+    check_python_requirements
     
-    # Verify Python version
-    PYTHON_VERSION=$(python3 --version)
-    print_success "$PYTHON_VERSION installed"
+    # Install deadsnakes PPA if needed
+    if [ "$NEED_DEADSNAKES" = "true" ]; then
+        if install_deadsnakes_ppa; then
+            print_substep "Installing Python 3.12 from deadsnakes PPA"
+            
+            if apt install -y python3.12 python3.12-dev python3.12-venv python3.12-distutils >> "$LOG_FILE" 2>&1; then
+                print_success "Python 3.12 installed from deadsnakes PPA"
+                
+                # Update alternatives to make python3.12 available as python3
+                if ! command -v python3 &> /dev/null || python3 -c "import sys; exit(0 if sys.version_info >= (3, 12) else 1)" 2>/dev/null; then
+                    print_substep "Setting up Python 3.12 as default python3"
+                    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 >> "$LOG_FILE" 2>&1 || true
+                fi
+            else
+                print_warning "Failed to install Python 3.12, using system Python"
+            fi
+        else
+            print_warning "Deadsnakes PPA installation failed, using system Python"
+        fi
+    fi
+    
+    # Install basic Python packages
+    print_substep "Installing essential Python packages"
+    apt install -y python3-pip python3-dev python3-venv >> "$LOG_FILE" 2>&1 || \
+        error_exit "Failed to install essential Python packages"
+    
+    # Verify final Python version
+    if command -v python3 &> /dev/null; then
+        FINAL_PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
+        print_success "Final Python version: $FINAL_PYTHON_VERSION"
+        
+        # Check if it meets minimum requirements
+        if python3 -c "import sys; exit(0 if sys.version_info >= (3, 8) else 1)" 2>/dev/null; then
+            print_success "Python version meets CryptoMiner Pro requirements"
+        else
+            error_exit "Python version ($FINAL_PYTHON_VERSION) still below minimum requirements"
+        fi
+    else
+        error_exit "Python3 not available after installation"
+    fi
     
     print_substep "Upgrading pip"
     python3 -m pip install --upgrade pip >> "$LOG_FILE" 2>&1 || \
         error_exit "Failed to upgrade pip"
+    
+    # Final verification
+    print_substep "Final Python environment verification:"
+    PIP_VERSION=$(python3 -m pip --version | cut -d' ' -f2)
+    print_info "  • Python: $(python3 --version)"
+    print_info "  • Pip: $PIP_VERSION"
+    print_info "  • Installation path: $(which python3)"
     
     print_success "Python environment ready"
 }

@@ -644,8 +644,16 @@ EOF
     # Install backend dependencies
     print_substep "Installing Python dependencies"
     cd "$PROJECT_DIR/backend"
-    sudo -u "$SUDO_USER" python3 -m pip install -r requirements.txt >> "$LOG_FILE" 2>&1 || \
-        error_exit "Failed to install Python dependencies"
+    
+    if [ "$USE_VENV" = "true" ]; then
+        print_info "Using virtual environment for Python packages"
+        sudo -u "$SUDO_USER" "$PIP_EXECUTABLE" install -r requirements.txt >> "$LOG_FILE" 2>&1 || \
+            error_exit "Failed to install Python dependencies in virtual environment"
+    else
+        print_info "Using system Python for package installation"
+        sudo -u "$SUDO_USER" python3 -m pip install -r requirements.txt >> "$LOG_FILE" 2>&1 || \
+            error_exit "Failed to install Python dependencies"
+    fi
     
     # Install frontend dependencies
     print_substep "Installing Node.js dependencies"

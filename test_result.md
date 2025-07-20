@@ -319,17 +319,10 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Main Dashboard Loading and Layout"
-    - "Cryptocurrency Selection Panel"
-    - "Mining Dashboard Metrics Display"
-    - "AI Assistant Section Functionality"
-    - "Wallet Configuration Functionality"
+  current_focus: []
+  stuck_tasks:
     - "Mining Controls (Start/Stop)"
-    - "System Monitoring Display"
-    - "Real-time WebSocket Updates"
     - "Frontend-Backend Integration"
-  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 

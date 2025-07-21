@@ -1080,8 +1080,8 @@ main() {
     install_nodejs
     install_mongodb
     create_project_structure
+    copy_source_code  # Copy source files before installing dependencies
     install_application
-    copy_source_code
     setup_supervisor
     configure_firewall
     create_management_scripts

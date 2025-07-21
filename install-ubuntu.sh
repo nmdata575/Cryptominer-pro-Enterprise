@@ -660,8 +660,13 @@ EOF
         
         print_success "Build tools upgraded successfully"
         
-        # Install packages in virtual environment
-        sudo -u "$SUDO_USER" "$PIP_EXECUTABLE" install -r requirements.txt >> "$LOG_FILE" 2>&1 || \
+        # Clear any existing pip cache to avoid corruption issues
+        print_substep "Clearing pip cache to ensure clean installation"
+        sudo -u "$SUDO_USER" "$PROJECT_DIR/venv/bin/pip" cache purge >> "$LOG_FILE" 2>&1 || true
+        
+        # Install packages in virtual environment with pre-compiled wheels when possible
+        print_substep "Installing Python packages (using pre-compiled wheels when available)"
+        sudo -u "$SUDO_USER" "$PIP_EXECUTABLE" install --prefer-binary -r requirements.txt >> "$LOG_FILE" 2>&1 || \
             error_exit "Failed to install Python dependencies in virtual environment"
     else
         print_info "Using system Python for package installation"

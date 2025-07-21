@@ -666,8 +666,15 @@ EOF
         
         # Install packages in virtual environment with pre-compiled wheels when possible
         print_substep "Installing Python packages (using pre-compiled wheels when available)"
-        sudo -u "$SUDO_USER" "$PIP_EXECUTABLE" install --prefer-binary -r requirements.txt >> "$LOG_FILE" 2>&1 || \
-            error_exit "Failed to install Python dependencies in virtual environment"
+        if ! sudo -u "$SUDO_USER" "$PIP_EXECUTABLE" install --prefer-binary -r requirements.txt >> "$LOG_FILE" 2>&1; then
+            print_warning "Installation with latest packages failed, trying fallback versions"
+            print_substep "Attempting installation with stable package versions"
+            sudo -u "$SUDO_USER" "$PIP_EXECUTABLE" install --prefer-binary -r requirements-fallback.txt >> "$LOG_FILE" 2>&1 || \
+                error_exit "Failed to install Python dependencies with both current and fallback packages"
+            print_success "Python dependencies installed with fallback versions"
+        else
+            print_success "Python dependencies installed successfully"
+        fi
     else
         print_info "Using system Python for package installation"
         sudo -u "$SUDO_USER" python3 -m pip install -r requirements.txt >> "$LOG_FILE" 2>&1 || \

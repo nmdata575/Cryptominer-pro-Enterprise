@@ -640,8 +640,14 @@ EOF
         
         # Create virtual environment if it doesn't exist
         if [ ! -d "$PROJECT_DIR/venv" ]; then
-            print_substep "Creating Python virtual environment"
-            sudo -u "$SUDO_USER" python3 -m venv "$PROJECT_DIR/venv" >> "$LOG_FILE" 2>&1 || \
+            print_substep "Creating Python virtual environment with Python 3.11"
+            
+            # Ensure python3.11 is available
+            if ! command -v python3.11 &> /dev/null; then
+                error_exit "Python 3.11 is required but not found. Please install python3.11"
+            fi
+            
+            sudo -u "$SUDO_USER" python3.11 -m venv "$PROJECT_DIR/venv" >> "$LOG_FILE" 2>&1 || \
                 error_exit "Failed to create virtual environment at $PROJECT_DIR/venv"
             
             print_substep "Setting virtual environment permissions"

@@ -836,14 +836,23 @@ async def start_mining(config: MiningConfig):
                     detail="RPC port is required when custom RPC host is specified"
                 )
         
-        mining_engine = MiningEngine(config)
+        # Calculate optimal thread count
+        optimal_threads = config.get_optimal_threads()
+        actual_config = config.copy()
+        actual_config.threads = optimal_threads
+        
+        mining_engine = MiningEngine(actual_config)
         mining_engine.start_mining()
         
         # Prepare connection info for response
         connection_info = {
             "address": config.wallet_address,
             "mode": config.mode,
-            "validation": "passed" if config.wallet_address else "not_required"
+            "validation": "passed" if config.wallet_address else "not_required",
+            "threads_used": optimal_threads,
+            "threads_requested": config.threads,
+            "auto_detection": config.auto_thread_detection,
+            "thread_profile": config.thread_profile
         }
         
         # Add custom connection details to response

@@ -324,6 +324,303 @@ class CryptoMinerAPITester:
         except Exception as e:
             return self.log_test("WebSocket Connection", False, f"- Exception: {str(e)}")
 
+    def test_pool_connection_endpoint(self) -> bool:
+        """Test the new pool connection testing endpoint"""
+        print("\n🔗 Testing Pool Connection Endpoint...")
+        
+        # Test cases for pool connection testing
+        test_cases = [
+            {
+                "name": "Valid Pool Connection (Google DNS)",
+                "data": {"pool_address": "8.8.8.8", "pool_port": 53, "type": "pool"},
+                "should_succeed": True
+            },
+            {
+                "name": "Valid RPC Connection (Google DNS)",
+                "data": {"pool_address": "8.8.8.8", "pool_port": 53, "type": "rpc"},
+                "should_succeed": True
+            },
+            {
+                "name": "Invalid Pool Address",
+                "data": {"pool_address": "invalid.nonexistent.pool", "pool_port": 3333, "type": "pool"},
+                "should_succeed": False
+            },
+            {
+                "name": "Missing Pool Address",
+                "data": {"pool_port": 3333, "type": "pool"},
+                "should_succeed": False
+            },
+            {
+                "name": "Missing Pool Port",
+                "data": {"pool_address": "pool.example.com", "type": "pool"},
+                "should_succeed": False
+            },
+            {
+                "name": "Unreachable Pool",
+                "data": {"pool_address": "192.168.255.255", "pool_port": 9999, "type": "pool"},
+                "should_succeed": False
+            }
+        ]
+        
+        passed_tests = 0
+        total_tests = len(test_cases)
+        
+        for i, test_case in enumerate(test_cases):
+            success, response = self.make_request('POST', '/api/pool/test-connection', test_case["data"])
+            
+            if test_case["should_succeed"]:
+                if success and response.get("success"):
+                    passed_tests += 1
+                    print(f"  ✅ Test {i+1}: {test_case['name']} - Connection successful")
+                else:
+                    print(f"  ❌ Test {i+1}: {test_case['name']} - Expected success but got: {response}")
+            else:
+                if not success or not response.get("success"):
+                    passed_tests += 1
+                    print(f"  ✅ Test {i+1}: {test_case['name']} - Correctly failed")
+                else:
+                    print(f"  ❌ Test {i+1}: {test_case['name']} - Expected failure but succeeded")
+        
+        success_rate = (passed_tests / total_tests) * 100
+        return self.log_test("Pool Connection Testing", passed_tests == total_tests,
+                           f"- {passed_tests}/{total_tests} tests passed ({success_rate:.1f}%)")
+
+    def test_custom_pool_mining(self) -> bool:
+        """Test mining with custom pool settings"""
+        print("\n⛏️ Testing Custom Pool Mining...")
+        
+        # Get coin presets
+        success, presets_response = self.make_request('GET', '/api/coins/presets')
+        if not success:
+            return self.log_test("Custom Pool Mining", False, "- Failed to get coin presets")
+        
+        litecoin_config = presets_response['presets']['litecoin']
+        
+        # Test custom pool mining configuration
+        custom_pool_config = {
+            "coin": litecoin_config,
+            "mode": "pool",
+            "threads": 2,
+            "intensity": 0.5,
+            "auto_optimize": True,
+            "ai_enabled": True,
+            "wallet_address": "",
+            "pool_username": "test_user.worker1",
+            "pool_password": "x",
+            "custom_pool_address": "pool.example.com",
+            "custom_pool_port": 3333
+        }
+        
+        # Test mining start with custom pool settings
+        start_success, start_response = self.make_request('POST', '/api/mining/start', custom_pool_config)
+        
+        if start_success and start_response.get('success'):
+            # Check if response includes custom connection details
+            wallet_info = start_response.get('wallet_info', {})
+            if (wallet_info.get('pool_address') == "pool.example.com" and 
+                wallet_info.get('pool_port') == 3333 and
+                wallet_info.get('connection_type') == "custom_pool"):
+                
+                self.log_test("Custom Pool Config", True, "- Custom pool settings accepted and returned")
+                
+                # Stop mining
+                self.make_request('POST', '/api/mining/stop')
+                time.sleep(1)
+                
+                return self.log_test("Custom Pool Mining", True, "- Custom pool mining started successfully")
+            else:
+                self.make_request('POST', '/api/mining/stop')
+                return self.log_test("Custom Pool Mining", False, f"- Custom pool details not in response: {wallet_info}")
+        else:
+            return self.log_test("Custom Pool Mining", False, f"- Failed to start: {start_response}")
+
+    def test_custom_rpc_mining(self) -> bool:
+        """Test mining with custom RPC settings"""
+        print("\n🔧 Testing Custom RPC Mining...")
+        
+        # Get coin presets
+        success, presets_response = self.make_request('GET', '/api/coins/presets')
+        if not success:
+            return self.log_test("Custom RPC Mining", False, "- Failed to get coin presets")
+        
+        litecoin_config = presets_response['presets']['litecoin']
+        
+        # Test custom RPC mining configuration
+        custom_rpc_config = {
+            "coin": litecoin_config,
+            "mode": "solo",
+            "threads": 2,
+            "intensity": 0.5,
+            "auto_optimize": True,
+            "ai_enabled": True,
+            "wallet_address": "LhK1Nk7QidqUBKLMBKVr8fWsNu4gp7rqLs",
+            "custom_rpc_host": "localhost",
+            "custom_rpc_port": 9332,
+            "custom_rpc_username": "rpcuser",
+            "custom_rpc_password": "rpcpass"
+        }
+        
+        # Test mining start with custom RPC settings
+        start_success, start_response = self.make_request('POST', '/api/mining/start', custom_rpc_config)
+        
+        if start_success and start_response.get('success'):
+            # Check if response includes custom connection details
+            wallet_info = start_response.get('wallet_info', {})
+            if (wallet_info.get('rpc_host') == "localhost" and 
+                wallet_info.get('rpc_port') == 9332 and
+                wallet_info.get('connection_type') == "custom_rpc"):
+                
+                self.log_test("Custom RPC Config", True, "- Custom RPC settings accepted and returned")
+                
+                # Stop mining
+                self.make_request('POST', '/api/mining/stop')
+                time.sleep(1)
+                
+                return self.log_test("Custom RPC Mining", True, "- Custom RPC mining started successfully")
+            else:
+                self.make_request('POST', '/api/mining/stop')
+                return self.log_test("Custom RPC Mining", False, f"- Custom RPC details not in response: {wallet_info}")
+        else:
+            return self.log_test("Custom RPC Mining", False, f"- Failed to start: {start_response}")
+
+    def test_custom_connection_validation(self) -> bool:
+        """Test validation of custom connection parameters"""
+        print("\n✅ Testing Custom Connection Validation...")
+        
+        # Get coin presets
+        success, presets_response = self.make_request('GET', '/api/coins/presets')
+        if not success:
+            return self.log_test("Custom Connection Validation", False, "- Failed to get coin presets")
+        
+        litecoin_config = presets_response['presets']['litecoin']
+        
+        validation_tests = [
+            {
+                "name": "Pool with address but no port",
+                "config": {
+                    "coin": litecoin_config,
+                    "mode": "pool",
+                    "threads": 2,
+                    "pool_username": "test",
+                    "custom_pool_address": "pool.example.com"
+                    # Missing custom_pool_port
+                },
+                "should_fail": True
+            },
+            {
+                "name": "RPC with host but no port",
+                "config": {
+                    "coin": litecoin_config,
+                    "mode": "solo",
+                    "threads": 2,
+                    "wallet_address": "LhK1Nk7QidqUBKLMBKVr8fWsNu4gp7rqLs",
+                    "custom_rpc_host": "localhost"
+                    # Missing custom_rpc_port
+                },
+                "should_fail": True
+            },
+            {
+                "name": "Pool without username",
+                "config": {
+                    "coin": litecoin_config,
+                    "mode": "pool",
+                    "threads": 2,
+                    "custom_pool_address": "pool.example.com",
+                    "custom_pool_port": 3333
+                    # Missing pool_username
+                },
+                "should_fail": True
+            }
+        ]
+        
+        passed_tests = 0
+        total_tests = len(validation_tests)
+        
+        for i, test in enumerate(validation_tests):
+            start_success, start_response = self.make_request('POST', '/api/mining/start', test["config"])
+            
+            if test["should_fail"]:
+                if not start_success or not start_response.get('success'):
+                    passed_tests += 1
+                    print(f"  ✅ Test {i+1}: {test['name']} - Correctly rejected")
+                else:
+                    print(f"  ❌ Test {i+1}: {test['name']} - Should have failed but succeeded")
+                    # Stop mining if it started
+                    self.make_request('POST', '/api/mining/stop')
+            else:
+                if start_success and start_response.get('success'):
+                    passed_tests += 1
+                    print(f"  ✅ Test {i+1}: {test['name']} - Correctly accepted")
+                    self.make_request('POST', '/api/mining/stop')
+                else:
+                    print(f"  ❌ Test {i+1}: {test['name']} - Should have succeeded but failed")
+        
+        success_rate = (passed_tests / total_tests) * 100
+        return self.log_test("Custom Connection Validation", passed_tests == total_tests,
+                           f"- {passed_tests}/{total_tests} validation tests passed ({success_rate:.1f}%)")
+
+    def test_enhanced_mining_config_model(self) -> bool:
+        """Test that the enhanced MiningConfig model accepts new custom fields"""
+        print("\n📋 Testing Enhanced MiningConfig Model...")
+        
+        # Get coin presets
+        success, presets_response = self.make_request('GET', '/api/coins/presets')
+        if not success:
+            return self.log_test("Enhanced MiningConfig Model", False, "- Failed to get coin presets")
+        
+        litecoin_config = presets_response['presets']['litecoin']
+        
+        # Test configuration with all new custom fields
+        full_custom_config = {
+            "coin": litecoin_config,
+            "mode": "pool",
+            "threads": 2,
+            "intensity": 0.5,
+            "auto_optimize": True,
+            "ai_enabled": True,
+            "wallet_address": "",
+            "pool_username": "test_user",
+            "pool_password": "test_pass",
+            # NEW custom pool fields
+            "custom_pool_address": "custom.pool.com",
+            "custom_pool_port": 4444,
+            # NEW custom RPC fields (should be ignored in pool mode)
+            "custom_rpc_host": "rpc.host.com",
+            "custom_rpc_port": 8332,
+            "custom_rpc_username": "rpcuser",
+            "custom_rpc_password": "rpcpass"
+        }
+        
+        # Test that the configuration is accepted
+        start_success, start_response = self.make_request('POST', '/api/mining/start', full_custom_config)
+        
+        if start_success and start_response.get('success'):
+            # Verify the config was stored properly
+            config_in_response = start_response.get('config', {})
+            
+            # Check that custom fields are present
+            custom_fields_present = (
+                config_in_response.get('custom_pool_address') == "custom.pool.com" and
+                config_in_response.get('custom_pool_port') == 4444 and
+                config_in_response.get('custom_rpc_host') == "rpc.host.com" and
+                config_in_response.get('custom_rpc_port') == 8332 and
+                config_in_response.get('custom_rpc_username') == "rpcuser" and
+                config_in_response.get('custom_rpc_password') == "rpcpass"
+            )
+            
+            # Stop mining
+            self.make_request('POST', '/api/mining/stop')
+            
+            if custom_fields_present:
+                return self.log_test("Enhanced MiningConfig Model", True, 
+                                   "- All custom connection fields accepted and stored")
+            else:
+                return self.log_test("Enhanced MiningConfig Model", False, 
+                                   f"- Custom fields missing from config: {config_in_response}")
+        else:
+            return self.log_test("Enhanced MiningConfig Model", False, 
+                               f"- Failed to start with enhanced config: {start_response}")
+
     def test_scrypt_algorithm(self) -> bool:
         """Test the scrypt algorithm implementation by starting a brief mining session"""
         # Get coin presets
@@ -339,7 +636,8 @@ class CryptoMinerAPITester:
             "threads": 1,
             "intensity": 0.1,  # Very low intensity
             "auto_optimize": False,
-            "ai_enabled": False
+            "ai_enabled": False,
+            "wallet_address": "LhK1Nk7QidqUBKLMBKVr8fWsNu4gp7rqLs"  # Added required wallet address
         }
         
         # Start mining

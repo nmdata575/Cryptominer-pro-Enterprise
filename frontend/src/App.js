@@ -56,7 +56,14 @@ function App() {
     ai_enabled: true,
     wallet_address: '',
     pool_username: '',
-    pool_password: 'x'
+    pool_password: 'x',
+    // NEW: Custom pool/RPC configuration fields
+    custom_pool_address: '',
+    custom_pool_port: '',
+    custom_rpc_host: '',
+    custom_rpc_port: '',
+    custom_rpc_username: '',
+    custom_rpc_password: ''
   });
   
   const [websocket, setWebsocket] = useState(null);

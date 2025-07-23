@@ -213,7 +213,10 @@ function App() {
         custom_rpc_host: miningConfig.custom_rpc_host?.trim() || '',
         custom_rpc_port: miningConfig.custom_rpc_port?.trim() || '',
         custom_rpc_username: miningConfig.custom_rpc_username?.trim() || '',
-        custom_rpc_password: miningConfig.custom_rpc_password?.trim() || ''
+        custom_rpc_password: miningConfig.custom_rpc_password?.trim() || '',
+        // Include dynamic thread management
+        auto_thread_detection: miningConfig.auto_thread_detection,
+        thread_profile: miningConfig.thread_profile
       };
 
       const response = await axios.post(`${BACKEND_URL}/api/mining/start`, fullConfig);

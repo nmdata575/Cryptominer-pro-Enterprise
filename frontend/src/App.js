@@ -331,53 +331,113 @@ function App() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Content - Role-Based Sections */}
       <main className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        <div className="space-y-8">
           
-          {/* Left Sidebar - Controls */}
-          <div className="xl:col-span-3 space-y-6">
-            <CoinSelector
-              coinPresets={coinPresets}
+          {/* Section 1: Mining Control Center */}
+          <DashboardSection
+            title="Mining Control Center"
+            icon="🎛️"
+            description="Quick actions, status overview, and mining controls"
+            headerColor="text-crypto-gold"
+            borderColor="border-crypto-gold/30"
+          >
+            <MiningControlCenter
+              miningStatus={miningStatus}
               selectedCoin={selectedCoin}
-              onCoinChange={setSelectedCoin}
-            />
-            
-            <WalletConfig
-              config={miningConfig}
-              onConfigChange={setMiningConfig}
-              selectedCoin={selectedCoin}
               coinPresets={coinPresets}
-              isMining={miningStatus.is_mining}
-            />
-            
-            <MiningControls
-              config={miningConfig}
-              onConfigChange={setMiningConfig}
-              isMining={miningStatus.is_mining}
+              miningConfig={miningConfig}
               onStart={startMining}
               onStop={stopMining}
+              errorMessage={errorMessage}
+              systemMetrics={systemStats}
             />
-          </div>
+          </DashboardSection>
 
-          {/* Center - Main Dashboard */}
-          <div className="xl:col-span-6 space-y-6">
-            <MiningDashboard
-              stats={miningStatus.stats}
-              isMining={miningStatus.is_mining}
-              config={miningStatus.config}
+          {/* Section 2: Miner Setup */}
+          <DashboardSection
+            title="Miner Setup"
+            icon="⚙️"
+            description="Cryptocurrency selection, wallet configuration, and performance settings"
+            headerColor="text-crypto-blue"
+            borderColor="border-crypto-blue/30"
+            collapsible={true}
+            defaultExpanded={!miningStatus.is_mining}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <CoinSelector
+                coinPresets={coinPresets}
+                selectedCoin={selectedCoin}
+                onCoinChange={setSelectedCoin}
+              />
+              
+              <WalletConfig
+                config={miningConfig}
+                onConfigChange={setMiningConfig}
+                selectedCoin={selectedCoin}
+                coinPresets={coinPresets}
+                isMining={miningStatus.is_mining}
+              />
+              
+              <MiningControls
+                config={miningConfig}
+                onConfigChange={setMiningConfig}
+                isMining={miningStatus.is_mining}
+                onStart={startMining}
+                onStop={stopMining}
+              />
+            </div>
+          </DashboardSection>
+
+          {/* Section 3: Mining Performance */}
+          <DashboardSection
+            title="Mining Performance"
+            icon="📊"
+            description="Real-time mining statistics, performance metrics, and efficiency analysis"
+            headerColor="text-crypto-green"
+            borderColor="border-crypto-green/30"
+          >
+            <MiningPerformance
+              miningStatus={miningStatus}
+              selectedCoin={selectedCoin}
+              coinPresets={coinPresets}
             />
-          </div>
+          </DashboardSection>
 
-          {/* Right Sidebar - AI Insights & System Monitor */}
-          <div className="xl:col-span-3 space-y-6">
-            <AIInsights 
+          {/* Section 4: System Monitoring */}
+          <DashboardSection
+            title="System Monitoring"
+            icon="🖥️"
+            description="Hardware statistics, resource usage, and system health monitoring"
+            headerColor="text-purple-400"
+            borderColor="border-purple-400/30"
+            collapsible={true}
+            defaultExpanded={true}
+          >
+            <SystemMonitoring
+              systemMetrics={systemStats}
+            />
+          </DashboardSection>
+
+          {/* Section 5: AI Assistant */}
+          <DashboardSection
+            title="AI Assistant"
+            icon="🤖"
+            description="Mining insights, optimization recommendations, and predictive analysis"
+            headerColor="text-crypto-accent"
+            borderColor="border-crypto-accent/30"
+            collapsible={true}
+            defaultExpanded={false}
+          >
+            <AIInsights
               insights={aiInsights.insights}
               predictions={aiInsights.predictions}
             />
-            
-            <SystemMonitor stats={systemStats} />
-          </div>
+          </DashboardSection>
+
+        </div>
+      </main>
         </div>
       </main>
 

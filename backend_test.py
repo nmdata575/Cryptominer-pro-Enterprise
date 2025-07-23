@@ -671,8 +671,17 @@ class CryptoMinerAPITester:
         self.test_system_stats()
         self.test_mining_status_initial()
         
-        # NEW: Wallet validation tests
+        # Wallet validation tests
         self.test_wallet_validation()
+        
+        # NEW: Custom pool and RPC connection features
+        print("\n🔥 TESTING NEW CUSTOM CONNECTION FEATURES")
+        print("-" * 50)
+        self.test_enhanced_mining_config_model()
+        self.test_pool_connection_endpoint()
+        self.test_custom_pool_mining()
+        self.test_custom_rpc_mining()
+        self.test_custom_connection_validation()
         
         # Core mining functionality
         self.test_mining_start_stop_cycle()

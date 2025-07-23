@@ -103,6 +103,13 @@ class MiningConfig(BaseModel):
     wallet_address: str = ""  # Mining reward address
     pool_username: Optional[str] = None  # Pool mining username
     pool_password: Optional[str] = "x"  # Pool mining password
+    # NEW: Custom pool/RPC configuration
+    custom_pool_address: Optional[str] = None  # Custom pool address
+    custom_pool_port: Optional[int] = None     # Custom pool port
+    custom_rpc_host: Optional[str] = None      # Custom RPC host for solo mining
+    custom_rpc_port: Optional[int] = None      # Custom RPC port for solo mining
+    custom_rpc_username: Optional[str] = None  # RPC username for solo mining
+    custom_rpc_password: Optional[str] = None  # RPC password for solo mining
 
 class MiningStats(BaseModel):
     hashrate: float = 0.0

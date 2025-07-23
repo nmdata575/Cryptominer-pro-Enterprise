@@ -906,6 +906,63 @@ async def validate_wallet_address(request: dict):
         logger.error(f"Wallet validation error: {e}")
         return {"valid": False, "error": "Validation failed"}
 
+@app.post("/api/pool/test-connection")
+async def test_pool_connection(request: dict):
+    """Test pool or RPC connection"""
+    try:
+        pool_address = request.get("pool_address")
+        pool_port = request.get("pool_port")
+        connection_type = request.get("type", "pool")  # "pool" or "rpc"
+        
+        if not pool_address or not pool_port:
+            raise HTTPException(status_code=400, detail="Pool address and port are required")
+        
+        # Test basic connectivity
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)  # 5 second timeout
+        
+        try:
+            result = sock.connect_ex((pool_address, int(pool_port)))
+            if result == 0:
+                # Connection successful
+                sock.close()
+                
+                if connection_type == "pool":
+                    return {
+                        "success": True,
+                        "message": f"Successfully connected to pool at {pool_address}:{pool_port}",
+                        "connection_time": "< 5s",
+                        "status": "reachable"
+                    }
+                else:  # RPC
+                    return {
+                        "success": True,
+                        "message": f"Successfully connected to RPC server at {pool_address}:{pool_port}",
+                        "connection_time": "< 5s", 
+                        "status": "reachable"
+                    }
+            else:
+                sock.close()
+                return {
+                    "success": False,
+                    "message": f"Cannot connect to {pool_address}:{pool_port}",
+                    "error": f"Connection failed (error code: {result})",
+                    "status": "unreachable"
+                }
+        except Exception as e:
+            sock.close()
+            return {
+                "success": False,
+                "message": f"Connection test failed: {str(e)}",
+                "error": str(e),
+                "status": "error"
+            }
+            
+    except Exception as e:
+        logger.error(f"Pool connection test error: {e}")
+        raise HTTPException(status_code=500, detail=f"Connection test failed: {str(e)}")
+
 @app.get("/api/system/stats")
 async def get_system_stats():
     """Get system resource statistics"""

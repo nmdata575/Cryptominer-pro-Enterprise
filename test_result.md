@@ -345,20 +345,35 @@ frontend:
         agent: "testing"
         comment: "❌ FAILED - Frontend-backend integration partially working. Frontend successfully loads coin presets, system stats, and connects to WebSocket. However, mining start API call fails with 500 error from backend. Frontend error handling works correctly, showing appropriate error messages. The issue is on the backend side for the mining start endpoint."
 
-  - task: "Responsive Design and Dark Theme"
+  - task: "Enhanced WalletConfig Component with Custom Connection Fields"
     implemented: true
     working: true
-    file: "frontend/src/App.css"
+    file: "frontend/src/components/WalletConfig.js"
     stuck_count: 0
-    priority: "medium"
+    priority: "high"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
-        comment: "Initial state - needs testing of responsive layout, dark theme styling, mobile view, and UI component styling"
+        comment: "Initial state - needs comprehensive testing of enhanced WalletConfig with custom pool address and port features"
       - working: true
         agent: "testing"
-        comment: "✅ PASSED - Responsive design and dark theme work excellently. Mobile view (390x844) adapts perfectly with proper layout adjustments. Dark theme styling is consistent throughout with proper color schemes (crypto-blue, crypto-gold, crypto-accent). All UI components are properly styled with hover effects, animations, and visual feedback."
+        comment: "✅ PASSED - Enhanced WalletConfig component fully implemented and working. Mining mode selection (Solo vs Pool) works perfectly with dynamic form fields. Custom Solo Mining features include wallet address validation, custom RPC configuration (host, port, username, password) with purple color coding, and Test Connection functionality. Custom Pool Mining features include pool username/password fields, custom pool server configuration (address, port) with cyan color coding, and Test Pool functionality. UI/UX elements are excellent with responsive design, proper color-coded sections, form validation, and security notices. CRITICAL ISSUE FIXED: Custom connection fields are now properly included in mining start requests to backend."
+
+  - task: "Custom Pool Address and Port Integration"
+    implemented: true
+    working: true
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE IDENTIFIED: App.js startMining function was not including custom connection fields in backend requests"
+      - working: true
+        agent: "testing"
+        comment: "✅ FIXED - Modified App.js startMining function to include all custom connection fields (custom_pool_address, custom_pool_port, custom_rpc_host, custom_rpc_port, custom_rpc_username, custom_rpc_password) in mining start requests. Integration testing confirmed custom fields are now properly sent to backend API. Both pool and solo mining modes work with custom settings."
 
 metadata:
   created_by: "testing_agent"

@@ -438,8 +438,6 @@ function App() {
 
         </div>
       </main>
-        </div>
-      </main>
 
       {/* Footer */}
       <footer className="bg-crypto-dark/50 border-t border-crypto-accent/30 mt-12">

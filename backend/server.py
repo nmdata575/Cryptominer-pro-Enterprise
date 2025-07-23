@@ -798,19 +798,50 @@ async def start_mining(config: MiningConfig):
                     status_code=400,
                     detail="Pool username is required for pool mining"
                 )
+            # Validate custom pool settings if provided
+            if config.custom_pool_address and not config.custom_pool_port:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Pool port is required when custom pool address is specified"
+                )
+        
+        # Validate RPC settings for solo mining with custom RPC
+        if config.mode == "solo" and config.custom_rpc_host:
+            if not config.custom_rpc_port:
+                raise HTTPException(
+                    status_code=400,
+                    detail="RPC port is required when custom RPC host is specified"
+                )
         
         mining_engine = MiningEngine(config)
         mining_engine.start_mining()
+        
+        # Prepare connection info for response
+        connection_info = {
+            "address": config.wallet_address,
+            "mode": config.mode,
+            "validation": "passed" if config.wallet_address else "not_required"
+        }
+        
+        # Add custom connection details to response
+        if config.mode == "pool" and config.custom_pool_address:
+            connection_info.update({
+                "pool_address": config.custom_pool_address,
+                "pool_port": config.custom_pool_port,
+                "connection_type": "custom_pool"
+            })
+        elif config.mode == "solo" and config.custom_rpc_host:
+            connection_info.update({
+                "rpc_host": config.custom_rpc_host,
+                "rpc_port": config.custom_rpc_port,
+                "connection_type": "custom_rpc"
+            })
         
         return {
             "success": True,
             "message": f"Mining started for {config.coin.name}",
             "config": config.dict(),
-            "wallet_info": {
-                "address": config.wallet_address,
-                "mode": config.mode,
-                "validation": "passed" if config.wallet_address else "not_required"
-            }
+            "wallet_info": connection_info
         }
     
     except Exception as e:

@@ -110,6 +110,29 @@ class MiningConfig(BaseModel):
     custom_rpc_port: Optional[int] = None      # Custom RPC port for solo mining
     custom_rpc_username: Optional[str] = None  # RPC username for solo mining
     custom_rpc_password: Optional[str] = None  # RPC password for solo mining
+    # NEW: Dynamic thread management
+    auto_thread_detection: bool = True          # Automatically detect optimal threads
+    thread_profile: str = "standard"           # "light", "standard", "maximum"
+    
+    def get_optimal_threads(self):
+        """Calculate optimal thread count based on system capabilities"""
+        try:
+            physical_cores = psutil.cpu_count(logical=False)
+            logical_cores = psutil.cpu_count()
+            
+            if self.auto_thread_detection:
+                if self.thread_profile == "light":
+                    return max(1, physical_cores // 2)
+                elif self.thread_profile == "standard":  
+                    return max(1, physical_cores - 1)
+                elif self.thread_profile == "maximum":
+                    return physical_cores
+                else:
+                    return max(1, physical_cores - 1)  # Default to standard
+            else:
+                return self.threads  # Use manually set thread count
+        except:
+            return self.threads  # Fallback to configured threads
 
 class MiningStats(BaseModel):
     hashrate: float = 0.0

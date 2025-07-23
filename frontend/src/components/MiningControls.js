@@ -174,20 +174,66 @@ const MiningControls = ({ config, onConfigChange, isMining, onStart, onStop }) =
           <input
             type="range"
             min="1"
-            max="16"
+            max={getMaxThreads()}
             value={config.threads}
-            onChange={(e) => handleConfigChange('threads', parseInt(e.target.value))}
-            disabled={isMining}
-            className="flex-1 h-2 bg-crypto-accent/30 rounded-lg appearance-none cursor-pointer slider"
+            onChange={(e) => {
+              handleConfigChange('threads', parseInt(e.target.value));
+              handleConfigChange('auto_thread_detection', false); // Disable auto when manually adjusted
+            }}
+            disabled={isMining || config.auto_thread_detection}
+            className="flex-1 h-2 bg-crypto-accent/30 rounded-lg appearance-none cursor-pointer slider disabled:opacity-50"
           />
-          <span className="text-white font-medium min-w-[2rem] text-center">
-            {config.threads}
+          <span className="text-white font-medium min-w-[3rem] text-center">
+            {config.auto_thread_detection && cpuInfo && cpuInfo.mining_profiles[config.thread_profile] 
+              ? cpuInfo.mining_profiles[config.thread_profile].threads 
+              : config.threads}
+          </span>
+          <span className="text-xs text-gray-400 min-w-[4rem]">
+            / {getMaxThreads()}
           </span>
         </div>
-        <p className="text-xs text-gray-400 mt-1">
-          Higher thread counts increase CPU usage but may improve hash rate
+        
+        {/* Thread Usage Indicator */}
+        <div className="mt-2">
+          <div className="flex justify-between text-xs text-gray-400 mb-1">
+            <span>Thread Usage</span>
+            <span>{Math.round((config.threads / getMaxThreads()) * 100)}%</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-1.5">
+            <div 
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                (config.threads / getMaxThreads()) > 0.8 ? 'bg-crypto-red' :
+                (config.threads / getMaxThreads()) > 0.6 ? 'bg-crypto-gold' : 'bg-crypto-green'
+              }`}
+              style={{ width: `${(config.threads / getMaxThreads()) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+        
+        <p className="text-xs text-gray-400 mt-2">
+          {config.auto_thread_detection 
+            ? `Auto-detection enabled: Using ${config.thread_profile} profile for optimal performance`
+            : `Manual control: Using ${config.threads} of ${getMaxThreads()} available threads`
+          }
         </p>
       </div>
+
+      {/* Performance Recommendations */}
+      {cpuInfo && cpuInfo.recommendations && (
+        <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+          <div className="text-purple-400 text-sm">
+            <div className="font-medium mb-2">💡 Performance Recommendations:</div>
+            <ul className="space-y-1 text-xs opacity-90">
+              {cpuInfo.recommendations.map((rec, index) => (
+                <li key={index} className="flex items-start space-x-2">
+                  <span className="text-purple-400 mt-0.5">•</span>
+                  <span>{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Mining Intensity */}
       <div className="form-group mb-4">

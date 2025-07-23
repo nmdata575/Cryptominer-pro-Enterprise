@@ -994,6 +994,72 @@ async def test_pool_connection(request: dict):
         logger.error(f"Pool connection test error: {e}")
         raise HTTPException(status_code=500, detail=f"Connection test failed: {str(e)}")
 
+@app.get("/api/system/cpu-info")
+async def get_cpu_info():
+    """Get detailed CPU information for mining optimization"""
+    try:
+        cpu_count_logical = psutil.cpu_count()  # Logical cores (with hyperthreading)
+        cpu_count_physical = psutil.cpu_count(logical=False)  # Physical cores
+        cpu_freq = psutil.cpu_freq()
+        
+        # Get CPU load averages
+        cpu_percent_per_core = psutil.cpu_percent(interval=1, percpu=True)
+        
+        # Calculate recommended thread counts
+        recommended_threads = {
+            "conservative": max(1, cpu_count_physical - 1),  # Leave 1 physical core free
+            "balanced": cpu_count_physical,  # Use all physical cores
+            "aggressive": min(cpu_count_logical, cpu_count_physical + 2)  # Use hyperthreading moderately
+        }
+        
+        # Performance recommendations
+        recommendations = []
+        if cpu_count_physical >= 8:
+            recommendations.append("High-performance system detected - can handle aggressive mining")
+        elif cpu_count_physical >= 4:
+            recommendations.append("Good performance system - balanced mining recommended")
+        else:
+            recommendations.append("Limited cores detected - conservative mining recommended")
+            
+        if cpu_count_logical > cpu_count_physical:
+            recommendations.append(f"Hyperthreading detected ({cpu_count_logical} logical vs {cpu_count_physical} physical cores)")
+        
+        return {
+            "cores": {
+                "physical": cpu_count_physical,
+                "logical": cpu_count_logical,
+                "hyperthreading": cpu_count_logical > cpu_count_physical
+            },
+            "frequency": {
+                "current": cpu_freq.current if cpu_freq else None,
+                "min": cpu_freq.min if cpu_freq else None,
+                "max": cpu_freq.max if cpu_freq else None
+            },
+            "load": {
+                "average": sum(cpu_percent_per_core) / len(cpu_percent_per_core),
+                "per_core": cpu_percent_per_core
+            },
+            "recommended_threads": recommended_threads,
+            "recommendations": recommendations,
+            "mining_profiles": {
+                "light": {
+                    "threads": max(1, cpu_count_physical // 2),
+                    "description": "Light mining - system remains responsive"
+                },
+                "standard": {
+                    "threads": max(1, cpu_count_physical - 1),
+                    "description": "Standard mining - good balance of performance and usability"
+                },
+                "maximum": {
+                    "threads": cpu_count_physical,
+                    "description": "Maximum mining - uses all physical cores"
+                }
+            }
+        }
+    except Exception as e:
+        logger.error(f"CPU info error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get CPU info: {str(e)}")
+
 @app.get("/api/system/stats")
 async def get_system_stats():
     """Get system resource statistics"""

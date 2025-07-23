@@ -1,5 +1,6 @@
 /* Custom component styles for the crypto mining dashboard */
 
+/* Legacy Card Styles */
 .mining-card {
   @apply bg-crypto-blue/50 backdrop-blur-sm border border-crypto-accent/30 rounded-xl p-6 shadow-xl;
   transition: all 0.3s ease;
@@ -20,6 +21,111 @@
   transform: translateY(-1px);
 }
 
+/* Role-Based Dashboard Styles */
+.dashboard-section {
+  @apply bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-xl p-6 shadow-xl border;
+  transition: all 0.3s ease;
+}
+
+.dashboard-section:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  position: relative;
+}
+
+.section-content {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.status-card {
+  @apply bg-gradient-to-br backdrop-blur-sm border shadow-lg transition-all duration-300;
+}
+
+.status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.metric-card {
+  @apply backdrop-blur-sm border shadow-lg transition-all duration-300;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.performance-panel {
+  @apply backdrop-blur-sm shadow-lg transition-all duration-300;
+}
+
+.resource-panel {
+  @apply backdrop-blur-sm shadow-lg transition-all duration-300;
+}
+
+.resource-meter {
+  @apply transition-all duration-300;
+}
+
+.performance-summary {
+  @apply backdrop-blur-sm shadow-lg transition-all duration-300;
+}
+
+.control-buttons button {
+  @apply transition-all duration-300 transform;
+}
+
+.control-buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.control-buttons button:active {
+  transform: translateY(0);
+}
+
+.status-banner {
+  @apply backdrop-blur-sm shadow-lg transition-all duration-300;
+}
+
+.efficiency-metric {
+  @apply transition-all duration-300;
+}
+
+.efficiency-metric:hover {
+  transform: scale(1.05);
+}
+
+.performance-grade {
+  @apply transition-all duration-300;
+}
+
+.performance-tips {
+  @apply backdrop-blur-sm transition-all duration-300;
+}
+
+.mining-history {
+  @apply backdrop-blur-sm shadow-lg transition-all duration-300;
+}
+
+.error-message {
+  @apply backdrop-blur-sm shadow-lg;
+  animation: slideInDown 0.3s ease-out;
+}
+
+.quick-tips {
+  @apply backdrop-blur-sm;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.recommendations {
+  @apply backdrop-blur-sm shadow-lg;
+}
+
+/* Button Styles */
 .mining-button {
   @apply px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 transform;
 }

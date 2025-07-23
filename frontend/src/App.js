@@ -2,13 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './App.css';
 
-// Component imports
-import MiningDashboard from './components/MiningDashboard';
+// Import new role-based components
+import DashboardSection from './components/DashboardSection';
+import MiningControlCenter from './components/MiningControlCenter';
 import CoinSelector from './components/CoinSelector';
-import AIInsights from './components/AIInsights';
-import SystemMonitor from './components/SystemMonitor';
-import MiningControls from './components/MiningControls';
 import WalletConfig from './components/WalletConfig';
+import MiningControls from './components/MiningControls';
+import MiningPerformance from './components/MiningPerformance';
+import SystemMonitoring from './components/SystemMonitoring';
+import AIInsights from './components/AIInsights';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 

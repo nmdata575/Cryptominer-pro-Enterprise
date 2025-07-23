@@ -161,6 +161,54 @@ backend:
         agent: "testing"
         comment: "✅ PASSED - Comprehensive error handling tested. Invalid endpoints return 404, invalid wallet validation requests handled properly, invalid mining configs return 422, stopping non-active mining handled gracefully, and large/invalid inputs are properly validated and rejected."
 
+  - task: "Enhanced MiningConfig Model with Custom Connection Fields"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Enhanced MiningConfig model successfully accepts and stores all new custom connection fields including custom_pool_address, custom_pool_port, custom_rpc_host, custom_rpc_port, custom_rpc_username, and custom_rpc_password. All fields are properly validated and preserved in configuration."
+
+  - task: "Pool Connection Testing Endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - New POST /api/pool/test-connection endpoint working perfectly. Successfully tests both 'pool' and 'rpc' connection types, handles valid/invalid addresses and ports correctly, provides appropriate success/failure responses with connection details, and includes proper error handling for missing parameters. Tested 6/6 scenarios (100% success rate)."
+
+  - task: "Enhanced Mining Start Endpoint with Custom Settings"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Enhanced /api/mining/start endpoint successfully handles custom pool and RPC settings. Pool mining with custom_pool_address/port works correctly, solo mining with custom_rpc_host/port/credentials functions properly, validation logic correctly rejects incomplete configurations, and enhanced response includes proper connection details with connection_type indicators."
+
+  - task: "Custom Connection Integration Testing"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Complete integration testing successful. Custom pool mining workflow (test connection → start mining → verify status → stop) works flawlessly. Custom RPC mining workflow functions correctly. Configuration validation properly rejects invalid combinations (pool without port, RPC without port, pool without username). All custom settings are preserved in mining status and properly handled throughout the mining lifecycle."
+
 frontend:
   - task: "Main Dashboard Loading and Layout"
     implemented: true

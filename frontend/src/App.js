@@ -203,7 +203,14 @@ function App() {
         ai_enabled: miningConfig.ai_enabled,
         wallet_address: miningConfig.wallet_address.trim(),
         pool_username: miningConfig.pool_username.trim(),
-        pool_password: miningConfig.pool_password || 'x'
+        pool_password: miningConfig.pool_password || 'x',
+        // Include custom connection fields
+        custom_pool_address: miningConfig.custom_pool_address?.trim() || '',
+        custom_pool_port: miningConfig.custom_pool_port?.trim() || '',
+        custom_rpc_host: miningConfig.custom_rpc_host?.trim() || '',
+        custom_rpc_port: miningConfig.custom_rpc_port?.trim() || '',
+        custom_rpc_username: miningConfig.custom_rpc_username?.trim() || '',
+        custom_rpc_password: miningConfig.custom_rpc_password?.trim() || ''
       };
 
       const response = await axios.post(`${BACKEND_URL}/api/mining/start`, fullConfig);

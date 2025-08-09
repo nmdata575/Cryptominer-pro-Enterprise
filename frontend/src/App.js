@@ -274,6 +274,13 @@ const App = () => {
 
         {/* Additional Components Grid */}
         <div className="dashboard-grid">
+          {/* Enterprise Thread Manager */}
+          <EnterpriseThreadManager
+            miningConfig={miningConfig}
+            onConfigChange={handleMiningConfigChange}
+            systemStats={systemStats}
+          />
+
           {/* System Components */}
           <SystemComponents
             miningConfig={miningConfig}

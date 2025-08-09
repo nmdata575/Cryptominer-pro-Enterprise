@@ -46,6 +46,13 @@ sudo ./install.sh
 ./start.sh
 ```
 
+### Access the Application
+
+After installation, access CryptoMiner Pro at:
+- **Web Interface**: http://localhost:3333
+- **Backend API**: http://localhost:8001/api
+- **Health Check**: http://localhost:8001/api/health
+
 ### Manual Installation
 
 **Backend Setup:**

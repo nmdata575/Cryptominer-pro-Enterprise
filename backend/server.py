@@ -374,6 +374,37 @@ async def get_cpu_info():
             "error": str(e)
         }
 
+@app.post("/api/test-db-connection")
+async def test_database_connection(request: dict):
+    """Test connection to a MongoDB database URL"""
+    try:
+        database_url = request.get("database_url")
+        if not database_url:
+            raise HTTPException(status_code=400, detail="Database URL is required")
+        
+        # Test connection
+        test_client = AsyncIOMotorClient(database_url, serverSelectionTimeoutMS=5000)
+        
+        # Attempt to connect and ping
+        await test_client.admin.command('ping')
+        
+        # Close test connection
+        test_client.close()
+        
+        return {
+            "success": True,
+            "message": "Database connection successful",
+            "url": database_url[:20] + "..." if len(database_url) > 20 else database_url
+        }
+        
+    except Exception as e:
+        logger.error(f"Database connection test failed: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Database connection failed"
+        }
+
 @app.get("/api/system/stats")
 async def get_system_stats():
     """Get system resource statistics"""

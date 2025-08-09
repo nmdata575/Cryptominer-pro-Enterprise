@@ -95,19 +95,23 @@ if [[ "$PYTHON_VERSION" == "3.13" ]]; then
     if pip install -r requirements.txt --only-binary=all --no-cache-dir; then
         success "✅ Binary installation successful"
     else
-        warning "Binary installation failed, trying simplified requirements..."
+        warning "Binary installation failed, trying minimal packages..."
         
-        # Strategy 2: Use simplified requirements
-        if pip install -r requirements-simple.txt --prefer-binary --no-cache-dir; then
-            success "✅ Simplified installation successful"
-            warning "⚠️  Note: Some AI features may be limited without scikit-learn"
-        else
-            error "❌ Installation failed with Python 3.13"
-            echo "💡 Recommendation: Install Python 3.11 or 3.12 for full compatibility:"
+        # Strategy 2: Install minimal essential packages manually
+        log "Installing essential packages only..."
+        pip install --only-binary=all --no-cache-dir \
+            fastapi uvicorn[standard] websockets python-multipart \
+            psutil requests python-dotenv pydantic pymongo motor base58 \
+            numpy pandas || {
+            error "❌ Essential packages installation failed"
+            echo "💡 Try installing Python 3.11 instead:"
             echo "   sudo apt install python3.11 python3.11-venv python3.11-dev"
-            echo "   Then rerun this script"
+            echo "   Then use: python3.11 -m venv venv"
             exit 1
-        fi
+        }
+        
+        success "✅ Essential packages installed (AI features may be limited)"
+        warning "⚠️  Note: scikit-learn skipped due to Python 3.13 compatibility issues"
     fi
 else
     # Standard installation for Python < 3.13
@@ -115,13 +119,15 @@ else
     if pip install -r requirements.txt --prefer-binary --no-cache-dir; then
         success "✅ Standard installation successful"
     else
-        warning "Standard installation failed, trying simplified requirements..."
-        if pip install -r requirements-simple.txt --prefer-binary --no-cache-dir; then
-            success "✅ Fallback installation successful"
-        else
+        warning "Standard installation failed, trying essential packages..."
+        pip install --prefer-binary --no-cache-dir \
+            fastapi uvicorn[standard] websockets python-multipart \
+            psutil requests python-dotenv pydantic pymongo motor base58 \
+            numpy pandas scikit-learn || {
             error "❌ All installation strategies failed"
             exit 1
-        fi
+        }
+        success "✅ Fallback installation successful"
     fi
 fi
 

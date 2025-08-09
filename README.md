@@ -213,40 +213,73 @@ cd frontend && yarn start
 
 ## 🚨 Troubleshooting
 
-### Common Issues
+### Supervisor Service Issues
 
-**Installation Fails:**
+If you encounter "no such group" errors or supervisor issues:
+
 ```bash
-# Clean installation
-sudo ./install.sh --clean
+# Run the supervisor setup script
+sudo ./setup-supervisor.sh
 
-# Use fallback packages
-cp backend/requirements-fallback.txt backend/requirements.txt
-pip install -r backend/requirements.txt
+# Or manually configure supervisor
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start cryptominer_pro:*
 ```
 
-**Mining Won't Start:**
-- Check wallet address format
-- Verify pool connection with test button
-- Ensure adequate system resources
-- Check backend logs: `tail -f backend/backend.log`
+### Quick Service Commands
 
-**AI System Not Working:**
-- AI requires mining data to learn
-- Start mining to begin AI training
-- Check AI status in dashboard
-- Verify scikit-learn installation
+```bash
+# Check service status
+sudo supervisorctl status
 
-**WebSocket Connection Issues:**
-- Check firewall settings
-- Verify port 8001 availability
-- Restart backend service
-- Clear browser cache
+# Start services
+sudo supervisorctl start cryptominer_pro:*
 
-### Log Files
-- Backend: `backend/backend.log`
-- Frontend: Browser console
-- System: `sudo journalctl -u cryptominer-pro`
+# Stop services  
+sudo supervisorctl stop cryptominer_pro:*
+
+# Restart services
+sudo supervisorctl restart cryptominer_pro:*
+```
+
+### Common Issues
+
+**Permission Denied:**
+```bash
+sudo chown -R www-data:www-data /app
+sudo supervisorctl restart cryptominer_pro:*
+```
+
+**Port Conflicts:**
+```bash
+sudo pkill -f "uvicorn" 
+sudo pkill -f "react-scripts"
+sudo supervisorctl restart cryptominer_pro:*
+```
+
+**Missing Dependencies:**
+```bash
+cd /app/backend && ./venv/bin/pip install -r requirements.txt
+cd /app/frontend && yarn install
+```
+
+### Manual Startup (Alternative)
+
+If supervisor fails, start services manually in separate terminals:
+
+**Terminal 1 (Backend):**
+```bash
+cd /app/backend
+source venv/bin/activate  
+python -m uvicorn server:app --host 0.0.0.0 --port 8001
+```
+
+**Terminal 2 (Frontend):**
+```bash
+cd /app/frontend
+PORT=3333 yarn start
+```
 
 ## 📋 System Requirements
 

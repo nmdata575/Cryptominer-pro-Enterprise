@@ -10,8 +10,57 @@ import threading
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
+
+# Try to import scikit-learn with fallback for Python 3.13 compatibility
+try:
+    from sklearn.linear_model import LinearRegression
+    from sklearn.preprocessing import StandardScaler
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    print("⚠️  Warning: scikit-learn not available. AI predictions will use simplified algorithms.")
+    
+    # Simple fallback implementations
+    class LinearRegression:
+        def __init__(self):
+            self.coef_ = None
+            self.intercept_ = None
+        
+        def fit(self, X, y):
+            # Simple linear regression fallback
+            X = np.array(X)
+            y = np.array(y)
+            if X.shape[1] == 1:
+                self.coef_ = [np.corrcoef(X.flatten(), y)[0, 1]]
+                self.intercept_ = np.mean(y) - self.coef_[0] * np.mean(X)
+            else:
+                # Multi-feature fallback - use mean
+                self.coef_ = [1.0] * X.shape[1]
+                self.intercept_ = np.mean(y)
+        
+        def predict(self, X):
+            X = np.array(X)
+            if self.coef_ is None:
+                return np.array([0.0] * X.shape[0])
+            return X @ self.coef_ + self.intercept_
+    
+    class StandardScaler:
+        def __init__(self):
+            self.mean_ = None
+            self.scale_ = None
+        
+        def fit_transform(self, X):
+            X = np.array(X)
+            self.mean_ = np.mean(X, axis=0)
+            self.scale_ = np.std(X, axis=0)
+            self.scale_[self.scale_ == 0] = 1.0  # Avoid division by zero
+            return (X - self.mean_) / self.scale_
+        
+        def transform(self, X):
+            X = np.array(X)
+            if self.mean_ is None or self.scale_ is None:
+                return X
+            return (X - self.mean_) / self.scale_
 
 @dataclass
 class AIInsights:

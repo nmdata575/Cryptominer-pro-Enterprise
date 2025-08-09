@@ -132,8 +132,31 @@ const App = () => {
 
   const handleMiningStart = async () => {
     try {
+      // Ensure we have a selected coin with all required fields
+      if (!selectedCoin) {
+        alert('Please select a cryptocurrency first');
+        return;
+      }
+
+      // Validate required fields for pool mining
+      if (walletConfig.mode === 'pool' && !walletConfig.pool_username) {
+        alert('Please enter pool username for pool mining');
+        return;
+      }
+
+      // Build complete mining configuration with all required fields
       const startConfig = {
-        coin: selectedCoin,
+        coin: {
+          name: selectedCoin.name,
+          symbol: selectedCoin.symbol,
+          algorithm: selectedCoin.algorithm,
+          block_reward: selectedCoin.block_reward,
+          block_time: selectedCoin.block_time,
+          difficulty: selectedCoin.difficulty,
+          scrypt_params: selectedCoin.scrypt_params,
+          network_hashrate: selectedCoin.network_hashrate,
+          wallet_format: selectedCoin.wallet_format
+        },
         mode: walletConfig.mode,
         threads: miningConfig.threads,
         intensity: miningConfig.intensity,
@@ -152,6 +175,8 @@ const App = () => {
         thread_profile: miningConfig.thread_profile
       };
 
+      console.log('Sending mining config:', startConfig);
+
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/mining/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -164,12 +189,29 @@ const App = () => {
         console.log('Mining started successfully:', result.message);
         // Status will be updated via WebSocket
       } else {
-        console.error('Failed to start mining:', result.detail || result.message);
-        alert(`Failed to start mining: ${result.detail || result.message}`);
+        // Fix error display - handle both array and string errors
+        let errorMessage = 'Unknown error occurred';
+        
+        if (result.detail) {
+          if (Array.isArray(result.detail)) {
+            // Handle validation errors array
+            errorMessage = result.detail.map(err => `${err.loc ? err.loc.join('.') + ': ' : ''}${err.msg}`).join('; ');
+          } else if (typeof result.detail === 'string') {
+            // Handle string error messages
+            errorMessage = result.detail;
+          } else {
+            errorMessage = JSON.stringify(result.detail);
+          }
+        } else if (result.message) {
+          errorMessage = result.message;
+        }
+        
+        console.error('Failed to start mining:', errorMessage);
+        alert(`Failed to start mining:\n${errorMessage}`);
       }
     } catch (error) {
       console.error('Error starting mining:', error);
-      alert('Error starting mining. Please check your connection.');
+      alert(`Network error starting mining:\n${error.message}`);
     }
   };
 

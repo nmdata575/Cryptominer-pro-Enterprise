@@ -335,9 +335,44 @@ async def test_pool_connection(request: dict):
 
 @app.get("/api/system/cpu-info")
 async def get_cpu_info():
-    """Get detailed CPU information"""
-    cpu_info = ai_system.get_cpu_info()
-    return cpu_info
+    """Get detailed CPU information including enterprise capabilities"""
+    try:
+        system_detector = mining_engine.system_detector
+        system_detector.refresh_system_info()
+        
+        cpu_info = {
+            "physical_cores": system_detector.cpu_info.get("physical_cores", 1),
+            "logical_cores": system_detector.cpu_info.get("logical_cores", 1),
+            "frequency": system_detector.cpu_info.get("frequency", {}),
+            "architecture": system_detector.cpu_info.get("architecture", "unknown"),
+            "max_safe_threads": system_detector.system_capabilities.get("max_safe_threads", 1),
+            "enterprise_mode": system_detector.system_capabilities.get("enterprise_mode", False),
+            "optimal_thread_density": system_detector.system_capabilities.get("optimal_thread_density", 1.0),
+            "total_memory_gb": system_detector.system_capabilities.get("total_memory_gb", 1),
+            "available_memory_gb": system_detector.system_capabilities.get("available_memory_gb", 1),
+            "recommended_threads": {
+                "low": system_detector.get_recommended_threads(0.25),
+                "medium": system_detector.get_recommended_threads(0.5),
+                "high": system_detector.get_recommended_threads(0.75),
+                "maximum": system_detector.get_recommended_threads(1.0)
+            }
+        }
+        
+        return cpu_info
+        
+    except Exception as e:
+        logger.error(f"CPU info error: {e}")
+        # Fallback to basic info
+        return {
+            "physical_cores": psutil.cpu_count(logical=False) or 1,
+            "logical_cores": psutil.cpu_count(logical=True) or 1,
+            "frequency": {},
+            "architecture": "unknown",
+            "max_safe_threads": psutil.cpu_count(logical=True) or 1,
+            "enterprise_mode": False,
+            "optimal_thread_density": 1.0,
+            "error": str(e)
+        }
 
 @app.get("/api/system/stats")
 async def get_system_stats():

@@ -29,7 +29,11 @@ const App = () => {
     ai_enabled: true,
     auto_optimize: true,
     auto_thread_detection: true,
-    thread_profile: 'standard'
+    thread_profile: 'standard',
+    // Enterprise configurations
+    enterprise_mode: false,
+    target_cpu_utilization: 1.0,
+    thread_scaling_enabled: true
   });
   const [systemStats, setSystemStats] = useState({});
   const [connectionStatus, setConnectionStatus] = useState('Disconnected');

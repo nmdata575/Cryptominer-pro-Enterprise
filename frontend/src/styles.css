@@ -854,3 +854,175 @@ code {
   background: linear-gradient(135deg, var(--primary), var(--success));
   color: white;
 }
+
+/* Enterprise Database Configuration Styles */
+.db-status-overview {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.db-config-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.db-config-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.db-config-label small {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.remote-db-config {
+  margin-left: 1.5rem;
+  padding: 1rem;
+  border-left: 3px solid var(--primary);
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.remote-db-examples {
+  margin-top: 1rem;
+}
+
+.remote-db-examples h5 {
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.example-configs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.example-config {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.25rem;
+}
+
+.example-config code {
+  font-family: 'Courier New', monospace;
+  color: var(--success);
+  font-size: 0.75rem;
+  background: transparent;
+  padding: 0;
+}
+
+.example-config small {
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+}
+
+.db-performance-info {
+  margin-top: 1rem;
+}
+
+.db-performance-info h5 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.performance-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tip-item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tip-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.tip-item strong {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.tip-item p {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+.config-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.config-actions .btn {
+  flex: 1;
+}
+
+.status-secondary {
+  background: rgba(107, 114, 128, 0.8);
+  color: white;
+}
+
+/* Form help text */
+.form-help {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Enhanced list styles for enterprise features */
+.enterprise-notice ul {
+  margin: 0.5rem 0;
+  padding-left: 1rem;
+}
+
+.enterprise-notice li {
+  color: var(--primary);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Responsive adjustments for database config */
+@media (max-width: 768px) {
+  .config-actions {
+    flex-direction: column;
+  }
+  
+  .remote-db-config {
+    margin-left: 0;
+    border-left: none;
+    border-top: 3px solid var(--primary);
+  }
+  
+  .example-configs {
+    gap: 0.75rem;
+  }
+  
+  .tip-item {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

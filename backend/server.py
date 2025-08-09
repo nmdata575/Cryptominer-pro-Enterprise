@@ -66,6 +66,14 @@ app.add_middleware(
 
 # Database configuration
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+REMOTE_DB_ENABLED = os.getenv("REMOTE_DB_ENABLED", "false").lower() == "true"
+REMOTE_MONGO_URL = os.getenv("REMOTE_MONGO_URL", "mongodb://localhost:27017")
+
+# Use remote database if enabled
+if REMOTE_DB_ENABLED and REMOTE_MONGO_URL != "mongodb://localhost:27017":
+    MONGO_URL = REMOTE_MONGO_URL
+    logger.info(f"Using remote database: {REMOTE_MONGO_URL[:20]}...")
+
 DATABASE_NAME = os.getenv("DATABASE_NAME", "crypto_miner_db")
 
 # Global variables

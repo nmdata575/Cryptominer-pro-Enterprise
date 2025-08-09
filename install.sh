@@ -347,29 +347,31 @@ EOF
 setup_supervisor() {
     log "Setting up Supervisor configuration..."
     
+    # Create supervisor configuration
     cat > /tmp/cryptominer-pro.conf << EOF
-[group:cryptominer-pro]
-programs=backend,frontend
-
-[program:backend]
-command=$INSTALL_DIR/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001
+[program:cryptominer_backend]
+command=$INSTALL_DIR/backend/venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8001
 directory=$INSTALL_DIR/backend
-user=$USER
 autostart=true
 autorestart=true
-redirect_stderr=true
-stdout_logfile=/var/log/cryptominer-pro/backend.log
+stderr_logfile=/var/log/cryptominer-pro/backend.err.log
+stdout_logfile=/var/log/cryptominer-pro/backend.out.log
+user=$USER
 environment=PATH="$INSTALL_DIR/backend/venv/bin"
 
-[program:frontend]
+[program:cryptominer_frontend]
 command=/usr/bin/yarn start
 directory=$INSTALL_DIR/frontend
-user=$USER
 autostart=true
 autorestart=true
-redirect_stderr=true
-stdout_logfile=/var/log/cryptominer-pro/frontend.log
-environment=PATH="/usr/bin:/bin:/usr/local/bin"
+stderr_logfile=/var/log/cryptominer-pro/frontend.err.log
+stdout_logfile=/var/log/cryptominer-pro/frontend.out.log
+user=$USER
+environment=PORT=3333,PATH="/usr/bin:/bin:/usr/local/bin"
+
+[group:cryptominer_pro]
+programs=cryptominer_backend,cryptominer_frontend
+priority=999
 EOF
     
     sudo mv /tmp/cryptominer-pro.conf /etc/supervisor/conf.d/

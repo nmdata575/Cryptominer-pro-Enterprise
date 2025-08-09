@@ -79,8 +79,8 @@ const MiningControls = ({ config, onChange, systemStats }) => {
                 <div className="metric-label">CPU Usage</div>
               </div>
               <div className="metric-card">
-                <div className="metric-value">{cpuInfo.recommended_threads}</div>
-                <div className="metric-label">Recommended</div>
+                <div className="metric-value">{cpuInfo.recommended_threads?.medium || cpuInfo.logical_cores || 'N/A'}</div>
+                <div className="metric-label">Recommended Threads</div>
               </div>
             </div>
           </div>

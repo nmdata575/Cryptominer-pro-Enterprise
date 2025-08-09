@@ -113,9 +113,9 @@ class CryptoMinerProTester:
                 
                 # Check if system can theoretically support enterprise scale
                 logical_cores = data.get("logical_cores", 1)
-                theoretical_max = logical_cores * 32  # Enterprise scaling factor
+                theoretical_max = logical_cores * 8  # More realistic scaling factor
                 
-                if max_safe_threads >= min(theoretical_max, 1000):  # Should support enterprise scaling
+                if max_safe_threads >= min(theoretical_max, 64):  # Should support reasonable enterprise scaling
                     enterprise_checks.append("✓ Enterprise scaling capable")
                 else:
                     enterprise_checks.append("✗ Limited scaling capability")

@@ -1,88 +1,349 @@
 <analysis>
-The AI engineer's work involved an iterative, phased approach to building a complex cryptocurrency mining application. Initial efforts focused on understanding an empty workspace, leading to a detailed architectural plan for a React/FastAPI/MongoDB full-stack application. Key decisions refined through user interaction included configurable multi-coin mining, a comprehensive AI prediction system (hash patterns, difficulty, coin switching), and maximizing hash rate with manual controls. The development process systematically addressed environment setup, core feature implementation (wallet integration), and robust installation scripting. Significant challenges debugged included GPG key issues for PPAs, bash/dash syntax incompatibilities in shell scripts, and Python's externally-managed-environment error, demonstrating a strong problem-solving and environment hardening capability.
+The AI engineer successfully guided the CryptoMiner Pro application from an initial MVP state to a robust, feature-rich mining platform. The development trajectory focused heavily on environment hardening and installation reliability, iteratively addressing complex Python versioning, dependency management, and build tool issues across multiple attempts. Concurrently, new product features were introduced, including advanced wallet configuration, dynamic CPU core detection for thread optimization, and a reorganized, role-based frontend dashboard. The approach was iterative, incorporating user feedback, performing extensive testing (backend, frontend, installation), and leveraging troubleshooting agents when encountering persistent issues. The trajectory highlights a strong problem-solving capability, particularly in debugging intricate installation failures.
 </analysis>
 
 <product_requirements>
-The primary objective is to build a fully functional web-controlled Scrypt cryptocurrency mining program. This program must incorporate the complete Scrypt algorithm and provide real-time web-based monitoring of:
-*   Hashrate
-*   Accepted Shares
-*   Rejected Shares
-*   Blocks Found
-*   CPU Load
-*   Memory Usage
+The core product is a web-controlled Scrypt cryptocurrency mining program.
+Initial requirements included:
+*   Real-time monitoring: Hashrate, Accepted/Rejected Shares, Blocks Found, CPU Load, Memory Usage.
+*   Advanced AI self-learning block hash prediction system, integrated with webpages.
+*   Seamless, integrated crypto mining leveraging internet information.
 
-Additionally, an advanced AI self-learning block hash prediction system is required, fully interfaced with the webpages. The system needs to be a seamless, perfectly integrated crypto mining program, leveraging internet information for optimal functionality.
-
-Through subsequent interactions, the following requirements were clarified and incorporated:
-*   **Mining Target**: Configurable for different Scrypt-based coins (e.g., Litecoin, Dogecoin).
-*   **AI Focus**: A comprehensive AI system emphasizing hash pattern prediction for efficiency, network difficulty forecasting for timing, and optimal coin switching recommendations.
-*   **Mining Mode**: Support for both solo mining capabilities and pool mining integration with seamless switching.
-*   **Performance Priority**: Maximum hash rate performance, complemented by manually controlled performance (user-adjustable thread counts, CPU/memory usage, custom hash rate limits, fine-grained tuning, manual AI override).
+Subsequent clarifications and additions:
+*   **Mining Target**: Configurable for Scrypt-based coins (Litecoin, Dogecoin).
+*   **AI Focus**: Hash pattern prediction, network difficulty forecasting, optimal coin switching.
+*   **Mining Mode**: Solo and pool mining with seamless switching.
+*   **Performance Priority**: Maximize hash rate, manual controls (thread counts, CPU/memory usage, custom limits, AI override).
 *   **Wallet Integration**: Ability to enter a wallet address for mining rewards.
-*   **Documentation**: Comprehensive step-by-step instructions, README, quick reference, and automated installation scripts for Ubuntu 24+.
+*   **Documentation**: Comprehensive instructions and automated Ubuntu 24+ installation scripts.
+*   **Custom Pool/RPC**: Manually enter pool address/port for solo/pool mining, including RPC credentials.
+*   **Dynamic Core Adjustment**: Automatically adjust usable cores based on system's CPU.
+*   **Web Page Optimization**: Reorganize frontend into role-based sections (Mining Performance, Miner Setup, System Stats, AI Assistant).
+*   **Automated Component Verification**: A script to verify and install missing Python backend components.
 </product_requirements>
 
 <key_technical_concepts>
 -   **Full-stack Architecture**: React (frontend), FastAPI (backend), MongoDB (database).
--   **Scrypt Algorithm**: Core mining algorithm implementation.
--   **Real-time Communication**: WebSockets for live data updates.
--   **AI/ML**: TensorFlow/PyTorch for hash prediction and optimization.
--   **Process Management**: Supervisor for background service execution.
--   **Dependency Management**: Python (pip, virtual environments), Node.js (npm/yarn).
--   **Linux/Bash Scripting**: Automated installation, environment setup, and troubleshooting.
--   **Ubuntu Environment**: Specific handling of system Python (PEP 668), PPA management (Deadsnakes), and GPG key issues.
+-   **Scrypt Algorithm**: Core mining logic.
+-   **Python Environment Management**: Virtual environments, pip, setuptools, wheel, PEP 668, Python 3.11/3.13 compatibility.
+-   **Linux/Bash Scripting**: Automated installation (, , ), system setup.
+-   **Process Management**: Supervisor for background services.
+-   **Real-time Data**: WebSockets for live metrics.
+-   **AI/ML**: TensorFlow/PyTorch (conceptual, specific libraries like Scikit-learn, Numpy, Pandas for data processing/prediction).
 </key_technical_concepts>
 
 <code_architecture>
-The application follows a full-stack architecture, initially residing in  and later designed to be installed under  by the installer.
+The application follows a full-stack architecture, primarily located in  and designed for installation under .
 
 
 
 Key files and their importance/changes:
 -   :
-    -   **Summary**: Core FastAPI application, handling API endpoints, Scrypt logic, AI integration, and system monitoring.
-    -   **Changes**: Initially created, then updated to include  model,  function, modified , added  endpoint, updated  for wallet validation, and integrated wallet usage into the mining engine. Feathercoin validation logic was also fixed.
+    -   **Summary**: Main FastAPI application handling API endpoints, Scrypt logic, AI integration, and system monitoring.
+    -   **Changes**:
+        -   Added  model,  function, modified .
+        -   Added  endpoint.
+        -   Updated  for wallet validation and integrated wallet usage into mining engine, including Feathercoin validation fix.
+        -   **Custom Pool/RPC**: Extended  model to include , , , , , . Added  endpoint. Updated  to use these custom settings.
+        -   **Dynamic Core Adjustment**: Added  endpoint for CPU detection. Updated  with  and . Modified  to use dynamic threads.
 -   :
-    -   **Summary**: Main React component, serving as the application entry point and coordinating other components.
-    -   **Changes**: Initially created with dashboard layout, later updated to manage wallet state and integrate the  component.
+    -   **Summary**: Main React component, entry point coordinating other components.
+    -   **Changes**: Initially created with dashboard layout. Updated to manage wallet state and integrate . **Custom Pool/RPC**: Updated to include new custom connection fields for backend API calls. **Dynamic Core Adjustment**: Updated to include new thread configuration fields. **Role-Based Dashboard**: Refactored to import and integrate , , , and  components for a segmented layout.
 -   :
-    -   **Summary**: Modular React components for dashboard elements (e.g., , ), coin selection (), mining controls (), AI insights (), system metrics ().
-    -   **Changes**:  was newly created for wallet address input and management.  was updated to remove redundant wallet-related functionality.
+    -   **Summary**: React component for wallet address input and management.
+    -   **Changes**: Newly created. **Custom Pool/RPC**: Enhanced to add input fields for custom pool/RPC address, port, and credentials. Includes dynamic field visibility based on mining mode and real-time connection testing.
 -   :
-    -   **Summary**: Python dependencies for the FastAPI backend.
-    -   **Changes**: Created with initial dependencies, then installed via pip.
--   :
-    -   **Summary**: Node.js dependencies for the React frontend.
-    -   **Changes**: Created with initial dependencies, then installed via npm (despite initial yarn preference).
--   :
-    -   **Summary**: Supervisor configuration to run backend (FastAPI on 8001) and frontend (React on 3000) services in the background.
-    -   **Changes**: Created and configured to manage the application services. Later updated to point to the virtual environment Python for the backend process when addressing the externally-managed-environment error.
+    -   **Summary**: React component for controlling mining parameters.
+    -   **Changes**: Updated to remove redundant wallet-related functionality. **Dynamic Core Adjustment**: Enhanced to display system CPU info, provide visual mining profile selection (Light/Standard/Maximum), and a dynamic thread slider based on system capabilities. Includes auto-detection toggle.
 -   [0;31m  ❌ Installation interrupted or failed[0m
 [0;36m  ℹ️ Cleaning up partial installation...[0m:
-    -   **Summary**: The comprehensive automated installation script for Ubuntu 24+. It handles system updates, Python, Node.js, MongoDB setup, project structure creation (), application installation, service configuration, firewall setup, and management scripts.
-    -   **Changes**: Underwent significant revisions: added Python version checking, integrated deadsnakes PPA GPG key handling, fixed bash/dash syntax compatibility issues (array syntax,  tests), and most recently, addressed the externally-managed-environment error by creating and using a Python virtual environment for backend dependencies.
+    -   **Summary**: Comprehensive automated installation script for Ubuntu 24+.
+    -   **Changes**: Underwent significant revisions: added Python version checking, deadsnakes PPA GPG key handling, fixed bash/dash syntax. Most recently, addressed externally-managed-environment error by using a virtual environment. Further modifications include reordering  creation, adding Looking in indexes: https://pypi.org/simple, https://d33sy5i8bnduwe.cloudfront.net/simple/
+Requirement already satisfied: pip in /root/.venv/lib/python3.11/site-packages (25.1.1)
+Collecting pip
+  Downloading pip-25.2-py3-none-any.whl.metadata (4.7 kB)
+Requirement already satisfied: setuptools in /root/.venv/lib/python3.11/site-packages (65.5.0)
+Collecting setuptools
+  Downloading setuptools-80.9.0-py3-none-any.whl.metadata (6.6 kB)
+Requirement already satisfied: wheel in /usr/local/lib/python3.11/site-packages (0.45.1)
+Downloading pip-25.2-py3-none-any.whl (1.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 26.0 MB/s eta 0:00:00
+Downloading setuptools-80.9.0-py3-none-any.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 20.2 MB/s eta 0:00:00
+Installing collected packages: setuptools, pip
+  Attempting uninstall: setuptools
+    Found existing installation: setuptools 65.5.0
+    Uninstalling setuptools-65.5.0:
+      Successfully uninstalled setuptools-65.5.0
+  Attempting uninstall: pip
+    Found existing installation: pip 25.1.1
+    Uninstalling pip-25.1.1:
+      Successfully uninstalled pip-25.1.1
+
+Successfully installed pip-25.2 setuptools-80.9.0, updating package versions (numpy, pandas, scikit-learn) in , purging pip cache, and adding  flag. Specifically forced  and reordered  before .
 -   :
-    -   **Summary**: A new Python virtual environment created by  to isolate Python dependencies and comply with PEP 668 on Ubuntu 24+.
-    -   **Changes**: This directory and its contents are dynamically created and managed by the installation script to house the backend's Python dependencies.
+    -   **Summary**: Python dependencies for FastAPI backend.
+    -   **Changes**: Updated to , ,  (later ,  for Python 3.13 compatibility).
+-   :
+    -   **Summary**: New file, contains older stable Python dependency versions (, , ) for fallback in case latest versions fail.
+-   :
+    -   **Summary**: New file, specifically for Python 3.13 compatible package versions (, , ).
+-   [0;31m  ❌ Installation interrupted or failed[0m
+[0;36m  ℹ️ Cleaning up partial installation...[0m:
+    -   **Summary**: New, highly robust installation script designed to handle all previous installation failures. Forces Python 3.11, performs extensive system cleanup, uses , and includes triple-layered fallback.
+-   :
+    -   **Summary**: New, specialized installer for full Python 3.13 compatibility. Integrates Deadsnakes PPA, uses latest compatible package versions from , and prefers pre-compiled wheels.
+-   🐍 [96mDetected virtual environment: /root/.venv[0m
+
+[1m[95m================================================================================[0m
+[1m[95m🐍 CryptoMiner Pro - Python Components Verification & Installation[0m
+[1m[95m================================================================================[0m
+[96mChecking all required Python dependencies for the web application...[0m
+
+🔍 [1mVerifying Python Components...[0m
+
+[1m[97m🌐 Core Web Framework:[0m
+  ✅ [92mfastapi              v0.104.1      ✓ Compatible[0m
+  ✅ [92muvicorn              v0.24.0       ✓ Compatible[0m
+  ✅ [92mpydantic             v2.5.0        ✓ Compatible[0m
+  ✅ [92mpython-multipart     v0.0.6        ✓ Compatible[0m
+
+[1m[97m🌐 Real-Time Communication:[0m
+  ✅ [92mwebsockets           v12.0         ✓ Compatible[0m
+
+[1m[97m🗄️ Database:[0m
+  ✅ [92mpymongo              v4.6.0        ✓ Compatible[0m
+  ✅ [92mmotor                v3.3.2        ✓ Compatible[0m
+
+[1m[97m🖥️ System Monitoring:[0m
+  ✅ [92mpsutil               v5.9.6        ✓ Compatible[0m
+
+[1m[97m🤖 Scientific Computing & AI:[0m
+  ✅ [92mnumpy                v1.26.4       ✓ Compatible[0m
+  ✅ [92mpandas               v2.2.1        ✓ Compatible[0m
+  ✅ [92mscikit-learn         v1.4.2        ✓ Compatible[0m
+
+[1m[97m🔒 Cryptographic:[0m
+  ✅ [92mcryptography         v45.0.5       ✓ Compatible[0m
+
+[1m[97m🌐 HTTP Client:[0m
+  ✅ [92mrequests             v2.31.0       ✓ Compatible[0m
+  ✅ [92maiohttp              v3.9.1        ✓ Compatible[0m
+
+[1m[97m🖥️ File & Configuration:[0m
+  ✅ [92maiofiles             v23.2.1       ✓ Compatible[0m
+  ✅ [92mpython-dotenv        v1.0.0        ✓ Compatible[0m
+
+
+[1m🔍 VERIFICATION REPORT[0m
+==================================================
+
+📊 SUMMARY:
+  Total Components: 16
+  ✅ Installed: 16
+  ❌ Missing: 0
+  🚨 Critical Missing: 0
+
+🌐 WEB PAGE IMPACT:
+  ✅ [92mAll critical components present - web page should load properly[0m
+
+✅ [92mAll components verified successfully! CryptoMiner Pro web application should work perfectly.[0m, [0;35m🐍 CryptoMiner Pro - Component Verification[0m
+[0;35m===========================================[0m
+
+[0;34m🔍 Checking all Python components...[0m
+
+🐍 [96mDetected virtual environment: /root/.venv[0m
+
+[1m[95m================================================================================[0m
+[1m[95m🐍 CryptoMiner Pro - Python Components Verification & Installation[0m
+[1m[95m================================================================================[0m
+[96mChecking all required Python dependencies for the web application...[0m
+
+🔍 [1mVerifying Python Components...[0m
+
+[1m[97m🌐 Core Web Framework:[0m
+  ✅ [92mfastapi              v0.104.1      ✓ Compatible[0m
+  ✅ [92muvicorn              v0.24.0       ✓ Compatible[0m
+  ✅ [92mpydantic             v2.5.0        ✓ Compatible[0m
+  ✅ [92mpython-multipart     v0.0.6        ✓ Compatible[0m
+
+[1m[97m🌐 Real-Time Communication:[0m
+  ✅ [92mwebsockets           v12.0         ✓ Compatible[0m
+
+[1m[97m🗄️ Database:[0m
+  ✅ [92mpymongo              v4.6.0        ✓ Compatible[0m
+  ✅ [92mmotor                v3.3.2        ✓ Compatible[0m
+
+[1m[97m🖥️ System Monitoring:[0m
+  ✅ [92mpsutil               v5.9.6        ✓ Compatible[0m
+
+[1m[97m🤖 Scientific Computing & AI:[0m
+  ✅ [92mnumpy                v1.26.4       ✓ Compatible[0m
+  ✅ [92mpandas               v2.2.1        ✓ Compatible[0m
+  ✅ [92mscikit-learn         v1.4.2        ✓ Compatible[0m
+
+[1m[97m🔒 Cryptographic:[0m
+  ✅ [92mcryptography         v45.0.5       ✓ Compatible[0m
+
+[1m[97m🌐 HTTP Client:[0m
+  ✅ [92mrequests             v2.31.0       ✓ Compatible[0m
+  ✅ [92maiohttp              v3.9.1        ✓ Compatible[0m
+
+[1m[97m🖥️ File & Configuration:[0m
+  ✅ [92maiofiles             v23.2.1       ✓ Compatible[0m
+  ✅ [92mpython-dotenv        v1.0.0        ✓ Compatible[0m
+
+
+[1m🔍 VERIFICATION REPORT[0m
+==================================================
+
+📊 SUMMARY:
+  Total Components: 16
+  ✅ Installed: 16
+  ❌ Missing: 0
+  🚨 Critical Missing: 0
+
+🌐 WEB PAGE IMPACT:
+  ✅ [92mAll critical components present - web page should load properly[0m
+
+✅ [92mAll components verified successfully! CryptoMiner Pro web application should work perfectly.[0m, 🐍 CryptoMiner Pro - Component Verification Demo
+==================================================
+
+1. Current system status:
+🐍 [96mDetected virtual environment: /root/.venv[0m
+
+[1m[95m================================================================================[0m
+[1m[95m🐍 CryptoMiner Pro - Python Components Verification & Installation[0m
+[1m[95m================================================================================[0m
+[96mChecking all required Python dependencies for the web application...[0m
+
+🔍 [1mVerifying Python Components...[0m
+
+[1m[97m🌐 Core Web Framework:[0m
+  ✅ [92mfastapi              v0.104.1      ✓ Compatible[0m
+  ✅ [92muvicorn              v0.24.0       ✓ Compatible[0m
+  ✅ [92mpydantic             v2.5.0        ✓ Compatible[0m
+  ✅ [92mpython-multipart     v0.0.6        ✓ Compatible[0m
+
+[1m[97m🌐 Real-Time Communication:[0m
+  ✅ [92mwebsockets           v12.0         ✓ Compatible[0m
+
+[1m[97m🗄️ Database:[0m
+  ✅ [92mpymongo              v4.6.0        ✓ Compatible[0m
+  ✅ [92mmotor                v3.3.2        ✓ Compatible[0m
+
+[1m[97m🖥️ System Monitoring:[0m
+  ✅ [92mpsutil               v5.9.6        ✓ Compatible[0m
+
+[1m[97m🤖 Scientific Computing & AI:[0m
+  ✅ [92mnumpy                v1.26.4       ✓ Compatible[0m
+  ✅ [92mpandas               v2.2.1        ✓ Compatible[0m
+  ✅ [92mscikit-learn         v1.4.2        ✓ Compatible[0m
+
+[1m[97m🔒 Cryptographic:[0m
+  ✅ [92mcryptography         v45.0.5       ✓ Compatible[0m
+
+[1m[97m🌐 HTTP Client:[0m
+  ✅ [92mrequests             v2.31.0       ✓ Compatible[0m
+  ✅ [92maiohttp              v3.9.1        ✓ Compatible[0m
+
+[1m[97m🖥️ File & Configuration:[0m
+  ✅ [92maiofiles             v23.2.1       ✓ Compatible[0m
+  ✅ [92mpython-dotenv        v1.0.0        ✓ Compatible[0m
+
+
+[1m🔍 VERIFICATION REPORT[0m
+==================================================
+
+📊 SUMMARY:
+  Total Components: 16
+  ✅ Installed: 16
+  ❌ Missing: 0
+  🚨 Critical Missing: 0
+
+🌐 WEB PAGE IMPACT:
+  ✅ [92mAll critical components present - web page should load properly[0m
+
+✅ [92mAll components verified successfully! CryptoMiner Pro web application should work perfectly.[0m
+
+==================================================
+2. To test with missing components, you can:
+   • Create a new virtual environment
+   • Install only some of the requirements
+   • Run the verification script
+
+Example commands:
+  python3 -m venv test_env
+  source test_env/bin/activate
+  pip install fastapi uvicorn
+  python3 verify_components.py
+
+3. Available verification options:
+   ./check_components.sh check          # Basic check
+   ./check_components.sh install        # Install critical components
+   ./check_components.sh install-all    # Install all components
+   ./check_components.sh report         # Generate detailed report, :
+    -   **Summary**: A new system for automated verification and installation of Python backend components.  is the core logic,  is a bash wrapper,  is for demonstration, and  provides documentation. This system checks for critical and optional components, handles versions, and installs missing ones.
 </code_architecture>
 
 <pending_tasks>
-The immediate pending task is to fix the Permission denied error when  attempts to create the virtual environment at .
+-   Test the functionality of the AI system and its ability to properly optimize the shares that are submitted to the pool servers. (This task was just started at the end of the trajectory).
 </pending_tasks>
 
 <current_work>
-Currently, the AI engineer is actively working on resolving a critical installation issue for the CryptoMiner Pro application. The problem is a Permission denied error when the  script attempts to create the Python virtual environment at . This error occurred immediately after implementing a fix for the externally-managed-environment issue, which involved ensuring Python 3.11+ environments use a virtual environment for package installation.
+Immediately before this summary request, the AI engineer was tasked with and had just begun to perform a Comprehensive AI System Testing which focuses on the AI system's ability to optimize mining shares, analyze pool performance, and enhance mining efficiency. This is the last explicit request made by the user.
 
-The root cause identified is that the virtual environment creation command () is executed *before* the  directory has been fully set up with the correct permissions (likely  context).
+Prior to starting this AI testing, a Complete Build Test was performed, which involved several phases:
+1.  **Python Components Verification**: Verified all necessary Python components were installed (🐍 [96mDetected virtual environment: /root/.venv[0m
+🔍 [1mVerifying Python Components...[0m
 
-The work done so far to address the Python environment issues includes:
-1.  **Modified **: To detect Python 3.11+ and automatically create , then install  into it. The supervisor configuration was also updated to use the virtual environment's Python executable.
-2.  **Created **: A utility script to analyze the Python environment (version, external management status, recommendations).
-3.  **Created **: A script to repair existing CryptoMiner Pro installations by creating a virtual environment, installing dependencies, and updating supervisor configurations.
+[1m[97m🌐 Core Web Framework:[0m
+  ✅ [92mfastapi              v0.104.1      ✓ Compatible[0m
+  ✅ [92muvicorn              v0.24.0       ✓ Compatible[0m
+  ✅ [92mpydantic             v2.5.0        ✓ Compatible[0m
+  ✅ [92mpython-multipart     v0.0.6        ✓ Compatible[0m
 
-The very latest message indicates the AI engineer has diagnosed the Permission denied error and plans to reorder the installation steps in  to ensure the project directory exists and has appropriate permissions before the virtual environment creation is attempted.
+[1m[97m🌐 Real-Time Communication:[0m
+  ✅ [92mwebsockets           v12.0         ✓ Compatible[0m
+
+[1m[97m🗄️ Database:[0m
+  ✅ [92mpymongo              v4.6.0        ✓ Compatible[0m
+  ✅ [92mmotor                v3.3.2        ✓ Compatible[0m
+
+[1m[97m🖥️ System Monitoring:[0m
+  ✅ [92mpsutil               v5.9.6        ✓ Compatible[0m
+
+[1m[97m🤖 Scientific Computing & AI:[0m
+  ✅ [92mnumpy                v1.26.4       ✓ Compatible[0m
+  ✅ [92mpandas               v2.2.1        ✓ Compatible[0m
+  ✅ [92mscikit-learn         v1.4.2        ✓ Compatible[0m
+
+[1m[97m🔒 Cryptographic:[0m
+  ✅ [92mcryptography         v45.0.5       ✓ Compatible[0m
+
+[1m[97m🌐 HTTP Client:[0m
+  ✅ [92mrequests             v2.31.0       ✓ Compatible[0m
+  ✅ [92maiohttp              v3.9.1        ✓ Compatible[0m
+
+[1m[97m🖥️ File & Configuration:[0m
+  ✅ [92maiofiles             v23.2.1       ✓ Compatible[0m
+  ✅ [92mpython-dotenv        v1.0.0        ✓ Compatible[0m
+
+
+✅ [92mAll components verified successfully! CryptoMiner Pro web application should work perfectly.[0m
+[0;32m✅ All components verified successfully![0m).
+2.  **Service Status Verification**: Confirmed [2025-08-09T05:12:10.407Z] info  code-server 4.102.1 47e9d43922b5764e3ead3bbf31d9ad23676604d6
+[2025-08-09T05:12:10.409Z] info  Using user-data-dir /root/.local/share/code-server, , and  were all running via code-server                      RUNNING   pid 45, uptime 0:00:41
+mining_system:backend            RUNNING   pid 47, uptime 0:00:41
+mining_system:frontend           RUNNING   pid 48, uptime 0:00:41, and the backend health endpoint () was healthy.
+3.  **Comprehensive Backend Testing**:  was invoked and achieved a 100% success rate (15/15 tests passed).
+4.  **Comprehensive Frontend Testing**:  was invoked and achieved a 95% success rate, confirming all major frontend features (including the newly added custom pool/RPC and dynamic core detection) were working.
+5.  **Installation Script Testing**: The  script was run and completed successfully, verifying the robustness of the installation process after numerous fixes for Python versioning, dependency conflicts, and compilation errors.
+
+The application currently has a new role-based dashboard, supports custom pool/RPC addresses and ports, dynamically adjusts mining threads based on CPU core detection, and has a robust installation system capable of handling Python 3.11 and 3.13 environments, including a fallback mechanism for dependencies.
 </current_work>
 
 <optional_next_step>
-Modify the  script to ensure the  directory is created and has correct permissions *before* attempting to create the virtual environment within it.
+Continue with Phase 1: AI System Backend Testing as part of the comprehensive AI system functionality test.
 </optional_next_step>
+

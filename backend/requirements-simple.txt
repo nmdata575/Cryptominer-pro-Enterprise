@@ -1,0 +1,24 @@
+# CryptoMiner Pro - Python 3.13 Fallback Dependencies
+# Use only pre-compiled wheels to avoid build issues
+
+# Core web framework
+fastapi
+uvicorn[standard]
+websockets
+python-multipart
+
+# Essential packages only (pre-compiled)
+psutil
+requests
+python-dotenv
+pydantic
+pymongo
+motor
+base58
+
+# Simplified AI stack (avoid complex builds)
+numpy
+pandas
+
+# Skip scikit-learn if it causes build issues
+# User can install manually later if needed

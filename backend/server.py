@@ -100,6 +100,10 @@ class MiningConfig(BaseModel):
     custom_rpc_password: Optional[str] = None
     auto_thread_detection: bool = True
     thread_profile: str = "standard"
+    # Enterprise configurations
+    enterprise_mode: bool = False
+    target_cpu_utilization: float = 1.0
+    thread_scaling_enabled: bool = True
 
 class WalletAddress(BaseModel):
     address: str

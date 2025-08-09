@@ -177,7 +177,11 @@ const App = () => {
         custom_rpc_username: walletConfig.custom_rpc_username,
         custom_rpc_password: walletConfig.custom_rpc_password,
         auto_thread_detection: miningConfig.auto_thread_detection,
-        thread_profile: miningConfig.thread_profile
+        thread_profile: miningConfig.thread_profile,
+        // Enterprise configurations
+        enterprise_mode: miningConfig.enterprise_mode,
+        target_cpu_utilization: miningConfig.target_cpu_utilization,
+        thread_scaling_enabled: miningConfig.thread_scaling_enabled
       };
 
       console.log('Sending mining config:', startConfig);

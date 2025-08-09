@@ -156,12 +156,85 @@ fi
 success "🎉 Complete environment setup finished!"
 
 echo
-echo "📋 Next steps:"
-echo "1. Set up supervisor: sudo ./setup-supervisor.sh"
-echo "2. Start services: sudo supervisorctl start cryptominer_pro:*"  
-echo "3. Check status: sudo supervisorctl status"
-echo "4. Access app: http://localhost:3333"
+echo "📋 Setting up Supervisor..."
+
+# Now set up supervisor automatically
+if [[ $EUID -eq 0 ]]; then
+    log "🔧 Setting up supervisor configuration as root..."
+    USER_NAME=$SUDO_USER
+else
+    log "🔧 Need to set up supervisor (requires sudo)..."
+    USER_NAME=$USER
+fi
+
+# Install supervisor if not already installed
+if ! command -v supervisorctl &> /dev/null; then
+    log "Installing supervisor..."
+    sudo apt update
+    sudo apt install -y supervisor
+fi
+
+# Create supervisor configuration directory if it doesn't exist
+sudo mkdir -p /etc/supervisor/conf.d
+
+# Create the mining app supervisor configuration
+log "Creating supervisor configuration..."
+
+sudo tee /etc/supervisor/conf.d/cryptominer-pro.conf > /dev/null << EOF
+[program:cryptominer_backend]
+command=$SCRIPT_DIR/backend/venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8001
+directory=$SCRIPT_DIR/backend
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/supervisor/cryptominer_backend.err.log
+stdout_logfile=/var/log/supervisor/cryptominer_backend.out.log
+user=$USER_NAME
+environment=PATH="$SCRIPT_DIR/backend/venv/bin"
+
+[program:cryptominer_frontend]
+command=yarn start
+directory=$SCRIPT_DIR/frontend
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/supervisor/cryptominer_frontend.err.log
+stdout_logfile=/var/log/supervisor/cryptominer_frontend.out.log
+user=$USER_NAME
+environment=PORT=3333,PATH="/usr/bin:/bin:/usr/local/bin"
+
+[group:cryptominer_pro]
+programs=cryptominer_backend,cryptominer_frontend
+priority=999
+EOF
+
+# Create log directory
+sudo mkdir -p /var/log/supervisor
+
+# Reload supervisor configuration
+log "Reloading supervisor configuration..."
+sudo supervisorctl reread
+sudo supervisorctl update
+
+# Start services
+log "Starting CryptoMiner Pro services..."
+sudo supervisorctl start cryptominer_pro:* || true
+
 echo
-echo "🔧 Or start manually:"
-echo "Backend:  cd backend && source venv/bin/activate && python -m uvicorn server:app --host 0.0.0.0 --port 8001"
-echo "Frontend: cd frontend && PORT=3333 yarn start"
+echo "🚀 SETUP COMPLETE!"
+echo
+echo "📊 Service Status:"
+sudo supervisorctl status cryptominer_pro:* || echo "Services not yet running"
+echo
+echo "🌐 Access URLs:"
+echo "  Frontend: http://localhost:3333"
+echo "  Backend:  http://localhost:8001"
+echo "  Health:   http://localhost:8001/api/health"
+echo
+echo "🛠️ Useful Commands:"
+echo "  sudo supervisorctl status                    # Check all services"
+echo "  sudo supervisorctl start cryptominer_pro:*  # Start all services"
+echo "  sudo supervisorctl stop cryptominer_pro:*   # Stop all services"
+echo "  sudo supervisorctl restart cryptominer_pro:* # Restart all services"
+echo
+echo "🔧 Manual Start (if supervisor fails):"
+echo "  Terminal 1: cd backend && source venv/bin/activate && python -m uvicorn server:app --host 0.0.0.0 --port 8001"
+echo "  Terminal 2: cd frontend && PORT=3333 yarn start"

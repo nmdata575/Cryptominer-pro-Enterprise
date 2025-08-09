@@ -7,7 +7,7 @@ python-multipart==0.0.6
 
 # Cryptography and Mining
 cryptography==41.0.7
-hashlib-compat==1.0.1
+
 scrypt==0.8.20
 
 # AI and Machine Learning

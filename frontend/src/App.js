@@ -285,6 +285,11 @@ const App = () => {
 
         {/* Additional Components Grid */}
         <div className="dashboard-grid">
+          {/* Enterprise Database Configuration */}
+          <EnterpriseDBConfig
+            onConfigChange={handleEnterpriseConfigChange}
+          />
+
           {/* Enterprise Thread Manager */}
           <EnterpriseThreadManager
             miningConfig={miningConfig}

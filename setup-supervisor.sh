@@ -34,7 +34,23 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_DIR="$SCRIPT_DIR"
+
 log "Setting up CryptoMiner Pro Supervisor configuration..."
+log "Using installation directory: $INSTALL_DIR"
+
+# Verify required directories exist
+if [[ ! -d "$INSTALL_DIR/backend" ]]; then
+    error "Backend directory not found at $INSTALL_DIR/backend"
+    exit 1
+fi
+
+if [[ ! -d "$INSTALL_DIR/frontend" ]]; then
+    error "Frontend directory not found at $INSTALL_DIR/frontend"
+    exit 1
+fi
 
 # Install supervisor if not already installed
 if ! command -v supervisorctl &> /dev/null; then
@@ -49,25 +65,25 @@ mkdir -p /etc/supervisor/conf.d
 # Create the mining app supervisor configuration
 log "Creating supervisor configuration..."
 
-cat > /etc/supervisor/conf.d/cryptominer-pro.conf << 'EOF'
+cat > /etc/supervisor/conf.d/cryptominer-pro.conf << EOF
 [program:cryptominer_backend]
-command=/app/backend/venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8001
-directory=/app/backend
+command=$INSTALL_DIR/backend/venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8001
+directory=$INSTALL_DIR/backend
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/supervisor/cryptominer_backend.err.log
 stdout_logfile=/var/log/supervisor/cryptominer_backend.out.log
-user=www-data
-environment=PATH="/app/backend/venv/bin"
+user=$SUDO_USER
+environment=PATH="$INSTALL_DIR/backend/venv/bin"
 
 [program:cryptominer_frontend]
 command=yarn start
-directory=/app/frontend
+directory=$INSTALL_DIR/frontend
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/supervisor/cryptominer_frontend.err.log
 stdout_logfile=/var/log/supervisor/cryptominer_frontend.out.log
-user=www-data
+user=$SUDO_USER
 environment=PORT=3333,PATH="/usr/bin:/bin:/usr/local/bin"
 
 [group:cryptominer_pro]
@@ -79,7 +95,8 @@ EOF
 mkdir -p /var/log/supervisor
 
 # Set proper ownership for the application directory
-chown -R www-data:www-data /app
+log "Setting up directory permissions..."
+chown -R $SUDO_USER:$SUDO_USER "$INSTALL_DIR"
 
 # Reload supervisor configuration
 log "Reloading supervisor configuration..."
@@ -115,4 +132,3 @@ else
     error "Failed to configure supervisor services"
     exit 1
 fi
-EOF

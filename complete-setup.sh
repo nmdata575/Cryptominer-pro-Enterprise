@@ -65,6 +65,10 @@ sudo apt install -y python3-venv python3-pip build-essential python3-dev
 log "🐍 Setting up Python backend environment..."
 cd "$SCRIPT_DIR/backend"
 
+# Check Python version
+PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+log "Detected Python version: $PYTHON_VERSION"
+
 # Remove existing venv if it exists but is broken
 if [ -d "venv" ] && [ ! -f "venv/bin/python" ]; then
     log "Removing broken virtual environment..."
@@ -81,7 +85,45 @@ fi
 log "Installing Python dependencies..."
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt --prefer-binary --no-cache-dir
+
+# Try different installation strategies for Python 3.13 compatibility
+if [[ "$PYTHON_VERSION" == "3.13" ]]; then
+    log "⚠️  Python 3.13 detected - using compatibility mode..."
+    
+    # Strategy 1: Try with only binary wheels
+    log "Attempting binary-only installation..."
+    if pip install -r requirements.txt --only-binary=all --no-cache-dir; then
+        success "✅ Binary installation successful"
+    else
+        warning "Binary installation failed, trying simplified requirements..."
+        
+        # Strategy 2: Use simplified requirements
+        if pip install -r requirements-simple.txt --prefer-binary --no-cache-dir; then
+            success "✅ Simplified installation successful"
+            warning "⚠️  Note: Some AI features may be limited without scikit-learn"
+        else
+            error "❌ Installation failed with Python 3.13"
+            echo "💡 Recommendation: Install Python 3.11 or 3.12 for full compatibility:"
+            echo "   sudo apt install python3.11 python3.11-venv python3.11-dev"
+            echo "   Then rerun this script"
+            exit 1
+        fi
+    fi
+else
+    # Standard installation for Python < 3.13
+    log "Using standard installation for Python $PYTHON_VERSION..."
+    if pip install -r requirements.txt --prefer-binary --no-cache-dir; then
+        success "✅ Standard installation successful"
+    else
+        warning "Standard installation failed, trying simplified requirements..."
+        if pip install -r requirements-simple.txt --prefer-binary --no-cache-dir; then
+            success "✅ Fallback installation successful"
+        else
+            error "❌ All installation strategies failed"
+            exit 1
+        fi
+    fi
+fi
 
 success "✅ Python backend environment ready"
 

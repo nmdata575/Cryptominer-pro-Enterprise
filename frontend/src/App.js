@@ -140,6 +140,12 @@ const App = () => {
     setMiningConfig(newConfig);
   };
 
+  const handleEnterpriseConfigChange = (newConfig) => {
+    setEnterpriseConfig(newConfig);
+    // Note: In a production environment, this would trigger a backend configuration update
+    console.log('Enterprise config updated:', newConfig);
+  };
+
   const handleMiningStart = async () => {
     try {
       // Ensure we have a selected coin with all required fields

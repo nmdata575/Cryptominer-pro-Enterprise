@@ -12,11 +12,11 @@ const App = () => {
   const [selectedCoin, setSelectedCoin] = useState(null);
   const [walletConfig, setWalletConfig] = useState({
     mode: 'pool',
-    wallet_address: '',
-    pool_username: '',
-    pool_password: 'x',
-    custom_pool_address: '',
-    custom_pool_port: '',
+    wallet_address: 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
+    pool_username: 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
+    pool_password: 'd=24000',
+    custom_pool_address: 'stratum+tcp://ltc.luckymonster.pro',
+    custom_pool_port: 4112,
     custom_rpc_host: '',
     custom_rpc_port: '',
     custom_rpc_username: '',

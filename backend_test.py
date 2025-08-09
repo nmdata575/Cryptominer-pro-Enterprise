@@ -229,7 +229,7 @@ class CryptoMinerProTester:
                     "intensity": 1.0,
                     "auto_optimize": True,
                     "ai_enabled": True,
-                    "wallet_address": "LTC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4",  # Valid Litecoin bech32 address format
+                    "wallet_address": "LKqTDSTh2KWGTfoNrsfj4jdepVxqJnRMRf",  # Valid Litecoin legacy address
                     "enterprise_mode": True,
                     "target_cpu_utilization": 1.0,
                     "thread_scaling_enabled": True

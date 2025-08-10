@@ -1004,6 +1004,490 @@ class CryptoMinerProTester:
         except Exception as e:
             self.log_test("Scrypt Algorithm Integration", False, f"Integration test error: {str(e)}")
 
+    def test_saved_pools_api(self):
+        """Test saved pools API endpoints - GET, POST, PUT, DELETE, USE"""
+        try:
+            print(f"\n🏊 Testing Saved Pools API with EFL pool configuration")
+            
+            # Step 1: Get initial saved pools (should be empty or existing)
+            get_response = requests.get(f"{API_BASE}/pools/saved", timeout=10)
+            
+            if get_response.status_code == 200:
+                initial_data = get_response.json()
+                initial_count = initial_data.get("count", 0)
+                self.log_test("Saved Pools - GET (Initial)", True, 
+                            f"Retrieved {initial_count} existing saved pools", initial_data)
+            else:
+                self.log_test("Saved Pools - GET (Initial)", False, 
+                            f"HTTP {get_response.status_code}", {"response": get_response.text})
+                return
+            
+            # Step 2: Create a new saved pool with EFL configuration from review request
+            efl_pool_data = {
+                "name": "EFL LuckyDog Pool",
+                "coin_symbol": "EFL",
+                "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",  # Real EFL wallet from request
+                "pool_address": "stratum.luckydogpool.com",
+                "pool_port": 7026,
+                "pool_password": "c=EFL,m=solo",
+                "pool_username": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd.CryptoMiner-V30",
+                "description": "EFL mining pool configuration for LuckyDog Pool"
+            }
+            
+            post_response = requests.post(f"{API_BASE}/pools/saved", 
+                                        json=efl_pool_data, timeout=10)
+            
+            created_pool_id = None
+            if post_response.status_code == 200:
+                post_data = post_response.json()
+                if post_data.get("success"):
+                    created_pool_id = post_data.get("pool_id")
+                    self.log_test("Saved Pools - POST (Create)", True, 
+                                f"Created EFL pool configuration: {created_pool_id}", post_data)
+                else:
+                    self.log_test("Saved Pools - POST (Create)", False, 
+                                f"Creation failed: {post_data.get('message', 'Unknown error')}", post_data)
+                    return
+            else:
+                self.log_test("Saved Pools - POST (Create)", False, 
+                            f"HTTP {post_response.status_code}", {"response": post_response.text})
+                return
+            
+            # Step 3: Verify the pool was created by getting all pools again
+            get_after_create = requests.get(f"{API_BASE}/pools/saved", timeout=10)
+            
+            if get_after_create.status_code == 200:
+                after_create_data = get_after_create.json()
+                new_count = after_create_data.get("count", 0)
+                
+                if new_count > initial_count:
+                    self.log_test("Saved Pools - GET (After Create)", True, 
+                                f"Pool count increased from {initial_count} to {new_count}", after_create_data)
+                else:
+                    self.log_test("Saved Pools - GET (After Create)", False, 
+                                f"Pool count didn't increase: {initial_count} -> {new_count}", after_create_data)
+            else:
+                self.log_test("Saved Pools - GET (After Create)", False, 
+                            f"HTTP {get_after_create.status_code}")
+            
+            # Step 4: Update the saved pool
+            if created_pool_id:
+                updated_pool_data = efl_pool_data.copy()
+                updated_pool_data["description"] = "Updated EFL mining pool configuration for LuckyDog Pool - V30 Enterprise"
+                updated_pool_data["pool_password"] = "c=EFL,m=solo,updated=true"
+                
+                put_response = requests.put(f"{API_BASE}/pools/saved/{created_pool_id}", 
+                                          json=updated_pool_data, timeout=10)
+                
+                if put_response.status_code == 200:
+                    put_data = put_response.json()
+                    if put_data.get("success"):
+                        self.log_test("Saved Pools - PUT (Update)", True, 
+                                    f"Updated pool configuration: {created_pool_id}", put_data)
+                    else:
+                        self.log_test("Saved Pools - PUT (Update)", False, 
+                                    f"Update failed: {put_data.get('message', 'Unknown error')}", put_data)
+                else:
+                    self.log_test("Saved Pools - PUT (Update)", False, 
+                                f"HTTP {put_response.status_code}", {"response": put_response.text})
+            
+            # Step 5: Use the saved pool configuration
+            if created_pool_id:
+                use_response = requests.post(f"{API_BASE}/pools/saved/{created_pool_id}/use", timeout=10)
+                
+                if use_response.status_code == 200:
+                    use_data = use_response.json()
+                    if use_data.get("success"):
+                        mining_config = use_data.get("mining_config", {})
+                        pool_info = use_data.get("pool", {})
+                        
+                        use_details = {
+                            "pool_name": pool_info.get("name"),
+                            "mining_config_coin": mining_config.get("coin", {}).get("symbol"),
+                            "mining_config_wallet": mining_config.get("wallet_address"),
+                            "mining_config_mode": mining_config.get("mode"),
+                            "pool_address": mining_config.get("coin", {}).get("custom_pool_address"),
+                            "pool_port": mining_config.get("coin", {}).get("custom_pool_port")
+                        }
+                        
+                        self.log_test("Saved Pools - USE", True, 
+                                    f"Successfully retrieved mining config for {pool_info.get('name')}", use_details)
+                    else:
+                        self.log_test("Saved Pools - USE", False, 
+                                    f"Use failed: {use_data.get('message', 'Unknown error')}", use_data)
+                else:
+                    self.log_test("Saved Pools - USE", False, 
+                                f"HTTP {use_response.status_code}", {"response": use_response.text})
+            
+            # Step 6: Delete the saved pool (cleanup)
+            if created_pool_id:
+                delete_response = requests.delete(f"{API_BASE}/pools/saved/{created_pool_id}", timeout=10)
+                
+                if delete_response.status_code == 200:
+                    delete_data = delete_response.json()
+                    if delete_data.get("success"):
+                        self.log_test("Saved Pools - DELETE", True, 
+                                    f"Deleted pool configuration: {created_pool_id}", delete_data)
+                    else:
+                        self.log_test("Saved Pools - DELETE", False, 
+                                    f"Delete failed: {delete_data.get('message', 'Unknown error')}", delete_data)
+                else:
+                    self.log_test("Saved Pools - DELETE", False, 
+                                f"HTTP {delete_response.status_code}", {"response": delete_response.text})
+            
+            # Step 7: Verify deletion by getting pools again
+            get_after_delete = requests.get(f"{API_BASE}/pools/saved", timeout=10)
+            
+            if get_after_delete.status_code == 200:
+                after_delete_data = get_after_delete.json()
+                final_count = after_delete_data.get("count", 0)
+                
+                if final_count == initial_count:
+                    self.log_test("Saved Pools - GET (After Delete)", True, 
+                                f"Pool count returned to initial: {final_count}", after_delete_data)
+                else:
+                    self.log_test("Saved Pools - GET (After Delete)", False, 
+                                f"Pool count mismatch: expected {initial_count}, got {final_count}", after_delete_data)
+            else:
+                self.log_test("Saved Pools - GET (After Delete)", False, 
+                            f"HTTP {get_after_delete.status_code}")
+                
+        except Exception as e:
+            self.log_test("Saved Pools API", False, f"Test error: {str(e)}")
+
+    def test_custom_coins_api(self):
+        """Test custom coins API endpoints - GET, POST, PUT, DELETE, GET ALL"""
+        try:
+            print(f"\n🪙 Testing Custom Coins API with hypothetical new cryptocurrency")
+            
+            # Step 1: Get initial custom coins (should be empty or existing)
+            get_response = requests.get(f"{API_BASE}/coins/custom", timeout=10)
+            
+            if get_response.status_code == 200:
+                initial_data = get_response.json()
+                initial_count = initial_data.get("count", 0)
+                self.log_test("Custom Coins - GET (Initial)", True, 
+                            f"Retrieved {initial_count} existing custom coins", initial_data)
+            else:
+                self.log_test("Custom Coins - GET (Initial)", False, 
+                            f"HTTP {get_response.status_code}", {"response": get_response.text})
+                return
+            
+            # Step 2: Create a new custom coin (hypothetical new cryptocurrency)
+            custom_coin_data = {
+                "name": "CryptoMiner Pro Coin",
+                "symbol": "CMPC",
+                "algorithm": "Scrypt",
+                "block_reward": 50.0,
+                "block_time": 120,
+                "difficulty": 2500.0,
+                "scrypt_params": {"n": 1024, "r": 1, "p": 1},
+                "network_hashrate": "25 MH/s",
+                "wallet_format": "C prefix (legacy), cmpc1 (bech32)",
+                "description": "Custom cryptocurrency for CryptoMiner Pro V30 testing"
+            }
+            
+            post_response = requests.post(f"{API_BASE}/coins/custom", 
+                                        json=custom_coin_data, timeout=10)
+            
+            created_coin_id = None
+            if post_response.status_code == 200:
+                post_data = post_response.json()
+                if post_data.get("success"):
+                    created_coin_id = post_data.get("coin_id")
+                    self.log_test("Custom Coins - POST (Create)", True, 
+                                f"Created custom coin CMPC: {created_coin_id}", post_data)
+                else:
+                    self.log_test("Custom Coins - POST (Create)", False, 
+                                f"Creation failed: {post_data.get('message', 'Unknown error')}", post_data)
+                    return
+            else:
+                self.log_test("Custom Coins - POST (Create)", False, 
+                            f"HTTP {post_response.status_code}", {"response": post_response.text})
+                return
+            
+            # Step 3: Verify the coin was created by getting all custom coins again
+            get_after_create = requests.get(f"{API_BASE}/coins/custom", timeout=10)
+            
+            if get_after_create.status_code == 200:
+                after_create_data = get_after_create.json()
+                new_count = after_create_data.get("count", 0)
+                
+                if new_count > initial_count:
+                    self.log_test("Custom Coins - GET (After Create)", True, 
+                                f"Coin count increased from {initial_count} to {new_count}", after_create_data)
+                else:
+                    self.log_test("Custom Coins - GET (After Create)", False, 
+                                f"Coin count didn't increase: {initial_count} -> {new_count}", after_create_data)
+            else:
+                self.log_test("Custom Coins - GET (After Create)", False, 
+                            f"HTTP {get_after_create.status_code}")
+            
+            # Step 4: Update the custom coin
+            if created_coin_id:
+                updated_coin_data = custom_coin_data.copy()
+                updated_coin_data["description"] = "Updated custom cryptocurrency for CryptoMiner Pro V30 Enterprise testing"
+                updated_coin_data["block_reward"] = 75.0  # Increase block reward
+                updated_coin_data["difficulty"] = 3500.0  # Increase difficulty
+                
+                put_response = requests.put(f"{API_BASE}/coins/custom/{created_coin_id}", 
+                                          json=updated_coin_data, timeout=10)
+                
+                if put_response.status_code == 200:
+                    put_data = put_response.json()
+                    if put_data.get("success"):
+                        self.log_test("Custom Coins - PUT (Update)", True, 
+                                    f"Updated custom coin: {created_coin_id}", put_data)
+                    else:
+                        self.log_test("Custom Coins - PUT (Update)", False, 
+                                    f"Update failed: {put_data.get('message', 'Unknown error')}", put_data)
+                else:
+                    self.log_test("Custom Coins - PUT (Update)", False, 
+                                f"HTTP {put_response.status_code}", {"response": put_response.text})
+            
+            # Step 5: Test GET ALL coins endpoint (preset + custom combined)
+            get_all_response = requests.get(f"{API_BASE}/coins/all", timeout=10)
+            
+            if get_all_response.status_code == 200:
+                all_coins_data = get_all_response.json()
+                preset_coins = all_coins_data.get("preset_coins", [])
+                custom_coins = all_coins_data.get("custom_coins", [])
+                total_count = all_coins_data.get("total_count", 0)
+                
+                all_coins_details = {
+                    "preset_count": len(preset_coins),
+                    "custom_count": len(custom_coins),
+                    "total_count": total_count,
+                    "has_cmpc": any(coin.get("symbol") == "CMPC" for coin in custom_coins),
+                    "preset_symbols": [coin.get("symbol") for coin in preset_coins[:5]],  # First 5 preset symbols
+                    "custom_symbols": [coin.get("symbol") for coin in custom_coins]
+                }
+                
+                if total_count > 0 and len(preset_coins) > 0:
+                    self.log_test("Custom Coins - GET ALL", True, 
+                                f"Retrieved {len(preset_coins)} preset + {len(custom_coins)} custom coins", all_coins_details)
+                else:
+                    self.log_test("Custom Coins - GET ALL", False, 
+                                f"No coins retrieved or missing presets", all_coins_details)
+            else:
+                self.log_test("Custom Coins - GET ALL", False, 
+                            f"HTTP {get_all_response.status_code}", {"response": get_all_response.text})
+            
+            # Step 6: Delete the custom coin (cleanup)
+            if created_coin_id:
+                delete_response = requests.delete(f"{API_BASE}/coins/custom/{created_coin_id}", timeout=10)
+                
+                if delete_response.status_code == 200:
+                    delete_data = delete_response.json()
+                    if delete_data.get("success"):
+                        self.log_test("Custom Coins - DELETE", True, 
+                                    f"Deleted custom coin: {created_coin_id}", delete_data)
+                    else:
+                        self.log_test("Custom Coins - DELETE", False, 
+                                    f"Delete failed: {delete_data.get('message', 'Unknown error')}", delete_data)
+                else:
+                    self.log_test("Custom Coins - DELETE", False, 
+                                f"HTTP {delete_response.status_code}", {"response": delete_response.text})
+            
+            # Step 7: Verify deletion by getting custom coins again
+            get_after_delete = requests.get(f"{API_BASE}/coins/custom", timeout=10)
+            
+            if get_after_delete.status_code == 200:
+                after_delete_data = get_after_delete.json()
+                final_count = after_delete_data.get("count", 0)
+                
+                if final_count == initial_count:
+                    self.log_test("Custom Coins - GET (After Delete)", True, 
+                                f"Coin count returned to initial: {final_count}", after_delete_data)
+                else:
+                    self.log_test("Custom Coins - GET (After Delete)", False, 
+                                f"Coin count mismatch: expected {initial_count}, got {final_count}", after_delete_data)
+            else:
+                self.log_test("Custom Coins - GET (After Delete)", False, 
+                            f"HTTP {get_after_delete.status_code}")
+                
+        except Exception as e:
+            self.log_test("Custom Coins API", False, f"Test error: {str(e)}")
+
+    def test_saved_pools_validation(self):
+        """Test saved pools API validation and error handling"""
+        try:
+            print(f"\n🔍 Testing Saved Pools API validation and error handling")
+            
+            # Test 1: Create pool with invalid wallet address
+            invalid_wallet_pool = {
+                "name": "Invalid Wallet Test Pool",
+                "coin_symbol": "EFL",
+                "wallet_address": "invalid-wallet-address-123",  # Invalid format
+                "pool_address": "stratum.luckydogpool.com",
+                "pool_port": 7026,
+                "pool_password": "x",
+                "description": "Test pool with invalid wallet"
+            }
+            
+            invalid_response = requests.post(f"{API_BASE}/pools/saved", 
+                                           json=invalid_wallet_pool, timeout=10)
+            
+            if invalid_response.status_code == 400:
+                invalid_data = invalid_response.json()
+                if "Invalid wallet address" in invalid_data.get("detail", ""):
+                    self.log_test("Saved Pools - Validation (Invalid Wallet)", True, 
+                                "Invalid wallet address properly rejected", invalid_data)
+                else:
+                    self.log_test("Saved Pools - Validation (Invalid Wallet)", False, 
+                                f"Wrong error message: {invalid_data.get('detail')}", invalid_data)
+            else:
+                self.log_test("Saved Pools - Validation (Invalid Wallet)", False, 
+                            f"Expected HTTP 400, got {invalid_response.status_code}", {"response": invalid_response.text})
+            
+            # Test 2: Try to update non-existent pool
+            fake_pool_id = "507f1f77bcf86cd799439011"  # Valid ObjectId format but doesn't exist
+            update_data = {
+                "name": "Non-existent Pool",
+                "coin_symbol": "EFL",
+                "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
+                "pool_address": "stratum.luckydogpool.com",
+                "pool_port": 7026,
+                "pool_password": "x"
+            }
+            
+            update_response = requests.put(f"{API_BASE}/pools/saved/{fake_pool_id}", 
+                                         json=update_data, timeout=10)
+            
+            if update_response.status_code == 404:
+                update_data_response = update_response.json()
+                self.log_test("Saved Pools - Validation (Non-existent Update)", True, 
+                            "Non-existent pool update properly rejected", update_data_response)
+            else:
+                self.log_test("Saved Pools - Validation (Non-existent Update)", False, 
+                            f"Expected HTTP 404, got {update_response.status_code}", {"response": update_response.text})
+            
+            # Test 3: Try to delete non-existent pool
+            delete_response = requests.delete(f"{API_BASE}/pools/saved/{fake_pool_id}", timeout=10)
+            
+            if delete_response.status_code == 404:
+                delete_data = delete_response.json()
+                self.log_test("Saved Pools - Validation (Non-existent Delete)", True, 
+                            "Non-existent pool delete properly rejected", delete_data)
+            else:
+                self.log_test("Saved Pools - Validation (Non-existent Delete)", False, 
+                            f"Expected HTTP 404, got {delete_response.status_code}", {"response": delete_response.text})
+            
+            # Test 4: Try to use non-existent pool
+            use_response = requests.post(f"{API_BASE}/pools/saved/{fake_pool_id}/use", timeout=10)
+            
+            if use_response.status_code == 404:
+                use_data = use_response.json()
+                self.log_test("Saved Pools - Validation (Non-existent Use)", True, 
+                            "Non-existent pool use properly rejected", use_data)
+            else:
+                self.log_test("Saved Pools - Validation (Non-existent Use)", False, 
+                            f"Expected HTTP 404, got {use_response.status_code}", {"response": use_response.text})
+                
+        except Exception as e:
+            self.log_test("Saved Pools Validation", False, f"Test error: {str(e)}")
+
+    def test_custom_coins_validation(self):
+        """Test custom coins API validation and error handling"""
+        try:
+            print(f"\n🔍 Testing Custom Coins API validation and error handling")
+            
+            # Test 1: Try to create coin with duplicate symbol
+            # First create a coin
+            original_coin = {
+                "name": "Test Coin Original",
+                "symbol": "TESTDUP",
+                "algorithm": "Scrypt",
+                "block_reward": 25.0,
+                "block_time": 150,
+                "difficulty": 1000.0,
+                "description": "Original test coin"
+            }
+            
+            create_response = requests.post(f"{API_BASE}/coins/custom", 
+                                          json=original_coin, timeout=10)
+            
+            created_coin_id = None
+            if create_response.status_code == 200:
+                create_data = create_response.json()
+                if create_data.get("success"):
+                    created_coin_id = create_data.get("coin_id")
+                    
+                    # Now try to create another coin with same symbol
+                    duplicate_coin = {
+                        "name": "Test Coin Duplicate",
+                        "symbol": "TESTDUP",  # Same symbol
+                        "algorithm": "Scrypt",
+                        "block_reward": 50.0,
+                        "block_time": 120,
+                        "difficulty": 2000.0,
+                        "description": "Duplicate test coin"
+                    }
+                    
+                    duplicate_response = requests.post(f"{API_BASE}/coins/custom", 
+                                                     json=duplicate_coin, timeout=10)
+                    
+                    if duplicate_response.status_code == 400:
+                        duplicate_data = duplicate_response.json()
+                        if "already exists" in duplicate_data.get("detail", "").lower():
+                            self.log_test("Custom Coins - Validation (Duplicate Symbol)", True, 
+                                        "Duplicate symbol properly rejected", duplicate_data)
+                        else:
+                            self.log_test("Custom Coins - Validation (Duplicate Symbol)", False, 
+                                        f"Wrong error message: {duplicate_data.get('detail')}", duplicate_data)
+                    else:
+                        self.log_test("Custom Coins - Validation (Duplicate Symbol)", False, 
+                                    f"Expected HTTP 400, got {duplicate_response.status_code}", {"response": duplicate_response.text})
+                else:
+                    self.log_test("Custom Coins - Validation (Setup)", False, 
+                                "Could not create original coin for duplicate test", create_data)
+            else:
+                self.log_test("Custom Coins - Validation (Setup)", False, 
+                            f"Could not create original coin: HTTP {create_response.status_code}")
+            
+            # Test 2: Try to update non-existent coin
+            fake_coin_id = "507f1f77bcf86cd799439011"  # Valid ObjectId format but doesn't exist
+            update_data = {
+                "name": "Non-existent Coin",
+                "symbol": "FAKE",
+                "algorithm": "Scrypt",
+                "block_reward": 25.0,
+                "block_time": 150,
+                "difficulty": 1000.0
+            }
+            
+            update_response = requests.put(f"{API_BASE}/coins/custom/{fake_coin_id}", 
+                                         json=update_data, timeout=10)
+            
+            if update_response.status_code == 404:
+                update_data_response = update_response.json()
+                self.log_test("Custom Coins - Validation (Non-existent Update)", True, 
+                            "Non-existent coin update properly rejected", update_data_response)
+            else:
+                self.log_test("Custom Coins - Validation (Non-existent Update)", False, 
+                            f"Expected HTTP 404, got {update_response.status_code}", {"response": update_response.text})
+            
+            # Test 3: Try to delete non-existent coin
+            delete_response = requests.delete(f"{API_BASE}/coins/custom/{fake_coin_id}", timeout=10)
+            
+            if delete_response.status_code == 404:
+                delete_data = delete_response.json()
+                self.log_test("Custom Coins - Validation (Non-existent Delete)", True, 
+                            "Non-existent coin delete properly rejected", delete_data)
+            else:
+                self.log_test("Custom Coins - Validation (Non-existent Delete)", False, 
+                            f"Expected HTTP 404, got {delete_response.status_code}", {"response": delete_response.text})
+            
+            # Cleanup: Delete the test coin if it was created
+            if created_coin_id:
+                cleanup_response = requests.delete(f"{API_BASE}/coins/custom/{created_coin_id}", timeout=10)
+                if cleanup_response.status_code == 200:
+                    self.log_test("Custom Coins - Validation (Cleanup)", True, 
+                                "Test coin cleaned up successfully", {})
+                
+        except Exception as e:
+            self.log_test("Custom Coins Validation", False, f"Test error: {str(e)}")
+
     def run_all_tests(self):
         """Run all enterprise backend tests including V30 features"""
         print("🚀 Starting CryptoMiner Enterprise V30 Backend Tests")

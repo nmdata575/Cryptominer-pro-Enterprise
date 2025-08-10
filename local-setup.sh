@@ -468,6 +468,7 @@ main() {
     
     check_source_directory
     check_permissions
+    check_and_install_python  # New function for Python version management
     install_dependencies
     install_mongodb
     setup_directories
@@ -478,6 +479,9 @@ main() {
     
     success "🎉 CryptoMiner Pro installation completed successfully!"
     log ""
+    log "Python version used: $($PYTHON_CMD --version)"
+    log "Installation directory: $INSTALL_DIR"
+    log ""
     log "Access your mining dashboard at: http://localhost:3334"
     log "API endpoint available at: http://localhost:8001/api"
     log ""
@@ -486,6 +490,10 @@ main() {
     log "  Stop:    sudo supervisorctl stop mining_system:all"
     log "  Restart: sudo supervisorctl restart mining_system:all"
     log "  Status:  sudo supervisorctl status mining_system:all"
+    log ""
+    log "Troubleshooting:"
+    log "  Backend logs:  tail -f /var/log/supervisor/backend.out.log"
+    log "  Frontend logs: tail -f /var/log/supervisor/frontend.out.log"
 }
 
 # Run main function

@@ -824,7 +824,24 @@ class CryptoMinerProTester:
             for test in self.failed_tests:
                 print(f"   • {test}")
         
-        print(f"\n🎯 Enterprise Features Status:")
+        # V30 Enterprise Features Summary
+        print(f"\n🔥 V30 ENTERPRISE FEATURES STATUS:")
+        v30_tests = [
+            "V30 Health Check Updates",
+            "V30 License Validation", 
+            "V30 License Activation",
+            "V30 Hardware Validation",
+            "V30 System Initialization",
+            "V30 System Status",
+            "V30 Distributed Mining Control",
+            "V30 Nodes Management",
+            "V30 Comprehensive Stats"
+        ]
+        
+        v30_passed = [test for test in v30_tests if any(test in passed for passed in self.passed_tests)]
+        print(f"   V30 Tests Passed: {len(v30_passed)}/{len(v30_tests)}")
+        
+        print(f"\n🎯 Legacy Enterprise Features Status:")
         enterprise_tests = [
             "CPU Info Enterprise",
             "Mining Engine Enterprise", 
@@ -833,7 +850,7 @@ class CryptoMinerProTester:
         ]
         
         enterprise_passed = [test for test in enterprise_tests if test in self.passed_tests or any(test in passed for passed in self.passed_tests)]
-        print(f"   Enterprise Tests Passed: {len(enterprise_passed)}/{len(enterprise_tests)}")
+        print(f"   Legacy Enterprise Tests Passed: {len(enterprise_passed)}/{len(enterprise_tests)}")
         
         return failed_count == 0
 

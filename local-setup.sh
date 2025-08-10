@@ -181,26 +181,49 @@ install_python312() {
                 python3.12-dev \
                 python3.12-distutils
             ;;
+        "plucky"|"25.04"|"oracular"|"24.10")
+            # Ubuntu 25.04+ or development versions - try standard repos first
+            log "Ubuntu development/newer version detected: $ubuntu_version"
+            log "Trying standard repositories first..."
+            
+            sudo apt update
+            if sudo apt install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils; then
+                success "Python 3.12 installed from standard repositories"
+            else
+                warning "Standard repositories don't have Python 3.12"
+                log "Trying to use existing Python 3.11 or compiling from source..."
+                install_python312_alternative
+            fi
+            ;;
         "jammy"|"22.04")
             # Ubuntu 22.04 - Need deadsnakes PPA for Python 3.12
             log "Installing Python 3.12 from deadsnakes PPA for Ubuntu 22.04..."
-            install_python312_from_deadsnakes
+            if ! install_python312_from_deadsnakes; then
+                warning "Deadsnakes PPA installation failed, trying alternatives..."
+                install_python312_alternative
+            fi
             ;;
         "focal"|"20.04")
             # Ubuntu 20.04 - Need deadsnakes PPA for Python 3.12
             log "Installing Python 3.12 from deadsnakes PPA for Ubuntu 20.04..."
-            install_python312_from_deadsnakes
+            if ! install_python312_from_deadsnakes; then
+                warning "Deadsnakes PPA installation failed, trying alternatives..."
+                install_python312_alternative
+            fi
             ;;
         *)
-            # Unknown Ubuntu version - try standard repos first, then deadsnakes
+            # Unknown Ubuntu version - try standard repos first, then alternatives
             warning "Unknown Ubuntu version: $ubuntu_version"
             log "Trying standard repositories first..."
             
-            if sudo apt update && sudo apt install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils; then
-                log "Python 3.12 installed from standard repositories"
+            sudo apt update
+            if sudo apt install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils; then
+                success "Python 3.12 installed from standard repositories"
+            elif install_python312_from_deadsnakes; then
+                success "Python 3.12 installed from deadsnakes PPA"
             else
-                log "Standard repositories failed, trying deadsnakes PPA..."
-                install_python312_from_deadsnakes
+                log "Both standard repos and deadsnakes PPA failed, trying alternatives..."
+                install_python312_alternative
             fi
             ;;
     esac
@@ -210,8 +233,46 @@ install_python312() {
         success "Python 3.12 installed successfully"
     else
         error "Python 3.12 installation failed"
-        exit 1
+        return 1
     fi
+}
+
+# Alternative Python 3.12 installation methods
+install_python312_alternative() {
+    log "Trying alternative Python 3.12 installation methods..."
+    
+    # Method 1: Check if Python 3.11 is available and use it instead
+    if command -v python3.11 &> /dev/null; then
+        warning "Python 3.12 not available, using Python 3.11 instead"
+        PYTHON_CMD="python3.11"
+        return 0
+    fi
+    
+    # Method 2: Try to install Python 3.11 if available
+    if sudo apt install -y python3.11 python3.11-venv python3.11-dev python3.11-distutils; then
+        success "Python 3.11 installed as alternative to Python 3.12"
+        PYTHON_CMD="python3.11"
+        return 0
+    fi
+    
+    # Method 3: Use system Python 3 if it's reasonably recent
+    local system_python_version=$(python3 --version 2>/dev/null | cut -d' ' -f2 || echo "0.0.0")
+    local major_version=$(echo $system_python_version | cut -d'.' -f1)
+    local minor_version=$(echo $system_python_version | cut -d'.' -f2)
+    
+    if [ "$major_version" = "3" ] && [ "$minor_version" -ge "10" ]; then
+        warning "Using system Python $system_python_version (may have some package compatibility issues)"
+        PYTHON_CMD="python3"
+        return 0
+    fi
+    
+    # Method 4: Install from source (last resort)
+    warning "All package installation methods failed"
+    log "Would you like to compile Python 3.12 from source? This will take 10-20 minutes."
+    log "Skipping source compilation for automated installation..."
+    log "You can manually install Python 3.12 and re-run this script"
+    
+    return 1
 }
 
 # Install Python 3.12 from deadsnakes PPA (for older Ubuntu versions)

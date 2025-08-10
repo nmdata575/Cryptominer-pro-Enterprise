@@ -731,111 +731,94 @@ async def save_pool_configuration(pool: SavedPool):
 async def update_saved_pool(pool_id: str, pool: SavedPool):
     """Update an existing saved pool configuration"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
-        # Validate wallet address
-        if pool.wallet_address:
-            is_valid, message = validate_wallet_address(pool.wallet_address, pool.coin_symbol)
-            if not is_valid:
-                raise HTTPException(status_code=400, detail=f"Invalid wallet address: {message}")
+        # Validate ObjectId
+        if not ObjectId.is_valid(pool_id):
+            return {"success": False, "error": "Invalid pool ID format"}
         
-        from bson import ObjectId
+        # Prepare update data
+        pool_data = {
+            "name": pool.name,
+            "coin_symbol": pool.coin_symbol,
+            "pool_address": pool.pool_address,
+            "pool_port": pool.pool_port,
+            "wallet_address": pool.wallet_address,
+            "updated_at": datetime.utcnow().isoformat()
+        }
         
-        pool_data = pool.dict()
-        pool_data["updated_at"] = datetime.utcnow()
-        
+        # Update in database
         result = await db.saved_pools.update_one(
             {"_id": ObjectId(pool_id)},
             {"$set": pool_data}
         )
         
         if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Pool configuration not found")
+            return {"success": False, "error": "Pool not found"}
         
-        return {
-            "success": True,
-            "message": "Pool configuration updated successfully"
-        }
+        return {"success": True, "message": "Pool updated successfully"}
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Update pool error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"success": False, "error": str(e)}
 
 @app.delete("/api/pools/saved/{pool_id}")
 async def delete_saved_pool(pool_id: str):
     """Delete a saved pool configuration"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
-        from bson import ObjectId
+        # Validate ObjectId
+        if not ObjectId.is_valid(pool_id):
+            return {"success": False, "error": "Invalid pool ID format"}
         
+        # Delete from database
         result = await db.saved_pools.delete_one({"_id": ObjectId(pool_id)})
         
         if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Pool configuration not found")
+            return {"success": False, "error": "Pool not found"}
         
-        return {
-            "success": True,
-            "message": "Pool configuration deleted successfully"
-        }
+        return {"success": True, "message": "Pool deleted successfully"}
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Delete pool error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"success": False, "error": str(e)}
 
 @app.post("/api/pools/saved/{pool_id}/use")
 async def use_saved_pool(pool_id: str):
-    """Mark a saved pool as recently used and return its configuration"""
+    """Mark a pool as recently used and get its configuration"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
-        from bson import ObjectId
+        # Validate ObjectId
+        if not ObjectId.is_valid(pool_id):
+            return {"success": False, "error": "Invalid pool ID format"}
         
-        # Update last used timestamp
-        result = await db.saved_pools.update_one(
+        # Update last_used timestamp
+        await db.saved_pools.update_one(
             {"_id": ObjectId(pool_id)},
-            {"$set": {"last_used": datetime.utcnow()}}
+            {"$set": {"last_used": datetime.utcnow().isoformat()}}
         )
         
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Pool configuration not found")
-        
-        # Get the updated pool configuration
+        # Get the pool configuration
         pool = await db.saved_pools.find_one({"_id": ObjectId(pool_id)})
         if not pool:
-            raise HTTPException(status_code=404, detail="Pool configuration not found")
+            return {"success": False, "error": "Pool not found"}
         
-        # Convert to dict and format for mining config
-        pool["_id"] = str(pool["_id"])
-        
-        return {
-            "success": True,
-            "pool": pool,
-            "mining_config": {
-                "coin": {
-                    "symbol": pool["coin_symbol"],
-                    "custom_pool_address": pool["pool_address"],
-                    "custom_pool_port": pool["pool_port"]
-                },
-                "wallet_address": pool["wallet_address"],
-                "pool_username": pool.get("pool_username", pool["wallet_address"]),
-                "pool_password": pool["pool_password"],
-                "mode": "pool"
-            }
+        pool_config = {
+            "id": str(pool["_id"]),
+            "name": pool["name"],
+            "coin_symbol": pool["coin_symbol"],
+            "pool_address": pool["pool_address"],
+            "pool_port": pool["pool_port"],
+            "wallet_address": pool["wallet_address"]
         }
         
-    except HTTPException:
-        raise
+        return {"success": True, "pool": pool_config}
+        
     except Exception as e:
-        logger.error(f"Use saved pool error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Use pool error: {e}")
+        return {"success": False, "error": str(e)}
 
 # ============================================================================
 # CUSTOM COINS API ENDPOINTS

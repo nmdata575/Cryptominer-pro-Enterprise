@@ -348,7 +348,7 @@ const EnterpriseDBConfig = ({ onConfigChange }) => {
     checkDatabaseStatus();
   }, []);
 
-  const checkDatabaseStatus = async () => {
+  const checkDatabaseStatus = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/health`);
       if (response.ok) {
@@ -381,7 +381,7 @@ const EnterpriseDBConfig = ({ onConfigChange }) => {
         connectionStatus: 'Error'
       }));
     }
-  };
+  }, []);
 
   const testDatabaseConnection = async (url) => {
     setDbConfig(prev => ({ ...prev, testingConnection: true }));

@@ -172,7 +172,9 @@ const EnterpriseThreadManager = ({ miningConfig, onConfigChange, systemStats }) 
               <div className="thread-presets">
                 <h5>Quick Presets</h5>
                 <div className="preset-buttons">
-                  {Object.entries(threadPresets).map(([presetName, threadCount]) => {
+                  {Object.entries(threadPresets).filter(([_, count]) => 
+                    typeof count === 'number' && count > 0
+                  ).map(([presetName, threadCount]) => {
                     const isActive = miningConfig.threads === threadCount;
                     const displayName = presetName.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
                     

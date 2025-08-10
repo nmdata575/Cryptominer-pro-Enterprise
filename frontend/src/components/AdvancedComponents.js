@@ -353,14 +353,25 @@ const EnterpriseDBConfig = ({ onConfigChange }) => {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/health`);
       if (response.ok) {
         const data = await response.json();
+        const dbStatus = data.database?.status || 'unknown';
+        
+        let connectionStatus = 'Unknown';
+        if (dbStatus === 'connected') {
+          connectionStatus = 'Connected';
+        } else if (dbStatus === 'disconnected') {
+          connectionStatus = 'Disconnected';
+        } else {
+          connectionStatus = 'Error';
+        }
+        
         setDbConfig(prev => ({
           ...prev,
-          connectionStatus: 'Connected'
+          connectionStatus: connectionStatus
         }));
       } else {
         setDbConfig(prev => ({
           ...prev,
-          connectionStatus: 'Disconnected'
+          connectionStatus: 'Error'
         }));
       }
     } catch (error) {

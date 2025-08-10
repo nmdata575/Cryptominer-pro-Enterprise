@@ -22,6 +22,7 @@ import uvicorn
 # Database imports
 from motor.motor_asyncio import AsyncIOMotorClient
 import pymongo
+from bson import ObjectId
 
 # System monitoring
 import psutil

@@ -294,14 +294,36 @@ cleanup_mongodb_data() {
             log "Cleaning up database data..."
             
             # Connect to MongoDB and drop the database
-            if command -v mongo &> /dev/null; then
-                mongo --eval "db.dropDatabase()" crypto_miner_db 2>/dev/null || true
-                success "Removed CryptoMiner Pro database"
-            elif command -v mongosh &> /dev/null; then
+            if command -v mongosh &> /dev/null; then
                 mongosh --eval "db.dropDatabase()" crypto_miner_db 2>/dev/null || true
-                success "Removed CryptoMiner Pro database"
+                success "Removed CryptoMiner Pro database (using mongosh)"
+            elif command -v mongo &> /dev/null; then
+                mongo --eval "db.dropDatabase()" crypto_miner_db 2>/dev/null || true
+                success "Removed CryptoMiner Pro database (using mongo)"
             else
-                warning "MongoDB client not found. Database data may remain."
+                # Try using Python pymongo
+                python3 -c "
+import pymongo
+try:
+    client = pymongo.MongoClient('mongodb://localhost:27017')
+    client.drop_database('crypto_miner_db')
+    print('Database dropped successfully')
+except Exception as e:
+    print(f'Failed to drop database: {e}')
+" 2>/dev/null || warning "Could not connect to MongoDB to drop database"
+            fi
+            
+            # Remove Docker MongoDB container if it exists
+            if command -v docker &> /dev/null && docker ps -a | grep -q mongodb; then
+                docker stop mongodb 2>/dev/null || true
+                docker rm mongodb 2>/dev/null || true
+                success "Removed MongoDB Docker container"
+            fi
+            
+            # Remove MongoDB data directory if using Docker
+            if [ -d "/opt/mongodb" ]; then
+                sudo rm -rf /opt/mongodb
+                success "Removed MongoDB data directory"
             fi
         else
             log "Skipped database cleanup"

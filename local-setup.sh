@@ -112,6 +112,58 @@ install_python312() {
         return 0
     fi
     
+    # Detect Ubuntu version
+    local ubuntu_version=$(lsb_release -cs 2>/dev/null || echo "unknown")
+    log "Detected Ubuntu version: $ubuntu_version"
+    
+    case "$ubuntu_version" in
+        "noble"|"24.04")
+            # Ubuntu 24.04 - Python 3.12 available from standard repositories
+            log "Installing Python 3.12 from Ubuntu 24.04 standard repositories..."
+            sudo apt update
+            sudo apt install -y \
+                python3.12 \
+                python3.12-venv \
+                python3.12-dev \
+                python3.12-distutils
+            ;;
+        "jammy"|"22.04")
+            # Ubuntu 22.04 - Need deadsnakes PPA for Python 3.12
+            log "Installing Python 3.12 from deadsnakes PPA for Ubuntu 22.04..."
+            install_python312_from_deadsnakes
+            ;;
+        "focal"|"20.04")
+            # Ubuntu 20.04 - Need deadsnakes PPA for Python 3.12
+            log "Installing Python 3.12 from deadsnakes PPA for Ubuntu 20.04..."
+            install_python312_from_deadsnakes
+            ;;
+        *)
+            # Unknown Ubuntu version - try standard repos first, then deadsnakes
+            warning "Unknown Ubuntu version: $ubuntu_version"
+            log "Trying standard repositories first..."
+            
+            if sudo apt update && sudo apt install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils; then
+                log "Python 3.12 installed from standard repositories"
+            else
+                log "Standard repositories failed, trying deadsnakes PPA..."
+                install_python312_from_deadsnakes
+            fi
+            ;;
+    esac
+    
+    # Verify installation
+    if python3.12 --version &> /dev/null; then
+        success "Python 3.12 installed successfully"
+    else
+        error "Python 3.12 installation failed"
+        exit 1
+    fi
+}
+
+# Install Python 3.12 from deadsnakes PPA (for older Ubuntu versions)
+install_python312_from_deadsnakes() {
+    log "Installing Python 3.12 from deadsnakes PPA..."
+    
     # Install software-properties-common if not available
     if ! command -v add-apt-repository &> /dev/null; then
         log "Installing software-properties-common..."
@@ -124,20 +176,12 @@ install_python312() {
     sudo apt update
     
     # Install Python 3.12 and related packages
-    log "Installing Python 3.12 packages..."
+    log "Installing Python 3.12 packages from deadsnakes..."
     sudo apt install -y \
         python3.12 \
         python3.12-venv \
         python3.12-dev \
         python3.12-distutils
-    
-    # Verify installation
-    if python3.12 --version &> /dev/null; then
-        success "Python 3.12 installed successfully"
-    else
-        error "Python 3.12 installation failed"
-        exit 1
-    fi
 }
 
 # Check permissions

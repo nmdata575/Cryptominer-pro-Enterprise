@@ -1,346 +1,196 @@
-# CryptoMiner Pro - Consolidated Documentation
+# CryptoMiner Pro - Enterprise V30 Edition
 
-## 🚀 Overview
+**Advanced Cryptocurrency Mining System with AI Optimization and Distributed Mining Capabilities**
 
-CryptoMiner Pro is an AI-powered Scrypt cryptocurrency mining platform with advanced web controls and real-time monitoring. The platform has been consolidated from 59+ files down to exactly 20 files while maintaining all functionality.
-
-### ⚡ Key Features
-
-- **AI-Powered Mining**: Advanced machine learning for hash pattern prediction and optimization
-- **Multi-Coin Support**: Litecoin (LTC), Dogecoin (DOGE), Feathercoin (FTC)
-- **Smart Pool Management**: Custom pool connections with real-time testing
-- **Dynamic Thread Optimization**: Auto-detection of optimal CPU core usage
-- **Real-time Monitoring**: WebSocket-powered live updates
-- **Role-based Dashboard**: Organized sections for different mining aspects
-
-### 🏗️ Architecture
-
-**Backend (Python FastAPI)**
-- `server.py` - Main API server with WebSocket support
-- `mining_engine.py` - Scrypt mining engine and pool management
-- `ai_system.py` - AI optimization and prediction system
-- `utils.py` - Utility functions and validation
-
-**Frontend (React)**
-- `App.js` - Main application component
-- `MiningDashboard.js` - Consolidated mining interface
-- `SystemComponents.js` - System controls and monitoring
-- `AIComponents.js` - AI insights and optimization
-
-**Configuration**
-- Consolidated CSS styles, package configurations, and environment setup
-
-## 🛠️ Installation
-
-### Quick Installation (Ubuntu 24+)
+## 🚀 Quick Start
 
 ```bash
-# Clone or download CryptoMiner Pro
-cd cryptominer-pro
+# Installation (Ubuntu 24+)
+sudo ./setup.sh --install
 
-# Run the unified installation script
-chmod +x install.sh
-sudo ./install.sh
+# Start mining
+sudo supervisorctl start mining_system:all
 
-# Start the application
-./start.sh
+# Access dashboard
+http://localhost:3334
 ```
 
-### Access the Application
+## 🏗️ Streamlined Architecture
 
-After installation, access CryptoMiner Pro at:
-- **Web Interface**: http://localhost:3333
-- **Backend API**: http://localhost:8001/api
-- **Health Check**: http://localhost:8001/api/health
-
-### Manual Installation
-
-**Backend Setup:**
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+```
+/opt/cryptominer-pro/
+├── backend/
+│   ├── server.py                    # Main FastAPI server
+│   ├── mining_engine.py             # Core mining functionality
+│   ├── ai_system.py                 # AI optimization system
+│   ├── real_scrypt_miner.py         # cgminer-compatible Scrypt implementation
+│   ├── enterprise_v30.py            # Consolidated V30 enterprise features
+│   ├── v30_protocol.py              # Distributed mining protocol
+│   ├── gpu_mining_engine.py         # GPU mining support
+│   └── utils.py                     # Utility functions
+├── frontend/
+│   ├── src/
+│   │   ├── App.js                   # Main application
+│   │   ├── styles.css               # Consolidated styles
+│   │   └── components/
+│   │       ├── MiningDashboard.js   # Core mining interface
+│   │       ├── SystemComponents.js  # System monitoring
+│   │       ├── AIComponents.js      # AI assistant
+│   │       ├── EnterpriseThreadManager.js # Thread management
+│   │       ├── EnterpriseDBConfig.js # Database configuration
+│   │       └── AdvancedComponents.js # Pool/coin management
+├── v30-remote-node/                 # Remote mining node
+├── setup.sh                         # Unified installation script
+├── uninstall.sh                     # Complete removal script
+└── Documentation/                   # Guides and documentation
 ```
 
-**Frontend Setup:**
-```bash
-cd frontend
-yarn install
-```
+## ✨ Key Features
 
-**Start Services:**
-```bash
-# Backend
-cd backend && source venv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 8001
+### 🏪 **Pool Management System**
+- Save frequently used pool configurations
+- Quick-launch mining with one click
+- EFL, LTC, DOGE, and custom coin support
+- Wallet address validation
 
-# Frontend
-cd frontend && yarn start
-```
+### 🪙 **Custom Coin Support**
+- Add any cryptocurrency with custom parameters
+- Support for multiple algorithms (Scrypt, SHA-256, X11, etc.)
+- Configurable Scrypt parameters (N, R, P values)
+- Database-backed persistence
 
-## 📊 AI System Features
+### ⛏️ **Enterprise Mining (V30)**
+- Scale to 250,000+ CPU threads
+- Distributed mining across multiple nodes
+- GPU acceleration (NVIDIA CUDA + AMD OpenCL)
+- Real-time performance monitoring
+- Load balancing and auto-failover
 
-### Hash Pattern Prediction
-- Real-time analysis of mining patterns
-- Predictive hashrate modeling using scikit-learn
-- Confidence scoring for predictions
+### 🤖 **AI-Powered Optimization**
+- Automatic thread adjustment
+- Pool performance analysis
+- Hash pattern prediction
+- Efficiency recommendations
 
-### Network Difficulty Forecasting
-- Analysis of network difficulty trends
-- 24-hour prediction horizon
-- Market-based difficulty adjustments
+### 🛠️ **Management Tools**
+- Web-based dashboard at `http://localhost:3334`
+- Real-time WebSocket updates
+- Comprehensive system monitoring
+- Enterprise licensing system
 
-### Pool Performance Analysis
-- Real-time latency monitoring
-- Share acceptance rate tracking
-- Automatic pool optimization recommendations
+## 📋 Installation Requirements
 
-### Mining Optimization
-- Dynamic thread count adjustment
-- CPU usage optimization
-- Memory efficiency monitoring
-- Performance grading system (A+ to D)
+**Minimum:**
+- Ubuntu 24+ (other distros supported but not tested)
+- 4GB RAM, 8GB recommended
+- 4 CPU cores minimum
+- 10GB free disk space
 
-## 🎯 Mining Profiles
+**Enterprise V30:**
+- 64GB RAM (512GB recommended)
+- 32+ CPU cores
+- 1Gbps network connection
+- GPU(s) for optimal performance
 
-### Light Mining (50% cores)
-- Minimal system impact
-- Background mining capability
-- Ideal for daily computer use
-
-### Standard Mining (75% cores)
-- Balanced performance
-- Optimal efficiency
-- Recommended for most users
-
-### Maximum Mining (100% cores)
-- Full system utilization
-- Maximum hashrate
-- Dedicated mining systems
-
-## 🔧 Configuration
-
-### Wallet Setup
-**Litecoin (LTC):**
-- Legacy: L/M prefix (26-35 chars)
-- Bech32: ltc1 prefix (39-59 chars)
-- Multisig: 3 prefix (26-35 chars)
-
-**Dogecoin (DOGE):**
-- Standard: D prefix (26-34 chars)
-- Multisig: 9/A prefix (26-34 chars)
-
-**Feathercoin (FTC):**
-- Standard: 6/7 prefix (26-34 chars)
-
-### Pool Configuration
-```json
-{
-  "mode": "pool",
-  "custom_pool_address": "stratum+tcp://ltc.luckymonster.pro",
-  "custom_pool_port": 4112,
-  "pool_username": "your_wallet_address",
-  "pool_password": "d=24000"
-}
-```
-
-### Solo Mining Configuration
-```json
-{
-  "mode": "solo",
-  "wallet_address": "your_wallet_address",
-  "custom_rpc_host": "127.0.0.1",
-  "custom_rpc_port": 9332,
-  "custom_rpc_username": "rpcuser",
-  "custom_rpc_password": "rpcpass"
-}
-```
-
-## 📈 Monitoring & Analytics
-
-### Real-time Metrics
-- Hashrate (H/s, KH/s, MH/s, GH/s, TH/s)
-- Accepted/Rejected shares
-- CPU and memory usage
-- Mining efficiency score
-- System health status
-
-### Performance Grading
-- **A+**: >50 efficiency score (Excellent)
-- **A**: 30-50 efficiency score (Very Good)
-- **B**: 20-30 efficiency score (Good)
-- **C**: 10-20 efficiency score (Average)
-- **D**: <10 efficiency score (Poor)
-
-### AI Learning Progress
-- Data point collection
-- Model training status
-- Prediction accuracy
-- Optimization recommendations
-
-## 🔗 API Endpoints
-
-### Mining Control
-- `GET /api/health` - System health check
-- `GET /api/coins/presets` - Available cryptocurrencies
-- `POST /api/mining/start` - Start mining
-- `POST /api/mining/stop` - Stop mining
-- `GET /api/mining/status` - Mining status
-
-### System Information
-- `GET /api/system/stats` - System statistics
-- `GET /api/system/cpu-info` - CPU information
-
-### AI System
-- `GET /api/mining/ai-insights` - AI predictions and insights
-- `GET /api/ai/status` - AI system status
-- `POST /api/ai/auto-optimize` - Trigger auto-optimization
-
-### Pool/RPC Testing
-- `POST /api/pool/test-connection` - Test pool connection
-- `POST /api/validate_wallet` - Validate wallet address
-
-### WebSocket
-- `ws://localhost:8001/ws` - Real-time updates
-
-## 🛡️ Security Features
-
-- Wallet address validation for all supported coins
-- Secure RPC connection handling
-- Input sanitization and validation
-- Environment variable protection
-- Safe mining parameter limits
-
-## 🚨 Troubleshooting
-
-### Supervisor Service Issues
-
-If you encounter "no such group" errors or supervisor issues:
+## 🔧 Management Commands
 
 ```bash
-# Run the supervisor setup script
-sudo ./setup-supervisor.sh
+# Service Management
+sudo supervisorctl status mining_system:all    # Check status
+sudo supervisorctl start mining_system:all     # Start services  
+sudo supervisorctl restart mining_system:all   # Restart services
+sudo supervisorctl stop mining_system:all      # Stop services
 
-# Or manually configure supervisor
-sudo supervisorctl reread
-sudo supervisorctl update
-sudo supervisorctl start cryptominer_pro:*
+# Installation Modes
+./setup.sh --install                   # Fresh installation
+./setup.sh --frontend-fix              # Fix frontend issues
+./setup.sh --restart-services          # Restart services
+./setup.sh --status                    # Check service status
+
+# Complete Removal
+./uninstall.sh                         # Basic uninstall with backup
+./uninstall.sh --cleanup-database      # Remove database data
+./uninstall.sh --remove-deps           # Remove dependencies
 ```
 
-### Quick Service Commands
+## 🔍 Troubleshooting
 
+**Service Issues:**
 ```bash
-# Check service status
-sudo supervisorctl status
+# Check logs
+tail -f /var/log/supervisor/backend.out.log
+tail -f /var/log/supervisor/frontend.out.log
 
-# Start services
-sudo supervisorctl start cryptominer_pro:*
-
-# Stop services  
-sudo supervisorctl stop cryptominer_pro:*
-
-# Restart services
-sudo supervisorctl restart cryptominer_pro:*
+# Restart specific service
+sudo supervisorctl restart mining_system:backend
+sudo supervisorctl restart mining_system:frontend
 ```
 
-### Common Issues
-
-**Permission Denied:**
+**Database Issues:**
 ```bash
-sudo chown -R www-data:www-data /app
-sudo supervisorctl restart cryptominer_pro:*
+# Restart MongoDB
+sudo systemctl restart mongodb
+sudo systemctl status mongodb
 ```
 
 **Port Conflicts:**
 ```bash
-sudo pkill -f "uvicorn" 
-sudo pkill -f "react-scripts"
-sudo supervisorctl restart cryptominer_pro:*
+# Check port usage
+sudo lsof -i :8001  # Backend port
+sudo lsof -i :3334  # Frontend port
+
+# Kill conflicting processes
+sudo kill -9 <PID>
 ```
 
-**Missing Dependencies:**
+## 📊 API Endpoints
+
+- **Health Check:** `GET /api/health`
+- **Mining Control:** `POST /api/mining/start|stop`
+- **Pool Management:** `GET|POST|PUT|DELETE /api/pools/saved`
+- **Custom Coins:** `GET|POST|PUT|DELETE /api/coins/custom`
+- **Enterprise V30:** `POST /api/v30/system/initialize`
+
+## 🔐 Enterprise Licensing
+
+The V30 Enterprise edition includes 5000 pre-generated license keys. Each license enables:
+- Distributed mining control
+- Advanced hardware validation  
+- GPU acceleration support
+- Custom mining protocols
+- Enterprise monitoring
+- Load balancing & auto-failover
+
+## 🌐 Remote Node Setup
+
+Deploy remote mining nodes:
 ```bash
-cd /app/backend && ./venv/bin/pip install -r requirements.txt
-cd /app/frontend && yarn install
+cd v30-remote-node/
+sudo ./install.sh
+# Configure with your license key and server details
 ```
 
-### Manual Startup (Alternative)
+## 📈 Performance Optimization
 
-If supervisor fails, start services manually in separate terminals:
+1. **Thread Configuration:** Use Enterprise Thread Manager for optimal CPU utilization
+2. **GPU Mining:** Enable CUDA/ROCm for hybrid CPU+GPU mining
+3. **Pool Selection:** Use saved pool configurations for lowest latency
+4. **AI Optimization:** Enable automatic optimization for best efficiency
+5. **Network:** Ensure stable 1Gbps+ connection for enterprise features
 
-**Terminal 1 (Backend):**
-```bash
-cd /app/backend
-source venv/bin/activate  
-python -m uvicorn server:app --host 0.0.0.0 --port 8001
-```
+## 🛡️ Security Considerations
 
-**Terminal 2 (Frontend):**
-```bash
-cd /app/frontend
-PORT=3333 yarn start
-```
-
-## 📋 System Requirements
-
-### Minimum Requirements
-- CPU: 2+ cores
-- RAM: 4GB
-- Storage: 2GB free space
-- OS: Ubuntu 20.04+ or compatible Linux
-
-### Recommended Requirements
-- CPU: 8+ cores (for optimal mining)
-- RAM: 8GB+
-- Storage: 5GB free space
-- Network: Stable internet connection
-
-### Supported Cryptocurrencies
-- **Litecoin (LTC)**: Primary focus, full feature support
-- **Dogecoin (DOGE)**: Complete implementation
-- **Feathercoin (FTC)**: Full support with validation
-
-## 🔄 Updates and Maintenance
-
-### Regular Maintenance
-```bash
-# Update system packages
-sudo apt update && sudo apt upgrade
-
-# Restart mining services
-sudo supervisorctl restart all
-
-# Clean logs (optional)
-sudo journalctl --vacuum-time=7d
-```
-
-### Performance Optimization
-1. Monitor system resources during mining
-2. Adjust thread count based on AI recommendations
-3. Use appropriate mining profile for your use case
-4. Keep system updated and clean
+- Configure firewall rules for distributed mining ports
+- Use secure wallet addresses and pool credentials
+- Regular backup of pool configurations and custom coins
+- Monitor system resources and network usage
 
 ## 📞 Support
 
-### Getting Help
-1. Check troubleshooting section above
-2. Review log files for error details
-3. Verify system requirements
-4. Test with different mining configurations
-
-### Reporting Issues
-Include the following information:
-- System specifications
-- Error messages from logs
-- Mining configuration used
-- Steps to reproduce the issue
-
-## 📄 License
-
-This project is open source. See LICENSE file for details.
+- Configuration backup: `~/cryptominer-pro-backup-YYYYMMDD-HHMMSS/`
+- Log files: `/var/log/supervisor/`
+- Installation directory: `/opt/cryptominer-pro/`
 
 ---
 
-**Built with ❤️ by the CryptoMiner Pro Team**
-
-*AI-Powered Mining for the Modern Era*
+**CryptoMiner Pro V30** - Professional cryptocurrency mining with enterprise scalability and AI optimization.

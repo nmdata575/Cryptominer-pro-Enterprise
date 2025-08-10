@@ -78,6 +78,16 @@ check_and_install_python() {
     log "Detected system Python: $python_version"
     log "Ubuntu version: $ubuntu_version"
     
+    # Clean up any broken PPA configurations first
+    if [ -f /etc/apt/sources.list.d/deadsnakes-ubuntu-ppa-*.list ]; then
+        log "Checking existing deadsnakes PPA configuration..."
+        if ! sudo apt update 2>/dev/null | grep -q "deadsnakes"; then
+            warning "Existing deadsnakes PPA seems broken, cleaning up..."
+            sudo rm -f /etc/apt/sources.list.d/deadsnakes-ubuntu-ppa-*.list
+            sudo apt update
+        fi
+    fi
+    
     # Determine optimal Python version based on Ubuntu version and compatibility
     case "$ubuntu_version" in
         "noble"|"24.04")
@@ -94,6 +104,30 @@ check_and_install_python() {
                 log "Installing Python 3.12 for optimal compatibility on Ubuntu 24.04..."
                 install_python312
                 PYTHON_CMD="python3.12"
+            fi
+            ;;
+        "plucky"|"25.04"|"oracular"|"24.10")
+            # Ubuntu development versions (25.04+)
+            warning "Ubuntu development version detected: $ubuntu_version"
+            if [ "$major_version" = "3" ] && [ "$minor_version" = "13" ]; then
+                warning "Python 3.13 detected - may have pandas compatibility issues"
+                log "Attempting to install Python 3.12 or 3.11 for better compatibility..."
+                if install_python312; then
+                    PYTHON_CMD="python3.12"
+                else
+                    warning "Could not install Python 3.12, will try to use Python 3.13 with workarounds"
+                    PYTHON_CMD="python3"
+                fi
+            elif [ "$major_version" = "3" ] && [ "$minor_version" -ge "11" ]; then
+                log "Python $python_version should work on development Ubuntu"
+                PYTHON_CMD="python3"
+            else
+                log "Attempting to install newer Python version for better compatibility..."
+                if install_python312; then
+                    PYTHON_CMD="python3.12"
+                else
+                    PYTHON_CMD="python3"
+                fi
             fi
             ;;
         "jammy"|"22.04")
@@ -132,16 +166,24 @@ check_and_install_python() {
             # Unknown Ubuntu version - use conservative approach
             warning "Unknown Ubuntu version: $ubuntu_version"
             if [ "$major_version" = "3" ] && [ "$minor_version" = "13" ]; then
-                warning "Python 3.13 detected - installing Python 3.12 for better compatibility"
-                install_python312
-                PYTHON_CMD="python3.12"
+                warning "Python 3.13 detected - attempting to install Python 3.12 or 3.11 for better compatibility"
+                if install_python312; then
+                    PYTHON_CMD="python3.12"
+                else
+                    warning "Could not install alternative Python version, using Python 3.13 with workarounds"
+                    PYTHON_CMD="python3"
+                fi
             elif [ "$major_version" = "3" ] && [ "$minor_version" -ge "11" ] && [ "$minor_version" -le "12" ]; then
                 log "Python $python_version should be compatible"
                 PYTHON_CMD="python3"
             else
-                log "Installing Python 3.12 for optimal compatibility..."
-                install_python312
-                PYTHON_CMD="python3.12"
+                log "Attempting to install Python 3.12 for optimal compatibility..."
+                if install_python312; then
+                    PYTHON_CMD="python3.12"
+                else
+                    warning "Could not install Python 3.12, using system Python"
+                    PYTHON_CMD="python3"
+                fi
             fi
             ;;
     esac

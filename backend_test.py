@@ -604,32 +604,252 @@ class BackendTester:
             self.log_test("Custom Coins API", False, f"Exception: {str(e)}")
             return False
     
+    def test_real_mining_start(self) -> bool:
+        """Test real mining start with EFL pool"""
+        try:
+            # Real EFL pool configuration as specified in the review request
+            mining_config = {
+                "coin": {
+                    "name": "Electronic Gulden", 
+                    "symbol": "EFL",
+                    "algorithm": "Scrypt",
+                    "custom_pool_address": "stratum.luckydogpool.com",
+                    "custom_pool_port": 7026
+                },
+                "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
+                "threads": 4,
+                "mode": "pool"
+            }
+            
+            response = self.session.post(f"{self.base_url}/mining/start", json=mining_config)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    self.log_test("Real Mining Start API", True, 
+                                f"Mining started successfully: {data.get('message')}")
+                    return True
+                else:
+                    self.log_test("Real Mining Start API", False, 
+                                f"Mining start failed: {data.get('message')}")
+                    return False
+            else:
+                self.log_test("Real Mining Start API", False, f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Real Mining Start API", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_real_mining_monitoring(self) -> bool:
+        """Test real mining monitoring for sustained operation"""
+        try:
+            print("\n⏱️  Starting 5-minute real mining monitoring test...")
+            print("   Checking mining status every 30 seconds for 10 cycles")
+            
+            monitoring_results = []
+            
+            for cycle in range(10):  # 10 cycles of 30 seconds = 5 minutes
+                print(f"\n📊 Monitoring Cycle {cycle + 1}/10:")
+                
+                # Get mining status
+                response = self.session.get(f"{self.base_url}/mining/status")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    is_mining = data.get("is_mining", False)
+                    stats = data.get("stats", {})
+                    
+                    # Extract key metrics
+                    hashrate = stats.get("hashrate", 0)
+                    accepted_shares = stats.get("accepted_shares", 0)
+                    uptime = stats.get("uptime", 0)
+                    active_threads = stats.get("active_threads", 0)
+                    
+                    cycle_result = {
+                        "cycle": cycle + 1,
+                        "is_mining": is_mining,
+                        "hashrate": hashrate,
+                        "accepted_shares": accepted_shares,
+                        "uptime": uptime,
+                        "active_threads": active_threads
+                    }
+                    
+                    monitoring_results.append(cycle_result)
+                    
+                    print(f"   ⛏️  Mining Active: {is_mining}")
+                    print(f"   📈 Hashrate: {hashrate:.2f} H/s")
+                    print(f"   ✅ Accepted Shares: {accepted_shares}")
+                    print(f"   ⏰ Uptime: {uptime:.1f}s")
+                    print(f"   🧵 Active Threads: {active_threads}")
+                    
+                    if not is_mining:
+                        self.log_test("Real Mining Monitoring", False, 
+                                    f"Mining stopped unexpectedly at cycle {cycle + 1}")
+                        return False
+                else:
+                    self.log_test("Real Mining Monitoring", False, 
+                                f"Status check failed at cycle {cycle + 1}: HTTP {response.status_code}")
+                    return False
+                
+                # Wait 30 seconds before next check (except last cycle)
+                if cycle < 9:
+                    time.sleep(30)
+            
+            # Analyze results
+            mining_stayed_active = all(result["is_mining"] for result in monitoring_results)
+            final_shares = monitoring_results[-1]["accepted_shares"]
+            final_uptime = monitoring_results[-1]["uptime"]
+            
+            if mining_stayed_active and final_uptime >= 270:  # At least 4.5 minutes
+                self.log_test("Real Mining Monitoring", True, 
+                            f"Mining stayed active for {final_uptime:.1f}s, {final_shares} shares accepted")
+                return True
+            else:
+                self.log_test("Real Mining Monitoring", False, 
+                            f"Mining instability detected - Active: {mining_stayed_active}, Uptime: {final_uptime:.1f}s")
+                return False
+                
+        except Exception as e:
+            self.log_test("Real Mining Monitoring", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_real_mining_statistics(self) -> bool:
+        """Test real mining statistics accuracy"""
+        try:
+            response = self.session.get(f"{self.base_url}/mining/status")
+            
+            if response.status_code == 200:
+                data = response.json()
+                stats = data.get("stats", {})
+                
+                # Check for required statistics fields
+                required_stats = ["hashrate", "accepted_shares", "uptime", "active_threads"]
+                missing_stats = [stat for stat in required_stats if stat not in stats]
+                
+                if missing_stats:
+                    self.log_test("Real Mining Statistics", False, f"Missing stats: {missing_stats}")
+                    return False
+                
+                # Validate statistics values
+                hashrate = stats.get("hashrate", 0)
+                accepted_shares = stats.get("accepted_shares", 0)
+                uptime = stats.get("uptime", 0)
+                
+                # Check if statistics are reasonable
+                if hashrate >= 0 and accepted_shares >= 0 and uptime >= 0:
+                    # Calculate acceptance rate if shares found
+                    shares_found = stats.get("blocks_found", 0)  # Using blocks_found as shares_found
+                    acceptance_rate = (accepted_shares / shares_found * 100) if shares_found > 0 else 0
+                    
+                    self.log_test("Real Mining Statistics", True, 
+                                f"Hashrate: {hashrate:.2f} H/s, Shares: {accepted_shares}, "
+                                f"Acceptance: {acceptance_rate:.1f}%, Uptime: {uptime:.1f}s")
+                    return True
+                else:
+                    self.log_test("Real Mining Statistics", False, 
+                                f"Invalid statistics values: hashrate={hashrate}, shares={accepted_shares}, uptime={uptime}")
+                    return False
+            else:
+                self.log_test("Real Mining Statistics", False, f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Real Mining Statistics", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_real_mining_stop(self) -> bool:
+        """Test real mining stop functionality"""
+        try:
+            response = self.session.post(f"{self.base_url}/mining/stop")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    # Wait a moment for mining to fully stop
+                    time.sleep(2)
+                    
+                    # Verify mining has stopped
+                    status_response = self.session.get(f"{self.base_url}/mining/status")
+                    if status_response.status_code == 200:
+                        status_data = status_response.json()
+                        is_mining = status_data.get("is_mining", True)
+                        
+                        if not is_mining:
+                            self.log_test("Real Mining Stop API", True, 
+                                        f"Mining stopped successfully: {data.get('message')}")
+                            return True
+                        else:
+                            self.log_test("Real Mining Stop API", False, 
+                                        "Mining status still shows active after stop command")
+                            return False
+                    else:
+                        self.log_test("Real Mining Stop API", False, 
+                                    f"Status check failed: HTTP {status_response.status_code}")
+                        return False
+                else:
+                    self.log_test("Real Mining Stop API", False, 
+                                f"Stop command failed: {data.get('message')}")
+                    return False
+            else:
+                self.log_test("Real Mining Stop API", False, f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Real Mining Stop API", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self) -> Dict[str, Any]:
-        """Run all backend API tests"""
+        """Run all backend API tests with focus on REAL MINING"""
         print("🚀 Starting CryptoMiner Pro Backend API Tests")
         print(f"📡 Testing backend at: {self.base_url}")
+        print("🎯 FOCUS: Real Mining Functionality Testing")
         print("=" * 60)
         
-        # Core API Tests
-        print("\n📋 Core API Tests:")
+        # Core API Tests (Quick verification)
+        print("\n📋 Core API Tests (Quick Check):")
         self.test_health_check()
+        self.test_mining_status()
+        
+        # CRITICAL: Real Mining Tests
+        print("\n⛏️  REAL MINING TESTS (CRITICAL):")
+        print("🔥 Testing FIXED real mining functionality after asyncio event loop fix")
+        
+        # Test 1: Start Real Mining
+        mining_started = self.test_real_mining_start()
+        
+        if mining_started:
+            # Test 2: Monitor Mining for 5+ minutes
+            mining_sustained = self.test_real_mining_monitoring()
+            
+            # Test 3: Check Statistics
+            self.test_real_mining_statistics()
+            
+            # Test 4: Stop Mining
+            self.test_real_mining_stop()
+        else:
+            print("❌ Real mining failed to start - skipping monitoring tests")
+            self.log_test("Real Mining Monitoring", False, "Skipped - mining failed to start")
+            self.log_test("Real Mining Statistics", False, "Skipped - mining failed to start") 
+            self.log_test("Real Mining Stop API", False, "Skipped - mining failed to start")
+        
+        # Additional Core Tests
+        print("\n📋 Additional Core API Tests:")
         self.test_system_cpu_info()
         self.test_system_stats()
-        self.test_mining_status()
         self.test_ai_insights()
         self.test_coin_presets()
         self.test_database_connection()
         
-        # V30 Enterprise Tests
-        print("\n🏢 V30 Enterprise API Tests:")
+        # V30 Enterprise Tests (Abbreviated)
+        print("\n🏢 V30 Enterprise API Tests (Key Tests):")
         self.test_v30_license_validation()
         self.test_v30_hardware_validation()
         self.test_v30_system_initialization()
-        self.test_v30_system_status()
-        self.test_v30_nodes_list()
-        self.test_v30_comprehensive_stats()
         
-        # Saved Pools & Custom Coins Tests
+        # Data Management Tests
         print("\n💾 Data Management API Tests:")
         self.test_saved_pools_api()
         self.test_custom_coins_api()

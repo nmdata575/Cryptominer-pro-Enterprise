@@ -1,118 +1,310 @@
 <analysis>
-The AI engineer's work on the CryptoMiner Pro application demonstrates an iterative and robust development process, transforming an initial MVP into an enterprise-grade distributed mining platform. The trajectory highlights systematic problem-solving across frontend, backend, and infrastructure layers. Key areas of focus included environment hardening (resolving Python versioning, dependency conflicts, and persistent port issues), scaling capabilities (from 16 to 250,000+ threads, remote database, GPU support), and functional enhancements (AI integration, real Scrypt mining protocol, licensing, custom communication). The engineer meticulously debugged UI rendering errors and backend validation issues, ensuring high functionality and stability. The progression involved initial fixes, enterprise feature additions (V30), and the development of a remote node application, culminating in a fully tested, production-ready system with a real scrypt mining engine.
+The AI engineer's trajectory for CryptoMiner Pro V30 demonstrates an advanced, iterative development process, addressing complex challenges across software layers and environment setup. Initially, the focus was on critical bug fixes, particularly for the Scrypt mining protocol and persistent environmental issues like Python versioning, port conflicts, and MongoDB connectivity. Subsequently, enterprise-grade features were added, including distributed mining capabilities, licensing, and remote node management. The engineer then implemented user-requested enhancements like saved pool configurations and custom coin management, followed by significant refactoring for file consolidation and the creation of an uninstall script. Throughout, the process highlighted a strong focus on debugging, environment hardening, and responsive feature development, culminating in a robust, functional, and organized application, despite recurring system-level configuration challenges related to Ubuntu versions and Python dependencies.
 </analysis>
 
 <product_requirements>
-The CryptoMiner Pro application is a web-controlled Scrypt cryptocurrency mining platform designed for both individual and enterprise use. Initially, the product required real-time mining metric monitoring (hashrate, shares, CPU/memory), an advanced AI for block hash prediction and optimal coin switching, and configurable Scrypt-based coin mining (Litecoin, Dogecoin) supporting solo/pool operations. Subsequent enhancements added wallet integration, performance optimization (manual/AI), comprehensive Ubuntu 24+ installation, custom pool/RPC configuration, dynamic CPU core adjustment, and a reorganized, role-based frontend. A critical requirement was platform consolidation to a target of 20 essential files.
+The CryptoMiner Pro application began as a web-controlled Scrypt cryptocurrency mining platform for individuals and enterprises, requiring real-time metrics, AI for hash prediction and coin switching, and configurable Scrypt-based solo/pool mining. Initial enhancements included wallet integration, performance optimization, Ubuntu 24+ installation support, custom pool/RPC, dynamic CPU adjustment, and a role-based frontend, aiming for a consolidated codebase of 20 essential files.
 
-The project evolved into CryptoMiner Enterprise V30, a distributed mining platform. This new phase required:
-- Increased CPU utilization (from 7-9% to 100%) and support for 250,000+ CPU cores for data centers/GPU farms.
-- A singular database option hosted on a separate server.
-- Ability to tally remote systems' mining rates and core counts into the central system.
-- Full GPU utilization for both AMD and NVIDIA simultaneously.
-- Minimum hardware requirements: 64GB RAM (512GB recommended), 32 cores minimum, 1x 1Gbps network.
-- A required license key system, pre-determined with 5000 42-character alphanumeric keys.
-- A custom communication protocol between the central server and remote nodes.
-- Development of a terminal-only remote application for nodes, with automatic updates from the main server.
-- A crucial fix for the Scrypt mining protocol to ensure proper share submission to mining pools, compatible with tools like .
+The project evolved into CryptoMiner Enterprise V30, a distributed mining platform. Core requirements included:
+- Scaling CPU utilization to 100% and supporting 250,000+ CPU cores, especially for data centers and GPU farms.
+- Centralized database on a separate server.
+- Aggregation of remote systems' mining rates and core counts.
+- Full GPU utilization for AMD and NVIDIA simultaneously.
+- Minimum hardware requirements: 64GB RAM (512GB recommended), 32 cores, 1Gbps network.
+- A mandatory license key system (5000 pre-determined 42-character alphanumeric keys).
+- A custom communication protocol for central server-to-node communication.
+- A terminal-only remote application for nodes, with automatic updates.
+- A critical fix for the Scrypt mining protocol to ensure proper share submission to mining pools, compatible with .
+
+Recent user-requested features include storing and reusing previously used pool information (wallet address, password, pool address, port) and adding a custom coin feature for user-defined cryptocurrencies. The latest request involves creating an uninstall script, re-evaluating and condensing existing files for efficiency, verifying dependencies, and preparing for executable packaging.
 </product_requirements>
 
 <key_technical_concepts>
 - **Full-stack Architecture**: React (frontend), FastAPI (backend), MongoDB.
-- **Scrypt Algorithm**: Core mining logic (cgminer-compatible, Stratum protocol).
-- **Python Environment**: Virtual environments, pip, dependency management.
-- **Linux/Bash Scripting**: Automated installation, supervisor.
-- **Process Management**: Supervisor for background services.
-- **Real-time Data**: WebSockets for live metrics.
-- **AI/ML**: Scikit-learn (prediction/optimization), NumPy, Pandas.
-- **Distributed Systems**: Custom binary protocol, node management, load balancing.
-- **Hardware Validation**: System resource detection.
-- **Licensing**: Alphanumeric key generation/validation.
-- **GPU Mining**: NVIDIA CUDA, AMD OpenCL.
+- **Scrypt Algorithm & Stratum Protocol**: Real cryptocurrency mining (cgminer-compatible).
+- **Python Environment Management**: Virtual environments (), 
+Usage:   
+  pip <command> [options]
+
+Commands:
+  install                     Install packages.
+  lock                        Generate a lock file.
+  download                    Download packages.
+  uninstall                   Uninstall packages.
+  freeze                      Output installed packages in requirements format.
+  inspect                     Inspect the python environment.
+  list                        List installed packages.
+  show                        Show information about installed packages.
+  check                       Verify installed packages have compatible dependencies.
+  config                      Manage local and global configuration.
+  search                      Search PyPI for packages.
+  cache                       Inspect and manage pip's wheel cache.
+  index                       Inspect information available from package indexes.
+  wheel                       Build wheels from your requirements.
+  hash                        Compute hashes of package archives.
+  completion                  A helper command used for command completion.
+  debug                       Show information useful for debugging.
+  help                        Show help for commands.
+
+General Options:
+  -h, --help                  Show help.
+  --debug                     Let unhandled exceptions propagate outside the
+                              main subroutine, instead of logging them to
+                              stderr.
+  --isolated                  Run pip in an isolated mode, ignoring
+                              environment variables and user configuration.
+  --require-virtualenv        Allow pip to only run in a virtual environment;
+                              exit with an error otherwise.
+  --python <python>           Run pip with the specified Python interpreter.
+  -v, --verbose               Give more output. Option is additive, and can be
+                              used up to 3 times.
+  -V, --version               Show version and exit.
+  -q, --quiet                 Give less output. Option is additive, and can be
+                              used up to 3 times (corresponding to WARNING,
+                              ERROR, and CRITICAL logging levels).
+  --log <path>                Path to a verbose appending log.
+  --no-input                  Disable prompting for input.
+  --keyring-provider <keyring_provider>
+                              Enable the credential lookup via the keyring
+                              library if user input is allowed. Specify which
+                              mechanism to use [auto, disabled, import,
+                              subprocess]. (default: auto)
+  --proxy <proxy>             Specify a proxy in the form
+                              scheme://[user:passwd@]proxy.server:port.
+  --retries <retries>         Maximum attempts to establish a new HTTP
+                              connection. (default: 5)
+  --timeout <sec>             Set the socket timeout (default 15 seconds).
+  --exists-action <action>    Default action when a path already exists:
+                              (s)witch, (i)gnore, (w)ipe, (b)ackup, (a)bort.
+  --trusted-host <hostname>   Mark this host or host:port pair as trusted,
+                              even though it does not have valid or any HTTPS.
+  --cert <path>               Path to PEM-encoded CA certificate bundle. If
+                              provided, overrides the default. See 'SSL
+                              Certificate Verification' in pip documentation
+                              for more information.
+  --client-cert <path>        Path to SSL client certificate, a single file
+                              containing the private key and the certificate
+                              in PEM format.
+  --cache-dir <dir>           Store the cache data in <dir>.
+  --no-cache-dir              Disable the cache.
+  --disable-pip-version-check
+                              Don't periodically check PyPI to determine
+                              whether a new version of pip is available for
+                              download. Implied with --no-index.
+  --no-color                  Suppress colored output.
+  --use-feature <feature>     Enable new functionality, that may be backward
+                              incompatible.
+  --use-deprecated <feature>  Enable deprecated functionality, that will be
+                              removed in the future.
+  --resume-retries <resume_retries>
+                              Maximum attempts to resume or restart an
+                              incomplete download. (default: 5) for dependencies.
+- **Linux System Administration**: Bash scripting for setup/install/uninstall,  for process management.
+- **Distributed Systems**: Custom binary protocol, central control, remote node application.
+- **Hardware Abstraction**: CPU, GPU (NVIDIA CUDA, AMD OpenCL) validation and utilization.
+- **AI/ML Integration**: Scikit-learn, NumPy for optimization.
+- **Package Management**:  (Python),  (npm <command>
+
+Usage:
+
+npm install        install all the dependencies in your project
+npm install <foo>  add the <foo> dependency to your project
+npm test           run this project's tests
+npm run <foo>      run the script named <foo>
+npm <command> -h   quick help on <command>
+npm -l             display usage info for all commands
+npm help <term>    search for help on <term>
+npm help npm       more involved overview
+
+All commands:
+
+    access, adduser, audit, bugs, cache, ci, completion,
+    config, dedupe, deprecate, diff, dist-tag, docs, doctor,
+    edit, exec, explain, explore, find-dupes, fund, get, help,
+    help-search, hook, init, install, install-ci-test,
+    install-test, link, ll, login, logout, ls, org, outdated,
+    owner, pack, ping, pkg, prefix, profile, prune, publish,
+    query, rebuild, repo, restart, root, run-script, sbom,
+    search, set, shrinkwrap, star, stars, start, stop, team,
+    test, token, uninstall, unpublish, unstar, update, version,
+    view, whoami
+
+Specify configs in the ini-formatted file:
+    /root/.npmrc
+or on the command line via: npm <command> --key=value
+
+More configuration info: npm help config
+Configuration fields: npm help 7 config
+
+npm@10.8.2 /usr/lib/node_modules/npm/).
 </key_technical_concepts>
 
 <code_architecture>
-The application follows a full-stack architecture, primarily located in  and designed for installation under . The codebase underwent significant consolidation.
+The application employs a full-stack architecture residing in , with an intended installation under . The codebase has undergone significant consolidation for efficiency.
 
 
 
 -   :
-    -   **Summary**: Main FastAPI application handling API endpoints.
-    -   **Changes**: Integrated new V30 API endpoints (, , , , etc.) for enterprise features (licensing, hardware validation, central control, node updates). Updated to support new thread management logic and external database configurations.
+    -   **Summary**: The main FastAPI application routing API requests.
+    -   **Changes**: Integrated new V30 API endpoints (e.g., for , , ). Updated to use  for consolidated V30 features and  for core mining.
 -   :
-    -   **Summary**: Core mining logic.
-    -   **Changes**: Overhauled to support enterprise-scale thread counts (e.g., ). Integrated  and  classes from  to enable actual pool mining via Stratum protocol and replace the previous, incorrect Scrypt implementation. Added  method.
+    -   **Summary**: Contains core mining logic.
+    -   **Changes**: Overhauled to support enterprise-scale threads and integrated  and  from  for actual pool mining.
 -   :
-    -   **Summary**: New file providing a -compatible Scrypt implementation and Stratum protocol client.
-    -   **Changes**: Newly created to implement correct Salsa20/8 core function, BlockMix, SMix, and full Stratum protocol (subscribe, authorize, submit) for real cryptocurrency share submission.
+    -   **Summary**: Implements a -compatible Scrypt algorithm and Stratum protocol client for real share submission.
+    -   **Changes**: Newly created to correctly handle hashing and pool communication.
 -   :
-    -   **Summary**: New file for generating and validating enterprise license keys.
-    -   **Changes**: Newly created to generate 5000 unique 42-character alphanumeric keys and provide validation/activation logic.
+    -   **Summary**: **New consolidated file** combining , , , , and likely  functionalities.
+    -   **Changes**: Created to centralize enterprise features for better organization and maintainability.
 -   :
-    -   **Summary**: New file to check system hardware against enterprise requirements.
-    -   **Changes**: Newly created to validate RAM, CPU cores, GPU presence (NVIDIA/AMD), and network speed.
--   :
-    -   **Summary**: New file to handle NVIDIA CUDA and AMD OpenCL GPU mining.
-    -   **Changes**: Newly created to support hybrid CPU+GPU mining and temperature/power monitoring.
--   :
-    -   **Summary**: New file defining a custom binary communication protocol for distributed nodes.
-    -   **Changes**: Newly created for high-performance, compressed, and error-handled node communication.
--   :
-    -   **Summary**: New file for orchestrating distributed mining across multiple nodes.
-    -   **Changes**: Newly created to manage node registration, heartbeats, work distribution, and load balancing.
--   :
-    -   **Summary**: Python dependencies for backend.
-    -   **Changes**: Updated to include new dependencies required for V30 enterprise features (e.g., ).
+    -   **Summary**: Python dependencies for the backend.
+    -   **Changes**: Updated multiple times to include new dependencies (, , etc.), manage version compatibility (e.g., for pandas with Python 3.13), and address  package conflicts.
 -   :
     -   **Summary**: Main React component.
-    -   **Changes**: Integrated  and  components. Fixed  to correctly parse  to an integer (or omit if empty) to prevent  errors. Updated to use  from .
+    -   **Changes**: Integrated ,  (now likely part of ), , and . Fixed  parsing. Updated to use  and implemented state management for new modals.
 -   :
-    -   **Summary**: New React component for managing enterprise-scale mining threads.
-    -   **Changes**: Newly created to provide UI for thread presets, custom thread input (up to 250,000), system metrics, and performance projections. Includes safety checks for rendering .
+    -   **Summary**: New React component for managing and quick-launching saved mining pool configurations.
+    -   **Changes**: Newly created to provide UI for CRUD operations on saved pools.
 -   :
-    -   **Summary**: New React component for configuring a separate database server.
-    -   **Changes**: Newly created to allow switching between local and remote MongoDB, connection testing, and status monitoring.
+    -   **Summary**: New React component for adding and managing user-defined custom coins.
+    -   **Changes**: Newly created to allow users to define coin parameters like algorithms and Scrypt N/R/P values.
 -   :
-    -   **Summary**: Displays system metrics.
-    -   **Changes**: Fixed a React error where  object was being rendered directly.
--   :
-    -   **Summary**: Main entry point for React app.
-    -   **Changes**: Corrected CSS import from  to  due to consolidation.
+    -   **Summary**: **New consolidated file** for  and .
+    -   **Changes**: Created to group advanced enterprise configuration components.
 -   :
     -   **Summary**: Consolidated all frontend CSS.
-    -   **Changes**: Added new styles for  and .
+    -   **Changes**: Added new styles for , , , and .
 -   :
     -   **Summary**: Frontend environment variables.
-    -   **Changes**: Corrected  to  (later running on 3334) to resolve connectivity issues.
+    -   **Changes**:  configured for backend connectivity.
 -   :
-    -   **Summary**: Supervisor configuration for services.
-    -   **Changes**: Ensured correct port mapping for frontend (e.g., ) and consistent program names.
+    -   **Summary**: Contains files for the terminal-based remote mining node application.
+    -   **Changes**: New directory for distributed mining.
+-   [0;34m[2025-08-10 19:54:33] Starting fresh installation...[0m:
+    -   **Summary**: **Consolidated** installation script, replacing , , , . Handles Python, MongoDB, and service setup.
+    -   **Changes**: Updated extensively for Ubuntu 24.04 compatibility, Python 3.12 installation logic (from standard repos for noble), GPG key fixes for MongoDB, and error handling for  creation and pip dependencies.
+-   [0;34m[2025-08-10 19:54:33] Starting CryptoMiner Pro uninstallation...[0m
+[1;33m[WARNING] Running as root. This is generally not recommended but will proceed.[0m
+[1;33m[WARNING] This will completely remove CryptoMiner Pro from your system.[0m:
+    -   **Summary**: New script to remove the CryptoMiner Pro installation.
+    -   **Changes**: Newly created to remove application files, services, and associated configurations.
 -   :
-    -   **Summary**: New directory for the terminal-based remote mining node application.
-    -   **Changes**: Contains , , , , and  for distributed mining node.
+    -   **Summary**: New user-facing setup script designed to work from the user's current directory, auto-detecting installation paths.
+    -   **Changes**: Created to simplify setup for users, integrating Python version compatibility, MongoDB fixes, and pip conflict resolution.
 -   :
-    -   **Summary**: New documentation detailing the Scrypt mining protocol fix.
--   :
-    -   **Summary**: New deployment guide for the V30 system.
+    -   **Summary**: Supervisor configuration for backend and frontend services.
+    -   **Changes**: Updated multiple times to ensure correct pathing for  and  (e.g., from  to ), and  to .
+
 </code_architecture>
 
 <pending_tasks>
-- No explicit pending tasks were left by the previous AI engineer. All requested features for CryptoMiner Enterprise V30, including the remote node application and the Scrypt mining fix, have been implemented and largely tested.
+The most recent explicit pending tasks are:
+- Re-evaluate and fix any remaining issues in the codebase.
+- Condense the files further to maintain efficiency and organization.
+- Verify all dependencies are correct and optimally configured.
+- Prepare the application for producing an executable file.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer had successfully implemented a crucial fix for the Scrypt mining protocol. The user reported that shares were not being properly submitted to mining pools. The engineer identified the root cause as an incorrect Scrypt algorithm implementation and a lack of proper Stratum protocol support.
+Immediately before this summary request, the AI engineer was tasked with a comprehensive codebase overhaul. The work was initiated by the user's request to:
+1.  **Add an uninstall script**: This was successfully implemented ().
+2.  **Condense files to maintain efficiency**: Significant progress was made on this front.
+    *   Installation scripts (, , , ) were consolidated into a single  script, later complemented by a user-facing .
+    *   Backend enterprise-related modules (, , , ) were successfully merged into a new  file, and  was updated to use this consolidated module.
+    *   Frontend components (, ) were consolidated into a new , and  was updated accordingly.
+    *   Redundant test/temporary files were removed.
+    *   The  was updated to reflect the consolidated structure.
 
-The work involved:
-1.  **Researching Real Scrypt Miners**: Investigating how  and other Scrypt mining programs utilize the Scrypt algorithm and the Stratum protocol for share submission.
-2.  **Developing **: A new Python file was created () containing the  class (implementing correct Salsa20/8 core, BlockMix, and SMix functions compatible with Litecoin specifications) and a  class for proper JSON-RPC communication with mining pools (handling , , ).
-3.  **Integrating into **: The  and  from  were integrated into the  class in . This involved replacing the old, incorrect Scrypt implementation and adding a new method to handle real pool mining.
-4.  **Addressing Dependencies and Environment Issues**: During this process, issues such as MongoDB not running and persistent port conflicts (e.g., on port 3334 for the frontend) were encountered and resolved by manually starting MongoDB and killing conflicting processes.
-5.  **Documentation**: A detailed document () was created to explain the changes and the correctness of the new implementation.
+During this consolidation and environment hardening process, several critical environment-related issues arose and were addressed:
+*   **MongoDB installation issues**: Resolved by updating  with correct GPG key handling, Ubuntu 24.04 compatibility, fallback methods (snap, Docker), and creating  and .
+*   **Python virtual environment creation errors**: Fixed by enhancing 's  creation logic, adding error handling, and creating .
+*   **Incorrect installation path in scripts**: The  and other scripts were updated to dynamically detect the actual installation directory (e.g., ) from supervisor configuration, replacing hardcoded . A  script was created for immediate resolution.
+*   **Pandas/Python 3.13 compilation errors**: This led to the decision to standardize on Python 3.12. The  script was updated to automatically install Python 3.12 (from standard Ubuntu 24.04 repos) and use it for the virtual environment, avoiding known  compilation issues.  was created.
+*   **Ubuntu Plucky (25.04 development) PPA errors**: The  was further refined to detect development Ubuntu versions, avoid broken PPAs, and use standard repositories or fallbacks for Python installation. A  was created.
+*   **Pip dependency conflicts (/)**:  was adjusted, and  and  were created to implement a robust, ordered installation strategy.
+*   **Critical system Python corruption ()**: This was a severe system-level issue, leading to the user wiping their system and installing Ubuntu 24.04.
+*   **Database connection issues (after system wipe)**: Diagnosed as a  in the backend. This was caused by the  package missing from the virtual environment due to previous installation complexities or restarts. The most recent focus was on fixing this  package issue, exacerbated by the path mismatch between supervisor configuration and the actual file location and 
+Usage:   
+  pip <command> [options]
 
-As of the last interaction, the  and  have been successfully added to , and the backend service was just restarted to apply these changes. Testing confirmed that the system now correctly recognizes pool mining configurations, attempts to start the real Stratum protocol, and properly validates wallet addresses (rejecting invalid ones, which is the correct behavior). The  validation issue (sending empty strings) was also previously fixed in , ensuring successful  requests.
+Commands:
+  install                     Install packages.
+  lock                        Generate a lock file.
+  download                    Download packages.
+  uninstall                   Uninstall packages.
+  freeze                      Output installed packages in requirements format.
+  inspect                     Inspect the python environment.
+  list                        List installed packages.
+  show                        Show information about installed packages.
+  check                       Verify installed packages have compatible dependencies.
+  config                      Manage local and global configuration.
+  search                      Search PyPI for packages.
+  cache                       Inspect and manage pip's wheel cache.
+  index                       Inspect information available from package indexes.
+  wheel                       Build wheels from your requirements.
+  hash                        Compute hashes of package archives.
+  completion                  A helper command used for command completion.
+  debug                       Show information useful for debugging.
+  help                        Show help for commands.
+
+General Options:
+  -h, --help                  Show help.
+  --debug                     Let unhandled exceptions propagate outside the
+                              main subroutine, instead of logging them to
+                              stderr.
+  --isolated                  Run pip in an isolated mode, ignoring
+                              environment variables and user configuration.
+  --require-virtualenv        Allow pip to only run in a virtual environment;
+                              exit with an error otherwise.
+  --python <python>           Run pip with the specified Python interpreter.
+  -v, --verbose               Give more output. Option is additive, and can be
+                              used up to 3 times.
+  -V, --version               Show version and exit.
+  -q, --quiet                 Give less output. Option is additive, and can be
+                              used up to 3 times (corresponding to WARNING,
+                              ERROR, and CRITICAL logging levels).
+  --log <path>                Path to a verbose appending log.
+  --no-input                  Disable prompting for input.
+  --keyring-provider <keyring_provider>
+                              Enable the credential lookup via the keyring
+                              library if user input is allowed. Specify which
+                              mechanism to use [auto, disabled, import,
+                              subprocess]. (default: auto)
+  --proxy <proxy>             Specify a proxy in the form
+                              scheme://[user:passwd@]proxy.server:port.
+  --retries <retries>         Maximum attempts to establish a new HTTP
+                              connection. (default: 5)
+  --timeout <sec>             Set the socket timeout (default 15 seconds).
+  --exists-action <action>    Default action when a path already exists:
+                              (s)witch, (i)gnore, (w)ipe, (b)ackup, (a)bort.
+  --trusted-host <hostname>   Mark this host or host:port pair as trusted,
+                              even though it does not have valid or any HTTPS.
+  --cert <path>               Path to PEM-encoded CA certificate bundle. If
+                              provided, overrides the default. See 'SSL
+                              Certificate Verification' in pip documentation
+                              for more information.
+  --client-cert <path>        Path to SSL client certificate, a single file
+                              containing the private key and the certificate
+                              in PEM format.
+  --cache-dir <dir>           Store the cache data in <dir>.
+  --no-cache-dir              Disable the cache.
+  --disable-pip-version-check
+                              Don't periodically check PyPI to determine
+                              whether a new version of pip is available for
+                              download. Implied with --no-index.
+  --no-color                  Suppress colored output.
+  --use-feature <feature>     Enable new functionality, that may be backward
+                              incompatible.
+  --use-deprecated <feature>  Enable deprecated functionality, that will be
+                              removed in the future.
+  --resume-retries <resume_retries>
+                              Maximum attempts to resume or restart an
+                              incomplete download. (default: 5)'s  error.
+
+The current immediate work involves re-evaluating the entire codebase, fixing any remaining issues, further condensing files, verifying dependencies, and preparing for an executable, with the immediate hurdle being the resolution of the  package installation and correct pathing within the virtual environment. The AI engineer is in the process of analyzing the codebase again to proceed with the user's multi-faceted request.
+
 </current_work>
 
 <optional_next_step>
-The next step is to comprehensively test the newly integrated real Scrypt mining functionality with a live mining pool to ensure shares are submitted correctly.
+Continue the comprehensive re-evaluation of the codebase as requested by the user, starting with a detailed analysis of the existing files.
 </optional_next_step>

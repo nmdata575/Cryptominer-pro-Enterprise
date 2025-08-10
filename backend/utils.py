@@ -105,6 +105,20 @@ def validate_feathercoin_address(address: str) -> Tuple[bool, str]:
     else:
         return False, "Invalid Feathercoin address format (must start with 6 or 7)"
 
+def validate_efl_address(address: str) -> Tuple[bool, str]:
+    """Validate E-Gulden (EFL) wallet addresses - similar to Litecoin"""
+    # EFL addresses typically start with 'L' like Litecoin
+    if address.startswith('L'):
+        if len(address) >= 26 and len(address) <= 35:
+            if validate_base58_checksum(address):
+                return True, "Valid EFL address"
+            else:
+                return False, "Invalid EFL address checksum"
+        else:
+            return False, "Invalid EFL address length"
+    else:
+        return False, "Invalid EFL address format (must start with L)"
+
 def validate_base58_checksum(address: str) -> bool:
     """Validate Base58Check encoded address"""
     try:

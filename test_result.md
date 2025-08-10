@@ -290,6 +290,30 @@ frontend:
           agent: "testing"
           comment: "✅ SCRYPT MINING PROTOCOL FIX SUCCESSFUL - Successfully tested with real EFL mining pool (stratum.luckydogpool.com:7026). Fixed JSON parsing in StratumClient, added EFL wallet validation, resolved thread pool statistics error. ScryptAlgorithm and StratumClient properly integrated. Pool connection working with 0.2-0.3s response times. Mining engine starts successfully with real pool credentials."
 
+  - task: "Saved Pools Management System"
+    implemented: true
+    working: true
+    file: "backend/server.py, frontend/src/components/SavedPoolsManager.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ SAVED POOLS API FULLY FUNCTIONAL - All CRUD operations working (GET, POST, PUT, DELETE, USE). Successfully tested with real EFL pool configuration. Proper validation of wallet addresses and duplicate pool names. MongoDB integration working with saved_pools collection. Use functionality returns properly formatted mining configs. Database connection issues fixed."
+
+  - task: "Custom Coins Management System"
+    implemented: true
+    working: true
+    file: "backend/server.py, frontend/src/components/CustomCoinsManager.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CUSTOM COINS API FULLY FUNCTIONAL - All CRUD operations working (GET, POST, PUT, DELETE, GET ALL). Successfully tested with hypothetical CMPC cryptocurrency. Proper validation of coin symbols and duplicate prevention. MongoDB integration working with custom_coins collection. Support for multiple algorithms including Scrypt with configurable parameters. Preset and custom coins properly combined in unified API."
+
   - task: "Saved Pools API Implementation"
     implemented: true
     working: true

@@ -4,8 +4,7 @@ import SystemComponents from './components/SystemComponents';
 import AIComponents from './components/AIComponents';
 import EnterpriseThreadManager from './components/EnterpriseThreadManager';
 import EnterpriseDBConfig from './components/EnterpriseDBConfig';
-import SavedPoolsManager from './components/SavedPoolsManager';
-import CustomCoinsManager from './components/CustomCoinsManager';
+import { SavedPoolsManager, CustomCoinsManager } from './components/AdvancedComponents';
 import './styles.css';
 
 const App = () => {

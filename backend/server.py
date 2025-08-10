@@ -88,6 +88,11 @@ db_client: Optional[AsyncIOMotorClient] = None
 db = None
 connected_websockets: List[WebSocket] = []
 
+# V30 Enterprise System
+v30_control_system: Optional[CentralControlSystem] = None
+enterprise_license_system = EnterpriseV30License()
+hardware_validator = EnterpriseHardwareValidator()
+
 # Pydantic models
 class MiningConfig(BaseModel):
     coin: Dict[str, Any]

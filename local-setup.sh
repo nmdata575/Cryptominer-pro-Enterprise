@@ -73,24 +73,78 @@ check_and_install_python() {
     local python_version=$(python3 --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
     local major_version=$(echo $python_version | cut -d'.' -f1)
     local minor_version=$(echo $python_version | cut -d'.' -f2)
+    local ubuntu_version=$(lsb_release -cs 2>/dev/null || echo "unknown")
     
     log "Detected system Python: $python_version"
+    log "Ubuntu version: $ubuntu_version"
     
-    # Check if Python 3.13 is being used (known compatibility issues)
-    if [ "$major_version" = "3" ] && [ "$minor_version" = "13" ]; then
-        warning "Python 3.13 detected - this version has known compatibility issues with pandas"
-        log "Installing Python 3.12 for better package compatibility..."
-        install_python312
-        PYTHON_CMD="python3.12"
-    elif [ "$major_version" = "3" ] && [ "$minor_version" -ge "11" ] && [ "$minor_version" -le "12" ]; then
-        log "Python $python_version is compatible"
-        PYTHON_CMD="python3"
-    else
-        warning "Python version $python_version may have compatibility issues"
-        log "Installing Python 3.12 for optimal compatibility..."
-        install_python312
-        PYTHON_CMD="python3.12"
-    fi
+    # Determine optimal Python version based on Ubuntu version and compatibility
+    case "$ubuntu_version" in
+        "noble"|"24.04")
+            # Ubuntu 24.04: Python 3.12 available, avoid Python 3.13 pandas issues
+            if [ "$major_version" = "3" ] && [ "$minor_version" = "13" ]; then
+                warning "Python 3.13 detected on Ubuntu 24.04 - pandas compilation issues known"
+                log "Installing Python 3.12 for better package compatibility..."
+                install_python312
+                PYTHON_CMD="python3.12"
+            elif [ "$major_version" = "3" ] && ([ "$minor_version" = "11" ] || [ "$minor_version" = "12" ]); then
+                log "Python $python_version is optimal for Ubuntu 24.04"
+                PYTHON_CMD="python3"
+            else
+                log "Installing Python 3.12 for optimal compatibility on Ubuntu 24.04..."
+                install_python312
+                PYTHON_CMD="python3.12"
+            fi
+            ;;
+        "jammy"|"22.04")
+            # Ubuntu 22.04: Python 3.11 default, 3.12 available via deadsnakes
+            if [ "$major_version" = "3" ] && [ "$minor_version" = "13" ]; then
+                warning "Python 3.13 detected - installing Python 3.12 for better compatibility"
+                install_python312
+                PYTHON_CMD="python3.12"
+            elif [ "$major_version" = "3" ] && ([ "$minor_version" = "11" ] || [ "$minor_version" = "12" ]); then
+                log "Python $python_version is compatible"
+                PYTHON_CMD="python3"
+            else
+                log "Installing Python 3.12 for better package compatibility..."
+                install_python312
+                PYTHON_CMD="python3.12"
+            fi
+            ;;
+        "focal"|"20.04")
+            # Ubuntu 20.04: Python 3.8 default, newer versions via deadsnakes
+            if [ "$major_version" = "3" ] && [ "$minor_version" -ge "11" ]; then
+                if [ "$minor_version" = "13" ]; then
+                    warning "Python 3.13 detected - installing Python 3.12 for better compatibility"
+                    install_python312
+                    PYTHON_CMD="python3.12"
+                else
+                    log "Python $python_version is compatible"
+                    PYTHON_CMD="python3"
+                fi
+            else
+                log "Installing Python 3.12 for better package compatibility..."
+                install_python312
+                PYTHON_CMD="python3.12"
+            fi
+            ;;
+        *)
+            # Unknown Ubuntu version - use conservative approach
+            warning "Unknown Ubuntu version: $ubuntu_version"
+            if [ "$major_version" = "3" ] && [ "$minor_version" = "13" ]; then
+                warning "Python 3.13 detected - installing Python 3.12 for better compatibility"
+                install_python312
+                PYTHON_CMD="python3.12"
+            elif [ "$major_version" = "3" ] && [ "$minor_version" -ge "11" ] && [ "$minor_version" -le "12" ]; then
+                log "Python $python_version should be compatible"
+                PYTHON_CMD="python3"
+            else
+                log "Installing Python 3.12 for optimal compatibility..."
+                install_python312
+                PYTHON_CMD="python3.12"
+            fi
+            ;;
+    esac
     
     # Verify the chosen Python version works
     if ! $PYTHON_CMD --version &> /dev/null; then

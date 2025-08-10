@@ -205,18 +205,65 @@ install_mongodb_fallback() {
 setup_directories() {
     log "Setting up application directories..."
     
+    # Create installation directory
     sudo mkdir -p "$INSTALL_DIR"
     sudo chown $USER:$USER "$INSTALL_DIR"
     
-    # Copy application files
-    cp -r backend/ "$INSTALL_DIR/"
-    cp -r frontend/ "$INSTALL_DIR/"
-    cp -r v30-remote-node/ "$INSTALL_DIR/"
+    # Verify current directory has the required files
+    if [ ! -d "backend" ] || [ ! -d "frontend" ]; then
+        error "Required directories (backend, frontend) not found in current directory"
+        error "Please run this script from the CryptoMiner Pro source directory"
+        return 1
+    fi
     
-    # Copy documentation
-    cp README.md "$INSTALL_DIR/"
-    cp DEPLOYMENT_GUIDE.md "$INSTALL_DIR/"
-    cp SCRYPT_MINING_FIX.md "$INSTALL_DIR/"
+    # Copy application files
+    log "Copying backend files..."
+    cp -r backend/ "$INSTALL_DIR/"
+    
+    log "Copying frontend files..."
+    cp -r frontend/ "$INSTALL_DIR/"
+    
+    # Copy v30-remote-node if it exists
+    if [ -d "v30-remote-node" ]; then
+        log "Copying v30-remote-node files..."
+        cp -r v30-remote-node/ "$INSTALL_DIR/"
+    fi
+    
+    # Copy documentation files
+    if [ -f "README.md" ]; then
+        cp README.md "$INSTALL_DIR/"
+    fi
+    
+    if [ -f "DEPLOYMENT_GUIDE.md" ]; then
+        cp DEPLOYMENT_GUIDE.md "$INSTALL_DIR/"
+    fi
+    
+    if [ -f "SCRYPT_MINING_FIX.md" ]; then
+        cp SCRYPT_MINING_FIX.md "$INSTALL_DIR/"
+    fi
+    
+    if [ -f "MONGODB_FIX_GUIDE.md" ]; then
+        cp MONGODB_FIX_GUIDE.md "$INSTALL_DIR/"
+    fi
+    
+    # Verify critical files exist
+    if [ ! -f "$INSTALL_DIR/backend/requirements.txt" ]; then
+        error "Backend requirements.txt not found after copy"
+        return 1
+    fi
+    
+    if [ ! -f "$INSTALL_DIR/backend/server.py" ]; then
+        error "Backend server.py not found after copy"
+        return 1
+    fi
+    
+    if [ ! -f "$INSTALL_DIR/frontend/package.json" ]; then
+        error "Frontend package.json not found after copy"
+        return 1
+    fi
+    
+    # Set proper permissions
+    sudo chown -R $USER:$USER "$INSTALL_DIR"
     
     success "Application directories setup completed"
 }

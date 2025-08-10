@@ -121,6 +121,28 @@ class WalletAddress(BaseModel):
     address: str
     coin_symbol: str
 
+class SavedPool(BaseModel):
+    name: str
+    coin_symbol: str
+    wallet_address: str
+    pool_address: str
+    pool_port: int
+    pool_password: str = "x"
+    pool_username: Optional[str] = None
+    description: Optional[str] = ""
+
+class CustomCoin(BaseModel):
+    name: str
+    symbol: str
+    algorithm: str = "Scrypt"
+    block_reward: float = 25.0
+    block_time: int = 150
+    difficulty: float = 1000.0
+    scrypt_params: dict = {"n": 1024, "r": 1, "p": 1}
+    network_hashrate: str = "Unknown"
+    wallet_format: str = "Standard"
+    description: Optional[str] = ""
+
 # ============================================================================
 # DATABASE SETUP
 # ============================================================================

@@ -802,6 +802,10 @@ main() {
     log "Starting CryptoMiner Pro installation from current directory..."
     log "Current directory: $(pwd)"
     
+    # Auto-detect installation directory first
+    detect_install_dir
+    log "Using installation directory: $INSTALL_DIR"
+    
     check_source_directory
     check_permissions
     check_and_install_python  # New function for Python version management

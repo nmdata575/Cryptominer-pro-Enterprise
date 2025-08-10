@@ -121,6 +121,50 @@ install_dependencies() {
     success "System dependencies installed"
 }
 
+# Install MongoDB with proper repository setup
+install_mongodb() {
+    log "Installing MongoDB..."
+    
+    # Check if MongoDB is already installed
+    if command -v mongod &> /dev/null; then
+        success "MongoDB already installed"
+        return 0
+    fi
+    
+    # Get Ubuntu version
+    local ubuntu_version=$(lsb_release -cs)
+    
+    # For Ubuntu 24.04 (noble), use jammy repository as it's the closest supported version
+    if [ "$ubuntu_version" = "noble" ]; then
+        ubuntu_version="jammy"
+        log "Using jammy repository for Ubuntu 24.04 compatibility"
+    fi
+    
+    # Import MongoDB GPG key
+    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+        sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+    
+    # Add MongoDB repository
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu $ubuntu_version/mongodb-org/7.0 multiverse" | \
+        sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    
+    # Update package list and install MongoDB
+    sudo apt update
+    sudo apt install -y mongodb-org
+    
+    # Start and enable MongoDB
+    sudo systemctl start mongod
+    sudo systemctl enable mongod
+    
+    # Verify installation
+    if systemctl is-active --quiet mongod; then
+        success "MongoDB installed and started successfully"
+    else
+        error "MongoDB installation failed or service not running"
+        return 1
+    fi
+}
+
 # Setup application directories
 setup_directories() {
     log "Setting up application directories..."

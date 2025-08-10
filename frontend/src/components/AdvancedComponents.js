@@ -343,11 +343,6 @@ const EnterpriseDBConfig = ({ onConfigChange }) => {
 
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
 
-  useEffect(() => {
-    // Check current database configuration
-    checkDatabaseStatus();
-  }, [checkDatabaseStatus]);
-
   const checkDatabaseStatus = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/health`);
@@ -382,6 +377,11 @@ const EnterpriseDBConfig = ({ onConfigChange }) => {
       }));
     }
   }, []);
+
+  useEffect(() => {
+    // Check current database configuration
+    checkDatabaseStatus();
+  }, [checkDatabaseStatus]);
 
   const testDatabaseConnection = async (url) => {
     setDbConfig(prev => ({ ...prev, testingConnection: true }));

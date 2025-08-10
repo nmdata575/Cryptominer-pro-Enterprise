@@ -1076,7 +1076,7 @@ const CustomCoinsManager = ({ onSelectCoin, onClose }) => {
 
     useEffect(() => {
         fetchCustomCoins();
-    }, []);
+    }, [fetchCustomCoins]);
 
     const fetchCustomCoins = useCallback(async () => {
         try {

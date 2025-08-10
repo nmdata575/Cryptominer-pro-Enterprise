@@ -160,8 +160,44 @@ install_mongodb() {
     if systemctl is-active --quiet mongod; then
         success "MongoDB installed and started successfully"
     else
-        error "MongoDB installation failed or service not running"
-        return 1
+        warning "Primary MongoDB installation failed, trying fallback method..."
+        install_mongodb_fallback
+    fi
+}
+
+# Fallback MongoDB installation using Ubuntu's default repository
+install_mongodb_fallback() {
+    log "Attempting fallback MongoDB installation..."
+    
+    # Try installing mongodb from Ubuntu repositories
+    sudo apt update
+    sudo apt install -y mongodb-server mongodb-clients
+    
+    # If that fails, try installing a compatible alternative
+    if ! command -v mongod &> /dev/null; then
+        log "Installing alternative MongoDB setup..."
+        
+        # Install snapd if not present
+        if ! command -v snap &> /dev/null; then
+            sudo apt install -y snapd
+        fi
+        
+        # Install MongoDB via snap as last resort
+        sudo snap install mongodb-community-server
+        
+        if command -v mongod &> /dev/null; then
+            success "MongoDB installed via snap"
+        else
+            error "All MongoDB installation methods failed"
+            warning "You may need to install MongoDB manually"
+            warning "The application will work with an external MongoDB instance"
+            return 1
+        fi
+    else
+        # Start and enable the service
+        sudo systemctl start mongodb
+        sudo systemctl enable mongodb
+        success "MongoDB installed from Ubuntu repository"
     fi
 }
 

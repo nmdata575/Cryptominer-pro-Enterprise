@@ -212,9 +212,17 @@ class StratumClient:
         try:
             data = self.socket.recv(4096).decode('utf-8').strip()
             if data:
-                message = json.loads(data)
-                logger.debug(f"Received: {message}")
-                return message
+                # Handle multiple JSON messages in one response (common in Stratum)
+                lines = data.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if line:
+                        try:
+                            message = json.loads(line)
+                            logger.debug(f"Received: {message}")
+                            return message
+                        except json.JSONDecodeError:
+                            continue
         except Exception as e:
             logger.error(f"Failed to receive message: {e}")
         return None

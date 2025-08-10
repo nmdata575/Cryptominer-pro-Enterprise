@@ -157,11 +157,15 @@ async def startup_event():
 @app.on_event("shutdown") 
 async def shutdown_event():
     """Cleanup on shutdown"""
-    global db_client
+    global db_client, v30_control_system
     
     # Stop mining
     if mining_engine.is_mining:
         mining_engine.stop_mining()
+    
+    # Stop V30 system
+    if v30_control_system and v30_control_system.is_running:
+        await v30_control_system.shutdown_system()
     
     # Stop AI system
     ai_system.stop_ai_system()

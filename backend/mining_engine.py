@@ -930,6 +930,21 @@ class EnterpriseScryptMiner:
         with self.stats_lock:
             stats_dict = asdict(self.stats)
         
+        # If real mining is active, get real stats
+        if hasattr(self, 'real_miner') and self.real_miner and self.is_mining:
+            try:
+                real_stats = self.real_miner.get_stats()
+                # Update stats with real mining data
+                stats_dict.update({
+                    'hashrate': real_stats.get('hashrate', 0),
+                    'accepted_shares': real_stats.get('shares_accepted', 0),
+                    'blocks_found': real_stats.get('shares_found', 0),
+                    'uptime': time.time() - (getattr(self, 'start_time', time.time())),
+                    'active_threads': 4 if self.is_mining else 0
+                })
+            except Exception as e:
+                logger.debug(f"Could not get real miner stats: {e}")
+
         return {
             "is_mining": self.is_mining,
             "stats": stats_dict,

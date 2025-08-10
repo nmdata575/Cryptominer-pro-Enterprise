@@ -268,6 +268,44 @@ yarn start
 
 ---
 
+---
+
+## 🔧 **Service Management**
+
+### **Service Control Commands**
+```bash
+# Start services
+sudo supervisorctl start mining_system:backend mining_system:frontend
+
+# Stop services  
+sudo supervisorctl stop mining_system:backend mining_system:frontend
+
+# Restart services
+sudo supervisorctl restart mining_system:backend mining_system:frontend
+
+# Check status
+sudo supervisorctl status mining_system:*
+```
+
+### **Individual Service Management**
+```bash
+# Backend only
+sudo supervisorctl restart mining_system:backend
+sudo supervisorctl status mining_system:backend
+
+# Frontend only  
+sudo supervisorctl restart mining_system:frontend
+sudo supervisorctl status mining_system:frontend
+```
+
+### **Service Information**
+- **Backend**: Runs on http://localhost:8001 (internal)
+- **Frontend**: Runs on http://localhost:3333 (accessible)
+- **Service Group**: mining_system
+- **Configuration**: /etc/supervisor/conf.d/mining_app.conf
+
+---
+
 ## 🐛 **Troubleshooting**
 
 ### **Common Issues**

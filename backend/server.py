@@ -828,108 +828,119 @@ async def use_saved_pool(pool_id: str):
 async def get_custom_coins():
     """Get all custom coin configurations"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
         coins = []
         async for coin in db.custom_coins.find().sort("name", 1):
-            # Convert ObjectId to string for JSON serialization
-            coin["_id"] = str(coin["_id"])
-            coins.append(coin)
-        
-        return {"coins": coins, "count": len(coins)}
-        
+            coin_data = {
+                "id": str(coin["_id"]),
+                "name": coin["name"],
+                "symbol": coin["symbol"],
+                "algorithm": coin["algorithm"],
+                "block_reward": coin["block_reward"],
+                "block_time": coin["block_time"],
+                "scrypt_params": coin["scrypt_params"],
+                "created_at": coin.get("created_at", datetime.utcnow().isoformat())
+            }
+            coins.append(coin_data)
+            
+        return {"success": True, "coins": coins}
     except Exception as e:
         logger.error(f"Get custom coins error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"success": False, "error": str(e), "coins": []}
 
 @app.post("/api/coins/custom")
-async def create_custom_coin(coin: CustomCoin):
-    """Create a new custom coin configuration"""
+async def save_custom_coin(coin: CustomCoin):
+    """Save a new custom coin configuration"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
-        # Check if coin symbol already exists
+        # Check if coin with same symbol exists
         existing = await db.custom_coins.find_one({"symbol": coin.symbol.upper()})
         if existing:
-            raise HTTPException(status_code=400, detail="Coin symbol already exists")
+            return {"success": False, "error": "Coin symbol already exists"}
         
-        coin_data = coin.dict()
-        coin_data["symbol"] = coin_data["symbol"].upper()  # Normalize symbol
-        coin_data["created_at"] = datetime.utcnow()
-        coin_data["usage_count"] = 0
+        # Prepare coin data
+        coin_data = {
+            "name": coin.name,
+            "symbol": coin.symbol.upper(),
+            "algorithm": coin.algorithm,
+            "block_reward": coin.block_reward,
+            "block_time": coin.block_time,
+            "scrypt_params": coin.scrypt_params,
+            "created_at": datetime.utcnow().isoformat()
+        }
         
+        # Insert into database
         result = await db.custom_coins.insert_one(coin_data)
         
         return {
             "success": True,
-            "message": "Custom coin created successfully",
+            "message": "Custom coin saved successfully",
             "coin_id": str(result.inserted_id)
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Create custom coin error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Save custom coin error: {e}")
+        return {"success": False, "error": str(e)}
 
 @app.put("/api/coins/custom/{coin_id}")
 async def update_custom_coin(coin_id: str, coin: CustomCoin):
     """Update an existing custom coin configuration"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
-        from bson import ObjectId
+        # Validate ObjectId
+        if not ObjectId.is_valid(coin_id):
+            return {"success": False, "error": "Invalid coin ID format"}
         
-        coin_data = coin.dict()
-        coin_data["symbol"] = coin_data["symbol"].upper()  # Normalize symbol
-        coin_data["updated_at"] = datetime.utcnow()
+        # Prepare update data
+        coin_data = {
+            "name": coin.name,
+            "symbol": coin.symbol.upper(),
+            "algorithm": coin.algorithm,
+            "block_reward": coin.block_reward,
+            "block_time": coin.block_time,
+            "scrypt_params": coin.scrypt_params,
+            "updated_at": datetime.utcnow().isoformat()
+        }
         
+        # Update in database
         result = await db.custom_coins.update_one(
             {"_id": ObjectId(coin_id)},
             {"$set": coin_data}
         )
         
         if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Custom coin not found")
+            return {"success": False, "error": "Custom coin not found"}
         
-        return {
-            "success": True,
-            "message": "Custom coin updated successfully"
-        }
+        return {"success": True, "message": "Custom coin updated successfully"}
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Update custom coin error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"success": False, "error": str(e)}
 
 @app.delete("/api/coins/custom/{coin_id}")
 async def delete_custom_coin(coin_id: str):
     """Delete a custom coin configuration"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
-        from bson import ObjectId
+        # Validate ObjectId
+        if not ObjectId.is_valid(coin_id):
+            return {"success": False, "error": "Invalid coin ID format"}
         
+        # Delete from database
         result = await db.custom_coins.delete_one({"_id": ObjectId(coin_id)})
         
         if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Custom coin not found")
+            return {"success": False, "error": "Custom coin not found"}
         
-        return {
-            "success": True,
-            "message": "Custom coin deleted successfully"
-        }
+        return {"success": True, "message": "Custom coin deleted successfully"}
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Delete custom coin error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"success": False, "error": str(e)}
 
 @app.get("/api/coins/all")
 async def get_all_coins():

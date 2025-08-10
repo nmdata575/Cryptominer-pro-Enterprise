@@ -753,7 +753,7 @@ async def get_all_coins():
         
         # Get custom coins
         custom_coins = []
-        if db:
+        if db is not None:
             async for coin in db.custom_coins.find().sort("name", 1):
                 coin["_id"] = str(coin["_id"])
                 coin["is_custom"] = True

@@ -3,6 +3,7 @@ CryptoMiner Pro - Enhanced Mining Engine with Real Scrypt Implementation
 Supports both solo mining and pool mining with proper stratum protocol
 """
 
+import asyncio
 import hashlib
 import hmac
 import struct

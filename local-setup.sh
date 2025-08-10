@@ -13,7 +13,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-INSTALL_DIR="/opt/cryptominer-pro"
+# Auto-detect installation directory from supervisor config or use default
+INSTALL_DIR_DEFAULT="/opt/cryptominer-pro"
 SERVICE_NAME="cryptominer-pro"
 PYTHON_VERSION="3.11"
 NODE_VERSION="18"
@@ -21,6 +22,49 @@ PYTHON_CMD="python3"  # Will be updated by check_and_install_python function
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Auto-detect actual installation directory
+detect_install_dir() {
+    # Method 1: Check supervisor configuration
+    if [ -f /etc/supervisor/conf.d/mining_system.conf ]; then
+        local detected_dir=$(grep "directory=" /etc/supervisor/conf.d/mining_system.conf | grep backend | cut -d'=' -f2 | sed 's|/backend||' | head -1)
+        if [ -n "$detected_dir" ] && [ -d "$detected_dir" ]; then
+            INSTALL_DIR="$detected_dir"
+            log "Detected installation directory from supervisor config: $INSTALL_DIR"
+            return 0
+        fi
+    fi
+    
+    # Method 2: Look for running processes
+    local process_dir=$(ps aux | grep "server.py" | grep -v grep | awk '{for(i=11;i<=NF;i++) print $i}' | grep server.py | head -1 | xargs dirname 2>/dev/null)
+    if [ -n "$process_dir" ] && [ -d "$process_dir" ]; then
+        INSTALL_DIR="$(dirname "$process_dir")"
+        log "Detected installation directory from running process: $INSTALL_DIR"
+        return 0
+    fi
+    
+    # Method 3: Check common locations
+    local common_locations=(
+        "/opt/cryptominer-pro"
+        "/usr/local/cryptominer-pro" 
+        "/home/$USER/cryptominer-pro"
+        "$HOME/Desktop/Cryptominer-pro-Enterprise-main"
+        "$SCRIPT_DIR"
+    )
+    
+    for dir in "${common_locations[@]}"; do
+        if [ -d "$dir/backend" ] && [ -f "$dir/backend/server.py" ]; then
+            INSTALL_DIR="$dir"
+            log "Found installation directory: $INSTALL_DIR"
+            return 0
+        fi
+    done
+    
+    # Method 4: Use default and create if needed
+    INSTALL_DIR="$INSTALL_DIR_DEFAULT"
+    warning "Could not auto-detect installation directory, using default: $INSTALL_DIR"
+    return 1
+}
 
 # Logging functions
 log() {

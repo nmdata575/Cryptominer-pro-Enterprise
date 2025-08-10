@@ -16,7 +16,7 @@ const EnterpriseThreadManager = ({ miningConfig, onConfigChange, systemStats }) 
     fetchCpuInfo();
   }, [fetchCpuInfo]);
 
-  const fetchCpuInfo = async () => {
+  const fetchCpuInfo = useCallback(async () => {
     setLoadingCpuInfo(true);
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/system/cpu-info`);
@@ -49,7 +49,7 @@ const EnterpriseThreadManager = ({ miningConfig, onConfigChange, systemStats }) 
     } finally {
       setLoadingCpuInfo(false);
     }
-  };
+  }, [miningConfig, onConfigChange]);
 
   const handleThreadPresetSelect = (presetName) => {
     const threadCount = threadPresets[presetName];

@@ -184,9 +184,11 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "version": "2.0.0",
+        "version": "v30",
+        "edition": "Enterprise",
         "ai_system": ai_system.status.is_active,
-        "mining_active": mining_engine.is_mining
+        "mining_active": mining_engine.is_mining,
+        "v30_system": v30_control_system.is_running if v30_control_system else False
     }
 
 @app.get("/api/mining/status")

@@ -169,9 +169,12 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "2.0"
+  test_sequence: 2
   run_ui: false
+  v30_testing_completed: true
+  v30_features_tested: 8
+  total_license_keys_generated: 5000
 
 test_plan:
   current_focus:

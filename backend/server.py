@@ -198,7 +198,23 @@ async def shutdown_event():
 
 @app.get("/api/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with database connectivity status"""
+    
+    # Check database connection
+    database_status = "unknown"
+    database_error = None
+    
+    try:
+        # Test MongoDB connection
+        client = AsyncIOMotorClient(MONGO_URL, serverSelectionTimeoutMS=2000)
+        await client.admin.command('ping')
+        database_status = "connected"
+        client.close()
+    except Exception as e:
+        database_status = "disconnected" 
+        database_error = str(e)
+        logger.warning(f"Database connection check failed: {e}")
+    
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
@@ -206,7 +222,12 @@ async def health_check():
         "edition": "Enterprise",
         "ai_system": ai_system.status.is_active,
         "mining_active": mining_engine.is_mining,
-        "v30_system": v30_control_system.is_running if v30_control_system else False
+        "v30_system": v30_control_system.is_running if v30_control_system else False,
+        "database": {
+            "status": database_status,
+            "url": MONGO_URL[:20] + "..." if len(MONGO_URL) > 20 else MONGO_URL,
+            "error": database_error
+        }
     }
 
 @app.get("/api/mining/status")

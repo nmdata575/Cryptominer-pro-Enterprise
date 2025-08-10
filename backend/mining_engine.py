@@ -437,7 +437,7 @@ class EnterpriseScryptMiner:
         logger.info("Thread pool cleanup completed")
 
     def start_mining(self, coin_config: CoinConfig, wallet_address: str, threads: int = 1):
-        """Start enterprise mining in a separate thread"""
+        """Start enterprise mining with pool detection"""
         if self.is_mining:
             return False, "Mining already in progress"
         
@@ -445,19 +445,97 @@ class EnterpriseScryptMiner:
         with self.stats_lock:
             self.stats = MiningStats()
         
-        # Start mining in separate thread to avoid blocking
-        self.mining_thread = threading.Thread(
-            target=self.mine_block,
-            args=(coin_config, wallet_address, threads),
-            daemon=False,  # Don't make daemon for proper cleanup
-            name="enterprise_mining_controller"
-        )
+        # Check if pool mining is requested
+        pool_address = getattr(coin_config, 'custom_pool_address', None)
+        pool_port = getattr(coin_config, 'custom_pool_port', None)
+        
+        if pool_address and pool_port:
+            # Start REAL pool mining with Stratum protocol
+            logger.info(f"🌐 Starting REAL Stratum pool mining: {pool_address}:{pool_port}")
+            self.mining_thread = threading.Thread(
+                target=self._start_real_pool_mining,
+                args=(pool_address, pool_port, wallet_address, coin_config),
+                daemon=False,
+                name="real_stratum_mining"
+            )
+        else:
+            # Start enterprise solo mining (existing implementation)
+            logger.info("⛏️ Starting enterprise solo mining")
+            self.mining_thread = threading.Thread(
+                target=self.mine_block,
+                args=(coin_config, wallet_address, threads),
+                daemon=False,
+                name="enterprise_mining_controller"
+            )
+        
         self.mining_thread.start()
         
         # Give it a moment to start
         time.sleep(1.0)
         
-        return True, f"Enterprise mining started with {threads:,} threads"
+        mining_type = "pool" if pool_address else "solo"
+        return True, f"Enterprise {mining_type} mining started with {threads:,} threads"
+    
+    def _start_real_pool_mining(self, pool_host: str, pool_port: int, wallet_address: str, coin_config: CoinConfig):
+        """Start real Stratum pool mining - cgminer compatible"""
+        try:
+            import asyncio
+            
+            # Create new event loop for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            # Create real miner instance
+            real_miner = RealScryptMiner()
+            
+            # Prepare username format: wallet_address.worker_name
+            worker_name = f"CryptoMiner-V30-{int(time.time())}"
+            username = f"{wallet_address}.{worker_name}"
+            
+            logger.info(f"🚀 Connecting to {coin_config.name} pool: {pool_host}:{pool_port}")
+            logger.info(f"👤 Worker: {username}")
+            logger.info(f"🔧 Algorithm: {coin_config.algorithm} (N={coin_config.scrypt_params.get('n', 1024)})")
+            
+            # Update our mining status
+            self.is_mining = True
+            
+            # Start real pool mining with proper error handling
+            try:
+                success = loop.run_until_complete(
+                    real_miner.start_mining(pool_host, pool_port, username, "x")
+                )
+                
+                if success:
+                    logger.info("✅ Real pool mining completed successfully")
+                else:
+                    logger.error("❌ Real pool mining failed to start")
+                    
+            except Exception as e:
+                logger.error(f"❌ Pool mining runtime error: {e}")
+                success = False
+            
+            # Update our stats with real miner results
+            try:
+                real_stats = real_miner.get_stats()
+                with self.stats_lock:
+                    self.stats.hashrate = real_stats["hashrate"]
+                    self.stats.accepted_shares = real_stats["shares_accepted"]
+                    self.stats.blocks_found = real_stats["shares_found"]
+                    self.stats.uptime = time.time() - (getattr(self, 'start_time', time.time()))
+                
+                logger.info(f"📊 Final stats: {real_stats['shares_found']} shares found, "
+                          f"{real_stats['shares_accepted']} accepted ({real_stats['acceptance_rate']:.1f}%)")
+                
+            except Exception as e:
+                logger.error(f"❌ Stats update error: {e}")
+                
+        except ImportError:
+            logger.error("❌ AsyncIO not available for pool mining")
+        except Exception as e:
+            logger.error(f"❌ Real pool mining setup error: {e}")
+        finally:
+            self.is_mining = False
+            logger.info("🛑 Pool mining thread finished")
     
     def stop_mining(self):
         """Stop enterprise mining"""

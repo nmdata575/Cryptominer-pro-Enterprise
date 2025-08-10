@@ -1010,7 +1010,13 @@ class CryptoMinerProTester:
         print(f"📡 Testing backend at: {BACKEND_URL}")
         print("=" * 60)
         
-        # Run V30 specific tests first
+        # NEW: EFL Scrypt Mining Protocol Tests (as requested in review)
+        print("\n🔥 NEWLY IMPLEMENTED SCRYPT MINING PROTOCOL TESTING:")
+        print("=" * 60)
+        self.test_efl_scrypt_mining_protocol()
+        self.test_scrypt_algorithm_integration()
+        
+        # Run V30 specific tests
         print("\n🔥 V30 ENTERPRISE FEATURES TESTING:")
         self.test_v30_health_check_updates()
         self.test_v30_license_validation()

@@ -47,38 +47,29 @@ class RealMiningTester:
         try:
             print("\n🚀 Starting Real EFL Mining Session...")
             
-            # EFL mining configuration as specified
-            mining_config = {
-                "coin_symbol": "EFL",
+            # EFL mining configuration with all required CoinConfig parameters
+            start_config = {
+                "coin": {
+                    "name": "Electronic Gulden",
+                    "symbol": "EFL",
+                    "algorithm": "Scrypt",
+                    "block_reward": 25.0,
+                    "block_time": 150,
+                    "difficulty": 1000.0,
+                    "scrypt_params": {"n": 1024, "r": 1, "p": 1},
+                    "network_hashrate": "Unknown",
+                    "wallet_format": "L prefix",
+                    "custom_pool_address": "stratum.luckydogpool.com",
+                    "custom_pool_port": 7026
+                },
                 "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
                 "threads": 4,
-                "custom_pool_address": "stratum.luckydogpool.com",
-                "custom_pool_port": 7026,
                 "mode": "pool",
                 "pool_username": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
                 "pool_password": "x",
                 "auto_optimize": True,
                 "ai_enabled": True,
                 "intensity": 1.0
-            }
-            
-            # Convert to the expected format
-            start_config = {
-                "coin": {
-                    "symbol": "EFL",
-                    "name": "Electronic Gulden",
-                    "algorithm": "Scrypt"
-                },
-                "wallet_address": mining_config["wallet_address"],
-                "threads": mining_config["threads"],
-                "mode": "pool",
-                "custom_pool_address": mining_config["custom_pool_address"],
-                "custom_pool_port": mining_config["custom_pool_port"],
-                "pool_username": mining_config["pool_username"],
-                "pool_password": mining_config["pool_password"],
-                "auto_optimize": mining_config["auto_optimize"],
-                "ai_enabled": mining_config["ai_enabled"],
-                "intensity": mining_config["intensity"]
             }
             
             response = self.session.post(f"{self.base_url}/mining/start", json=start_config)
@@ -88,7 +79,7 @@ class RealMiningTester:
                 if data.get("success"):
                     self.mining_active = True
                     self.log_test("Real Mining Start", True, 
-                                f"EFL mining started with {mining_config['threads']} threads on {mining_config['custom_pool_address']}:{mining_config['custom_pool_port']}")
+                                f"EFL mining started with {start_config['threads']} threads on stratum.luckydogpool.com:7026")
                     return True
                 else:
                     self.log_test("Real Mining Start", False, f"Mining start failed: {data.get('message')}")

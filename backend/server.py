@@ -115,9 +115,8 @@ class DatabaseManager:
                 # Retry settings
                 retryWrites=True,
                 retryReads=True,
-                # Additional settings
-                maxStalenessSeconds=30,           # Max staleness for reads
-                w='majority'                      # Write concern for durability
+                # Write concern for durability (removed maxStalenessSeconds conflict)
+                w='majority'
             )
             
             self.db = self.client[DATABASE_NAME]

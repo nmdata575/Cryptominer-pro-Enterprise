@@ -314,9 +314,18 @@ EOF
 start_services() {
     log "Starting CryptoMiner Pro services..."
     
-    # Start MongoDB if not running
-    sudo systemctl start mongodb
-    sudo systemctl enable mongodb
+    # Start MongoDB (try different service names)
+    if systemctl list-units --type=service | grep -q "mongod.service"; then
+        sudo systemctl start mongod
+        sudo systemctl enable mongod
+        log "Started mongod service"
+    elif systemctl list-units --type=service | grep -q "mongodb.service"; then
+        sudo systemctl start mongodb
+        sudo systemctl enable mongodb
+        log "Started mongodb service"
+    else
+        warning "MongoDB service not found - you may need to start it manually"
+    fi
     
     # Start Redis if not running  
     sudo systemctl start redis-server

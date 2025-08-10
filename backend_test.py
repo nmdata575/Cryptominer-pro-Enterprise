@@ -525,11 +525,11 @@ class BackendTester:
                 return False
             
             data = response.json()
-            if "coins" not in data or "count" not in data:
-                self.log_test("Custom Coins API", False, "Missing coins or count field in GET response")
+            if "coins" not in data or not data.get("success"):
+                self.log_test("Custom Coins API", False, "Missing coins field or success=false in GET response")
                 return False
             
-            initial_count = data["count"]
+            initial_count = len(data["coins"])
             
             # Test POST - Create new custom coin
             test_coin = {

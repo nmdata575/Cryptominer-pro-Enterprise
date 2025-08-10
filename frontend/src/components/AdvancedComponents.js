@@ -12,10 +12,6 @@ const EnterpriseThreadManager = ({ miningConfig, onConfigChange, systemStats }) 
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loadingCpuInfo, setLoadingCpuInfo] = useState(false);
 
-  useEffect(() => {
-    fetchCpuInfo();
-  }, [fetchCpuInfo]);
-
   const fetchCpuInfo = useCallback(async () => {
     setLoadingCpuInfo(true);
     try {
@@ -50,6 +46,10 @@ const EnterpriseThreadManager = ({ miningConfig, onConfigChange, systemStats }) 
       setLoadingCpuInfo(false);
     }
   }, [miningConfig, onConfigChange]);
+
+  useEffect(() => {
+    fetchCpuInfo();
+  }, [fetchCpuInfo]);
 
   const handleThreadPresetSelect = (presetName) => {
     const threadCount = threadPresets[presetName];

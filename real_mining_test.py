@@ -294,15 +294,21 @@ class RealMiningTester:
                 # Start with new thread count
                 config = {
                     "coin": {
-                        "symbol": "EFL",
                         "name": "Electronic Gulden",
-                        "algorithm": "Scrypt"
+                        "symbol": "EFL",
+                        "algorithm": "Scrypt",
+                        "block_reward": 25.0,
+                        "block_time": 150,
+                        "difficulty": 1000.0,
+                        "scrypt_params": {"n": 1024, "r": 1, "p": 1},
+                        "network_hashrate": "Unknown",
+                        "wallet_format": "L prefix",
+                        "custom_pool_address": "stratum.luckydogpool.com",
+                        "custom_pool_port": 7026
                     },
                     "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
                     "threads": threads,
                     "mode": "pool",
-                    "custom_pool_address": "stratum.luckydogpool.com",
-                    "custom_pool_port": 7026,
                     "pool_username": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
                     "pool_password": "x"
                 }

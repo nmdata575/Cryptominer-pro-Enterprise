@@ -947,25 +947,30 @@ async def get_all_coins():
     """Get both preset and custom coins combined"""
     try:
         # Get preset coins
-        presets_dict = get_coin_presets()
-        presets = []
+        presets = get_coin_presets()
         
-        # Convert preset dict to list and mark as not custom
-        for key, preset in presets_dict.items():
-            preset_copy = preset.copy()
-            preset_copy["is_custom"] = False
-            preset_copy["preset_key"] = key
-            presets.append(preset_copy)
-        
-        # Get custom coins
+        # Get custom coins using database manager
         custom_coins = []
-        if db is not None:
+        try:
+            db = await db_manager.get_database()
             async for coin in db.custom_coins.find().sort("name", 1):
-                coin["_id"] = str(coin["_id"])
-                coin["is_custom"] = True
-                custom_coins.append(coin)
+                coin_data = {
+                    "id": str(coin["_id"]),
+                    "name": coin["name"],
+                    "symbol": coin["symbol"],
+                    "algorithm": coin["algorithm"],
+                    "block_reward": coin["block_reward"],
+                    "block_time": coin["block_time"],
+                    "scrypt_params": coin["scrypt_params"],
+                    "created_at": coin.get("created_at", datetime.utcnow().isoformat()),
+                    "is_custom": True
+                }
+                custom_coins.append(coin_data)
+        except Exception as e:
+            logger.warning(f"Could not load custom coins: {e}")
         
         return {
+            "success": True,
             "preset_coins": presets,
             "custom_coins": custom_coins,
             "total_count": len(presets) + len(custom_coins)
@@ -973,7 +978,7 @@ async def get_all_coins():
         
     except Exception as e:
         logger.error(f"Get all coins error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"success": False, "error": str(e), "preset_coins": [], "custom_coins": []}
 
 # ============================================================================
 # V30 ENTERPRISE API ENDPOINTS

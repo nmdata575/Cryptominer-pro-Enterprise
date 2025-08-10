@@ -65,6 +65,80 @@ check_source_directory() {
     success "Source directory structure verified"
 }
 
+# Check and install optimal Python version
+check_and_install_python() {
+    log "Checking Python version compatibility..."
+    
+    local python_version=$(python3 --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+    local major_version=$(echo $python_version | cut -d'.' -f1)
+    local minor_version=$(echo $python_version | cut -d'.' -f2)
+    
+    log "Detected system Python: $python_version"
+    
+    # Check if Python 3.13 is being used (known compatibility issues)
+    if [ "$major_version" = "3" ] && [ "$minor_version" = "13" ]; then
+        warning "Python 3.13 detected - this version has known compatibility issues with pandas"
+        log "Installing Python 3.12 for better package compatibility..."
+        install_python312
+        PYTHON_CMD="python3.12"
+    elif [ "$major_version" = "3" ] && [ "$minor_version" -ge "11" ] && [ "$minor_version" -le "12" ]; then
+        log "Python $python_version is compatible"
+        PYTHON_CMD="python3"
+    else
+        warning "Python version $python_version may have compatibility issues"
+        log "Installing Python 3.12 for optimal compatibility..."
+        install_python312
+        PYTHON_CMD="python3.12"
+    fi
+    
+    # Verify the chosen Python version works
+    if ! $PYTHON_CMD --version &> /dev/null; then
+        error "Selected Python version ($PYTHON_CMD) is not available"
+        exit 1
+    fi
+    
+    local final_version=$($PYTHON_CMD --version | cut -d' ' -f2)
+    success "Using Python $final_version for installation"
+}
+
+# Install Python 3.12 for optimal compatibility
+install_python312() {
+    log "Installing Python 3.12 for optimal package compatibility..."
+    
+    # Check if Python 3.12 is already installed
+    if command -v python3.12 &> /dev/null; then
+        success "Python 3.12 already installed"
+        return 0
+    fi
+    
+    # Install software-properties-common if not available
+    if ! command -v add-apt-repository &> /dev/null; then
+        log "Installing software-properties-common..."
+        sudo apt install -y software-properties-common
+    fi
+    
+    # Add deadsnakes PPA for newer Python versions
+    log "Adding deadsnakes PPA..."
+    sudo add-apt-repository ppa:deadsnakes/ppa -y
+    sudo apt update
+    
+    # Install Python 3.12 and related packages
+    log "Installing Python 3.12 packages..."
+    sudo apt install -y \
+        python3.12 \
+        python3.12-venv \
+        python3.12-dev \
+        python3.12-distutils
+    
+    # Verify installation
+    if python3.12 --version &> /dev/null; then
+        success "Python 3.12 installed successfully"
+    else
+        error "Python 3.12 installation failed"
+        exit 1
+    fi
+}
+
 # Check permissions
 check_permissions() {
     if [[ $EUID -eq 0 ]]; then

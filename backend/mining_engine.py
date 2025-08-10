@@ -837,6 +837,9 @@ class EnterpriseScryptMiner:
         try:
             import asyncio
             
+            # Store configuration for status API
+            self.current_config = coin_config
+            
             # Create new event loop for this thread
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)

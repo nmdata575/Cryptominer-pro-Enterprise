@@ -227,18 +227,74 @@ setup_python_environment() {
     
     cd "$INSTALL_DIR/backend"
     
+    # Ensure we have the right Python version and venv module
+    if ! python3 -m venv --help &> /dev/null; then
+        error "python3-venv module not available. Installing..."
+        sudo apt install -y python3-venv python3-pip
+    fi
+    
+    # Remove existing venv if it exists but is broken
+    if [ -d "venv" ] && [ ! -f "venv/bin/python3" ]; then
+        log "Removing broken virtual environment..."
+        rm -rf venv
+    fi
+    
     # Create virtual environment
-    python3 -m venv venv
+    if [ ! -d "venv" ]; then
+        log "Creating Python virtual environment..."
+        python3 -m venv venv
+        
+        # Verify virtual environment was created successfully
+        if [ ! -f "venv/bin/python3" ]; then
+            error "Failed to create virtual environment"
+            log "Trying alternative method..."
+            
+            # Try alternative venv creation
+            virtualenv venv 2>/dev/null || {
+                log "Installing virtualenv..."
+                sudo apt install -y python3-virtualenv
+                virtualenv venv
+            }
+            
+            # Final check
+            if [ ! -f "venv/bin/python3" ]; then
+                error "All virtual environment creation methods failed"
+                return 1
+            fi
+        fi
+        
+        success "Virtual environment created successfully"
+    else
+        log "Virtual environment already exists"
+    fi
+    
+    # Activate virtual environment
     source venv/bin/activate
     
+    # Verify activation worked
+    if [ "$VIRTUAL_ENV" = "" ]; then
+        error "Failed to activate virtual environment"
+        return 1
+    fi
+    
+    log "Virtual environment activated: $VIRTUAL_ENV"
+    
     # Upgrade pip
-    pip install --upgrade pip
+    log "Upgrading pip..."
+    python -m pip install --upgrade pip
     
     # Install Python dependencies
-    pip install -r requirements.txt
+    log "Installing Python dependencies..."
+    if [ -f "requirements.txt" ]; then
+        pip install -r requirements.txt
+    else
+        error "requirements.txt not found"
+        return 1
+    fi
     
     # Create environment file if it doesn't exist
     if [ ! -f .env ]; then
+        log "Creating default backend .env file..."
         cat > .env << EOF
 MONGO_URL=mongodb://localhost:27017
 DATABASE_NAME=crypto_miner_db
@@ -246,7 +302,9 @@ REMOTE_DB_ENABLED=false
 REMOTE_MONGO_URL=mongodb://localhost:27017
 LOG_LEVEL=INFO
 EOF
-        log "Created default backend .env file"
+        success "Created default backend .env file"
+    else
+        log "Backend .env file already exists"
     fi
     
     success "Python environment setup completed"

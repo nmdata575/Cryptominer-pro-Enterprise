@@ -367,9 +367,8 @@ async def health_check():
     database_error = None
     
     try:
-        if db_manager.is_connected:
+        if db_manager.is_connected and db_manager.client is not None:
             # Test with a quick ping through the manager
-            db = await db_manager.get_database()
             await asyncio.wait_for(
                 db_manager.client.admin.command('ping'), 
                 timeout=2.0
@@ -402,7 +401,9 @@ async def health_check():
                 "max_pool_size": 50,
                 "min_pool_size": 5,
                 "heartbeat_frequency": "10s",
-                "auto_reconnect": True
+                "auto_reconnect": True,
+                "current_connections": "dynamic",
+                "heartbeat_active": db_manager.heartbeat_task is not None and not db_manager.heartbeat_task.done() if hasattr(db_manager, 'heartbeat_task') else False
             }
         }
     }

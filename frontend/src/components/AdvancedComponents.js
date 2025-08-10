@@ -346,7 +346,7 @@ const EnterpriseDBConfig = ({ onConfigChange }) => {
   useEffect(() => {
     // Check current database configuration
     checkDatabaseStatus();
-  }, []);
+  }, [checkDatabaseStatus]);
 
   const checkDatabaseStatus = useCallback(async () => {
     try {

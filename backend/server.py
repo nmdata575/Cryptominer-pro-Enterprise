@@ -83,6 +83,150 @@ DATABASE_NAME = os.getenv("DATABASE_NAME", "crypto_miner_db")
 db_client: Optional[AsyncIOMotorClient] = None
 db = None
 connected_websockets: List[WebSocket] = []
+db_connection_task: Optional[asyncio.Task] = None
+
+# Database connection manager class
+class DatabaseManager:
+    def __init__(self):
+        self.client: Optional[AsyncIOMotorClient] = None
+        self.db = None
+        self.is_connected = False
+        self.reconnect_attempts = 0
+        self.max_reconnect_attempts = 5
+        self.heartbeat_task: Optional[asyncio.Task] = None
+        
+    async def connect(self):
+        """Connect to MongoDB with connection pooling and proper configuration"""
+        try:
+            # Configure connection with proper settings for stability
+            self.client = AsyncIOMotorClient(
+                MONGO_URL,
+                # Connection pool settings
+                maxPoolSize=50,                    # Maximum connections in pool
+                minPoolSize=5,                     # Minimum connections in pool
+                maxIdleTimeMS=60000,              # 60 seconds max idle time
+                # Timeouts
+                serverSelectionTimeoutMS=5000,     # 5 seconds to select server
+                socketTimeoutMS=20000,            # 20 seconds socket timeout
+                connectTimeoutMS=10000,           # 10 seconds connect timeout
+                # Heartbeat and keepalive
+                heartbeatFrequencyMS=10000,       # 10 seconds heartbeat frequency
+                # Retry settings
+                retryWrites=True,
+                retryReads=True,
+                # Additional settings
+                maxStalenessSeconds=30,           # Max staleness for reads
+                w='majority'                      # Write concern for durability
+            )
+            
+            self.db = self.client[DATABASE_NAME]
+            
+            # Test connection with ping
+            await self.client.admin.command('ping')
+            
+            # Create indexes
+            await self._create_indexes()
+            
+            self.is_connected = True
+            self.reconnect_attempts = 0
+            
+            # Start heartbeat monitoring
+            if not self.heartbeat_task or self.heartbeat_task.done():
+                self.heartbeat_task = asyncio.create_task(self._heartbeat_monitor())
+            
+            logger.info("✅ Database connected successfully with connection pooling")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Database connection failed: {e}")
+            self.is_connected = False
+            return False
+    
+    async def _create_indexes(self):
+        """Create database indexes for performance"""
+        try:
+            await self.db.mining_stats.create_index([("timestamp", pymongo.DESCENDING)])
+            await self.db.mining_configs.create_index([("name", pymongo.ASCENDING)], unique=True)
+            await self.db.saved_pools.create_index([("name", pymongo.ASCENDING)], unique=True)
+            await self.db.custom_coins.create_index([("symbol", pymongo.ASCENDING)], unique=True)
+            logger.info("✅ Database indexes created successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Index creation warning: {e}")
+    
+    async def _heartbeat_monitor(self):
+        """Monitor database connection health and auto-reconnect if needed"""
+        while True:
+            try:
+                await asyncio.sleep(30)  # Check every 30 seconds
+                
+                if self.client and self.is_connected:
+                    # Ping database to check connection
+                    await asyncio.wait_for(
+                        self.client.admin.command('ping'), 
+                        timeout=5.0
+                    )
+                    logger.debug("💗 Database heartbeat OK")
+                else:
+                    logger.warning("❌ Database connection lost, attempting reconnection...")
+                    await self._reconnect()
+                    
+            except asyncio.TimeoutError:
+                logger.warning("⏰ Database heartbeat timeout, attempting reconnection...")
+                await self._reconnect()
+            except Exception as e:
+                logger.error(f"💔 Database heartbeat failed: {e}, attempting reconnection...")
+                await self._reconnect()
+    
+    async def _reconnect(self):
+        """Attempt to reconnect to database with exponential backoff"""
+        if self.reconnect_attempts >= self.max_reconnect_attempts:
+            logger.error(f"❌ Max reconnection attempts ({self.max_reconnect_attempts}) reached")
+            return False
+        
+        self.is_connected = False
+        self.reconnect_attempts += 1
+        
+        # Exponential backoff: 2, 4, 8, 16, 32 seconds
+        wait_time = min(2 ** self.reconnect_attempts, 32)
+        logger.info(f"🔄 Reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts} in {wait_time}s...")
+        
+        await asyncio.sleep(wait_time)
+        
+        # Close existing connection
+        if self.client:
+            self.client.close()
+        
+        # Attempt reconnection
+        success = await self.connect()
+        if success:
+            logger.info("✅ Database reconnection successful")
+        else:
+            logger.error(f"❌ Database reconnection attempt {self.reconnect_attempts} failed")
+        
+        return success
+    
+    async def get_database(self):
+        """Get database connection, reconnecting if necessary"""
+        if not self.is_connected or not self.client:
+            logger.info("🔄 Database not connected, attempting connection...")
+            await self.connect()
+        
+        if self.is_connected and self.db:
+            return self.db
+        else:
+            raise Exception("Database connection unavailable")
+    
+    async def close(self):
+        """Close database connections"""
+        self.is_connected = False
+        if self.heartbeat_task and not self.heartbeat_task.done():
+            self.heartbeat_task.cancel()
+        if self.client:
+            self.client.close()
+            logger.info("✅ Database connections closed")
+
+# Global database manager
+db_manager = DatabaseManager()
 
 # V30 Enterprise System
 v30_control_system: Optional[CentralControlSystem] = None

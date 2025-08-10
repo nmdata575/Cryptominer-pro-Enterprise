@@ -1510,4 +1510,4 @@ const CustomCoinsManager = ({ onSelectCoin, onClose }) => {
 };
 
 // Export consolidated components
-export { SavedPoolsManager, CustomCoinsManager };
+export { SavedPoolsManager, CustomCoinsManager, EnterpriseThreadManager, EnterpriseDBConfig };

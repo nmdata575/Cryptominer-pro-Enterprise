@@ -182,9 +182,13 @@ const App = () => {
         pool_username: walletConfig.pool_username,
         pool_password: walletConfig.pool_password,
         custom_pool_address: walletConfig.custom_pool_address,
-        custom_pool_port: walletConfig.custom_pool_port,
+        // Convert port to integer or omit if empty
+        ...(walletConfig.custom_pool_port && walletConfig.custom_pool_port !== '' ? 
+          { custom_pool_port: parseInt(walletConfig.custom_pool_port) || undefined } : {}),
         custom_rpc_host: walletConfig.custom_rpc_host,
-        custom_rpc_port: walletConfig.custom_rpc_port,
+        // Convert RPC port to integer or omit if empty
+        ...(walletConfig.custom_rpc_port && walletConfig.custom_rpc_port !== '' ? 
+          { custom_rpc_port: parseInt(walletConfig.custom_rpc_port) || undefined } : {}),
         custom_rpc_username: walletConfig.custom_rpc_username,
         custom_rpc_password: walletConfig.custom_rpc_password,
         auto_thread_detection: miningConfig.auto_thread_detection,

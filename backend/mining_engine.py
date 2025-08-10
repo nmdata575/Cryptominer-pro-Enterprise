@@ -4,6 +4,7 @@ Supports both solo mining and pool mining with proper stratum protocol
 """
 
 import hashlib
+import hmac
 import struct
 import time
 import threading

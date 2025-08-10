@@ -1081,6 +1081,129 @@ class BackendTester:
         except Exception:
             return False
 
+    def test_database_connection_stability(self) -> bool:
+        """Test database connection stability under load - specific to review request"""
+        try:
+            print("\n💾 DATABASE CONNECTION STABILITY TEST")
+            print("   🔥 Testing connection pooling and stability fixes")
+            
+            # Test 1: Health check database status
+            print("   📍 Test 1: Health check database status...")
+            response = self.session.get(f"{self.base_url}/health")
+            
+            if response.status_code != 200:
+                self.log_test("Database Connection Stability", False, f"Health check failed: HTTP {response.status_code}")
+                return False
+            
+            health_data = response.json()
+            database_info = health_data.get("database", {})
+            db_status = database_info.get("status", "unknown")
+            
+            if db_status != "connected":
+                self.log_test("Database Connection Stability", False, f"Database status: {db_status} (expected: connected)")
+                return False
+            
+            print(f"   ✅ Database status: {db_status}")
+            
+            # Verify connection pool configuration
+            pool_info = database_info.get("connection_pool", {})
+            max_pool = pool_info.get("max_pool_size", 0)
+            min_pool = pool_info.get("min_pool_size", 0)
+            heartbeat_active = pool_info.get("heartbeat_active", False)
+            
+            print(f"   📊 Connection pool: max={max_pool}, min={min_pool}, heartbeat={heartbeat_active}")
+            
+            # Test 2: Rapid saved pools requests (10 requests)
+            print("   📍 Test 2: Rapid saved pools requests (10 requests)...")
+            pools_success_count = 0
+            
+            for i in range(10):
+                try:
+                    response = self.session.get(f"{self.base_url}/pools/saved", timeout=5)
+                    if response.status_code == 200:
+                        pools_success_count += 1
+                except Exception as e:
+                    print(f"   ⚠️  Request {i+1} failed: {str(e)}")
+            
+            if pools_success_count < 8:  # Allow 2 failures out of 10
+                self.log_test("Database Connection Stability", False, 
+                            f"Saved pools requests: {pools_success_count}/10 successful (minimum 8 required)")
+                return False
+            
+            print(f"   ✅ Saved pools requests: {pools_success_count}/10 successful")
+            
+            # Test 3: Rapid custom coins requests (10 requests)
+            print("   📍 Test 3: Rapid custom coins requests (10 requests)...")
+            coins_success_count = 0
+            
+            for i in range(10):
+                try:
+                    response = self.session.get(f"{self.base_url}/coins/custom", timeout=5)
+                    if response.status_code == 200:
+                        coins_success_count += 1
+                except Exception as e:
+                    print(f"   ⚠️  Request {i+1} failed: {str(e)}")
+            
+            if coins_success_count < 8:  # Allow 2 failures out of 10
+                self.log_test("Database Connection Stability", False, 
+                            f"Custom coins requests: {coins_success_count}/10 successful (minimum 8 required)")
+                return False
+            
+            print(f"   ✅ Custom coins requests: {coins_success_count}/10 successful")
+            
+            # Test 4: Mixed database operations under load
+            print("   📍 Test 4: Mixed database operations under load...")
+            mixed_success_count = 0
+            
+            for i in range(5):
+                try:
+                    # Alternate between different database operations
+                    if i % 2 == 0:
+                        response = self.session.get(f"{self.base_url}/pools/saved", timeout=5)
+                    else:
+                        response = self.session.get(f"{self.base_url}/coins/all", timeout=5)
+                    
+                    if response.status_code == 200:
+                        mixed_success_count += 1
+                except Exception as e:
+                    print(f"   ⚠️  Mixed operation {i+1} failed: {str(e)}")
+            
+            if mixed_success_count < 4:  # Allow 1 failure out of 5
+                self.log_test("Database Connection Stability", False, 
+                            f"Mixed operations: {mixed_success_count}/5 successful (minimum 4 required)")
+                return False
+            
+            print(f"   ✅ Mixed operations: {mixed_success_count}/5 successful")
+            
+            # Test 5: Final health check to ensure database is still connected
+            print("   📍 Test 5: Final database connectivity check...")
+            response = self.session.get(f"{self.base_url}/health")
+            
+            if response.status_code == 200:
+                final_health = response.json()
+                final_db_status = final_health.get("database", {}).get("status", "unknown")
+                
+                if final_db_status == "connected":
+                    print(f"   ✅ Final database status: {final_db_status}")
+                    
+                    self.log_test("Database Connection Stability", True, 
+                                f"All stability tests passed - pools: {pools_success_count}/10, "
+                                f"coins: {coins_success_count}/10, mixed: {mixed_success_count}/5, "
+                                f"final status: {final_db_status}")
+                    return True
+                else:
+                    self.log_test("Database Connection Stability", False, 
+                                f"Final database status degraded: {final_db_status}")
+                    return False
+            else:
+                self.log_test("Database Connection Stability", False, 
+                            f"Final health check failed: HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Database Connection Stability", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self) -> Dict[str, Any]:
         """Legacy test runner - redirects to comprehensive suite"""
         return self.run_comprehensive_test_suite()

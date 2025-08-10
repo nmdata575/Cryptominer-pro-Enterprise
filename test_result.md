@@ -40,7 +40,7 @@ backend:
     working: true
     file: "backend/server.py"
     stuck_count: 0
-    priority: "medium"
+    priority: "high"
     needs_retesting: false
     status_history:
         - working: true
@@ -86,7 +86,7 @@ backend:
   - task: "V30 License System"
     implemented: true
     working: true
-    file: "backend/enterprise_license.py"
+    file: "backend/enterprise_v30.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -98,7 +98,7 @@ backend:
   - task: "V30 Hardware Validation"
     implemented: true
     working: true
-    file: "backend/hardware_validator.py"
+    file: "backend/enterprise_v30.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -110,7 +110,7 @@ backend:
   - task: "V30 System Initialization"
     implemented: true
     working: true
-    file: "backend/v30_central_control.py"
+    file: "backend/enterprise_v30.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -122,7 +122,7 @@ backend:
   - task: "V30 Distributed Mining Control"
     implemented: true
     working: true
-    file: "backend/v30_central_control.py"
+    file: "backend/enterprise_v30.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -134,7 +134,7 @@ backend:
   - task: "V30 Node Management"
     implemented: true
     working: true
-    file: "backend/v30_protocol.py"
+    file: "backend/enterprise_v30.py"
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
@@ -146,7 +146,7 @@ backend:
   - task: "V30 Comprehensive Statistics"
     implemented: true
     working: true
-    file: "backend/v30_central_control.py"
+    file: "backend/enterprise_v30.py"
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
@@ -166,6 +166,18 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ V30 Health check updates working. Correctly shows version 'v30' and edition 'Enterprise'. Includes V30 system status, AI system status, and mining status."
+
+  - task: "Enterprise File Consolidation"
+    implemented: true
+    working: true
+    file: "backend/enterprise_v30.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "development"
+          comment: "✅ Successfully consolidated v30_protocol.py and gpu_mining_engine.py into enterprise_v30.py. Updated imports and removed redundant files. All enterprise functionality now unified in a single module."
 
 metadata:
   created_by: "testing_agent"

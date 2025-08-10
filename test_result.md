@@ -212,6 +212,30 @@ test_plan:
     - "Redundant Script Removal"
 
 frontend:
+  - task: "Saved Pools Manager Component (Consolidated)"
+    implemented: true
+    working: true
+    file: "frontend/src/components/AdvancedComponents.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ SAVED POOLS MANAGER VERIFIED - Component successfully consolidated into AdvancedComponents.js with comprehensive functionality: Modal interface with pool list display, Add New Pool and Save Current Config buttons, Pool management with CRUD operations (Create, Read, Update, Delete, Use), Form validation for pool configurations, Pool usage functionality that loads configurations into main mining interface, Integration with backend API endpoints (/api/pools/saved), Proper state management and error handling. Component renders properly and integrates with main App.js state management."
+
+  - task: "Custom Coins Manager Component (Consolidated)"
+    implemented: true
+    working: true
+    file: "frontend/src/components/AdvancedComponents.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CUSTOM COINS MANAGER VERIFIED - Component successfully consolidated into AdvancedComponents.js with comprehensive functionality: Modal interface for custom coin management, Add New Coin functionality with algorithm selection, CRUD operations for custom cryptocurrencies, Form validation and duplicate prevention, Integration with backend API endpoints (/api/coins/custom, /api/coins/all), Coin selection functionality that updates main mining interface, Support for multiple algorithms including Scrypt with configurable parameters. Component properly integrated with main App.js and backend APIs."
+
   - task: "Enterprise Thread Manager Component"
     implemented: true
     working: true

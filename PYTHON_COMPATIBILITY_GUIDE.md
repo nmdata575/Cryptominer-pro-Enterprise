@@ -20,14 +20,33 @@ The updated `local-setup.sh` script now automatically handles Python version com
    - Creates virtual environment with optimal Python version
    - Handles package installation with binary preferences
 
-### **Python Version Compatibility Matrix:**
+### **Ubuntu + Python Version Compatibility Matrix:**
 
-| Python Version | Status | Action Taken |
-|---------------|--------|--------------|
-| Python 3.11   | ✅ Excellent | Uses existing installation |
-| Python 3.12   | ✅ Excellent | Uses existing installation |
-| Python 3.13   | ⚠️ Issues | Installs Python 3.12 instead |
-| Python 3.10   | ⚠️ Limited | Installs Python 3.12 instead |
+Based on deadsnakes PPA and Ubuntu official repositories:
+
+| Ubuntu Version | System Python | Available via Standard Repos | Available via Deadsnakes PPA | Recommended for CryptoMiner |
+|---------------|---------------|------------------------------|------------------------------|---------------------------|
+| **Ubuntu 24.04 (noble)** | Python 3.12 | **Python 3.12** ✅ | Python 3.7-3.11, 3.13 | **Python 3.12** ✅ |
+| **Ubuntu 22.04 (jammy)** | Python 3.10 | **Python 3.10** | Python 3.7-3.9, 3.11-3.13 | **Python 3.11/3.12** ✅ |
+| **Ubuntu 20.04 (focal)** | Python 3.8 | **Python 3.8** | Python 3.5-3.7, 3.9-3.13 | **Python 3.11/3.12** ✅ |
+
+### **Script Logic by Ubuntu Version:**
+
+**Ubuntu 24.04 (noble):**
+- ✅ **Python 3.12**: Uses standard Ubuntu repositories (optimal)
+- ⚠️ **Python 3.13**: Installs Python 3.12 instead (pandas compatibility)
+- ✅ **Python 3.11**: Uses existing installation
+- 🔄 **Other versions**: Installs Python 3.12 from standard repos
+
+**Ubuntu 22.04 (jammy):**
+- ✅ **Python 3.11/3.12**: Uses existing or installs from deadsnakes PPA
+- ⚠️ **Python 3.13**: Installs Python 3.12 from deadsnakes PPA
+- 🔄 **Python 3.10 or older**: Installs Python 3.12 from deadsnakes PPA
+
+**Ubuntu 20.04 (focal):**
+- ✅ **Python 3.11/3.12**: Uses existing or installs from deadsnakes PPA
+- ⚠️ **Python 3.13**: Installs Python 3.12 from deadsnakes PPA
+- 🔄 **Python 3.8-3.10**: Installs Python 3.12 from deadsnakes PPA
 
 ### **How to Use:**
 

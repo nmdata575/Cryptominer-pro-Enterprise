@@ -742,6 +742,8 @@ async def delete_custom_coin(coin_id: str):
             "message": "Custom coin deleted successfully"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Delete custom coin error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

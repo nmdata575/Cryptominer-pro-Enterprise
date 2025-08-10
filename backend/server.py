@@ -476,7 +476,7 @@ async def get_system_stats():
 async def get_saved_pools():
     """Get all saved pool configurations"""
     try:
-        if not db:
+        if db is None:
             raise HTTPException(status_code=500, detail="Database not connected")
         
         pools = []

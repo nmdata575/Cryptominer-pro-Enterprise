@@ -25,6 +25,8 @@ def validate_wallet_address(address: str, coin_symbol: str) -> Tuple[bool, str]:
             return validate_dogecoin_address(address)
         elif coin_symbol == "FTC":  # Feathercoin
             return validate_feathercoin_address(address)
+        elif coin_symbol == "EFL":  # E-Gulden (for testing purposes)
+            return validate_efl_address(address)
         else:
             return False, f"Unsupported coin: {coin_symbol}"
     except Exception as e:

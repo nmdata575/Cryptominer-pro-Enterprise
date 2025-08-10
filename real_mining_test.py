@@ -558,9 +558,12 @@ def main():
     results = tester.run_real_mining_tests()
     
     # Determine success criteria
+    share_data = results.get("share_data", {})
+    total_shares = share_data.get("total", 0) if isinstance(share_data, dict) else 0
+    
     success_criteria_met = (
         results["success_rate"] >= 80.0 and  # 80% test success rate
-        results.get("share_data", {}).get("total", 0) > 0  # At least some shares submitted
+        total_shares > 0  # At least some shares submitted
     )
     
     if success_criteria_met:
@@ -572,7 +575,7 @@ def main():
     else:
         print(f"\n⚠️ Real mining tests completed with issues.")
         print(f"Success rate: {results['success_rate']:.1f}% (target: 80%+)")
-        if results.get("share_data", {}).get("total", 0) == 0:
+        if total_shares == 0:
             print("❌ No shares were submitted to the mining pool")
         sys.exit(1)
 

@@ -1678,7 +1678,24 @@ class CentralControlSystem:
 
 # Export consolidated classes
 __all__ = [
+    # License System
     'EnterpriseV30License',
+    # Hardware Validation
     'EnterpriseHardwareValidator', 
-    'CentralControlSystem'
+    # Central Control
+    'CentralControlSystem',
+    # Protocol System
+    'V30Protocol',
+    'NodeManager',
+    'DistributedMiningServer',
+    'MessageType',
+    'NodeInfo',
+    'MiningWork',
+    'WorkResult',
+    # GPU Mining System
+    'CUDAMiner',
+    'OpenCLMiner',
+    'HybridGPUCPUMiner',
+    'GPUMiningStats',
+    'HybridMiningStats'
 ]

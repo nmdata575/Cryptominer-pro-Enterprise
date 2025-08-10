@@ -1,7 +1,6 @@
 """
-CryptoMiner Pro - Enterprise-Scale Mining Engine
-Handles massive-scale Scrypt mining operations for data centers and GPU farms
-Supports up to 250,000+ cores with intelligent thread management and load balancing
+CryptoMiner Pro - Enhanced Mining Engine with Real Scrypt Implementation
+Supports both solo mining and pool mining with proper stratum protocol
 """
 
 import hashlib
@@ -18,6 +17,9 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from threading import Lock
 import logging
+
+# Import the real scrypt implementation
+from real_scrypt_miner import RealScryptMiner, ScryptAlgorithm, StratumClient
 
 logger = logging.getLogger(__name__)
 

@@ -290,19 +290,11 @@ class CustomCoin(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     """Initialize database connection and AI system"""
-    global db_client, db, v30_control_system
+    global v30_control_system
     
     try:
-        db_client = AsyncIOMotorClient(MONGO_URL)
-        db = db_client[DATABASE_NAME]
-        
-        # Test connection
-        await db_client.admin.command('ping')
-        logger.info("Database connected successfully")
-        
-        # Create indexes
-        await db.mining_stats.create_index([("timestamp", pymongo.DESCENDING)])
-        await db.mining_configs.create_index([("name", pymongo.ASCENDING)], unique=True)
+        # Initialize database with connection pooling and auto-reconnection
+        await db_manager.connect()
         
         # Start AI system
         ai_system.start_ai_system()
@@ -315,6 +307,15 @@ async def startup_event():
         
     except Exception as e:
         logger.error(f"Startup error: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    try:
+        await db_manager.close()
+        logger.info("Application shutdown complete")
+    except Exception as e:
+        logger.error(f"Shutdown error: {e}")
 
 @app.on_event("shutdown") 
 async def shutdown_event():

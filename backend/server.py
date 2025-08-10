@@ -662,7 +662,7 @@ async def get_custom_coins():
 async def create_custom_coin(coin: CustomCoin):
     """Create a new custom coin configuration"""
     try:
-        if not db:
+        if db is None:
             raise HTTPException(status_code=500, detail="Database not connected")
         
         # Check if coin symbol already exists

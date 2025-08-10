@@ -362,20 +362,29 @@ async def api_root():
 async def health_check():
     """Health check endpoint with database connectivity status"""
     
-    # Check database connection
+    # Check database connection using the database manager
     database_status = "unknown"
     database_error = None
     
     try:
-        # Test MongoDB connection
-        client = AsyncIOMotorClient(MONGO_URL, serverSelectionTimeoutMS=2000)
-        await client.admin.command('ping')
-        database_status = "connected"
-        client.close()
+        if db_manager.is_connected:
+            # Test with a quick ping through the manager
+            db = await db_manager.get_database()
+            await asyncio.wait_for(
+                db_manager.client.admin.command('ping'), 
+                timeout=2.0
+            )
+            database_status = "connected"
+        else:
+            database_status = "disconnected"
+            database_error = "Connection not established"
+    except asyncio.TimeoutError:
+        database_status = "timeout"
+        database_error = "Database ping timeout"
     except Exception as e:
-        database_status = "disconnected" 
+        database_status = "error" 
         database_error = str(e)
-        logger.warning(f"Database connection check failed: {e}")
+        logger.warning(f"Health check database error: {e}")
     
     return {
         "status": "healthy",
@@ -388,7 +397,13 @@ async def health_check():
         "database": {
             "status": database_status,
             "url": MONGO_URL[:20] + "..." if len(MONGO_URL) > 20 else MONGO_URL,
-            "error": database_error
+            "error": database_error,
+            "connection_pool": {
+                "max_pool_size": 50,
+                "min_pool_size": 5,
+                "heartbeat_frequency": "10s",
+                "auto_reconnect": True
+            }
         }
     }
 

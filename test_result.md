@@ -169,12 +169,16 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "2.0"
-  test_sequence: 2
+  version: "3.0"
+  test_sequence: 3
   run_ui: false
   v30_testing_completed: true
   v30_features_tested: 8
   total_license_keys_generated: 5000
+  saved_pools_api_tested: true
+  custom_coins_api_tested: true
+  api_endpoints_tested: 10
+  api_success_rate: "100%"
 
 test_plan:
   current_focus:

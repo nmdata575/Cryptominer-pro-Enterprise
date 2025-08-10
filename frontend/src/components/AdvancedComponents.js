@@ -674,10 +674,6 @@ const SavedPoolsManager = ({ onUsePool, onClose, currentConfig }) => {
 
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
-    useEffect(() => {
-        fetchSavedPools();
-    }, [fetchSavedPools]);
-
     const fetchSavedPools = useCallback(async () => {
         try {
             const response = await fetch(`${backendUrl}/api/pools/saved`);
@@ -690,6 +686,10 @@ const SavedPoolsManager = ({ onUsePool, onClose, currentConfig }) => {
         }
         setLoading(false);
     }, [backendUrl]);
+
+    useEffect(() => {
+        fetchSavedPools();
+    }, [fetchSavedPools]);
 
     const handleSave = async () => {
         try {

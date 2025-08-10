@@ -447,6 +447,190 @@ async def get_system_stats():
         return {"error": str(e)}
 
 # ============================================================================
+# V30 ENTERPRISE API ENDPOINTS
+# ============================================================================
+
+@app.post("/api/v30/license/validate")
+async def validate_v30_license(request: dict):
+    """Validate V30 Enterprise license key"""
+    try:
+        license_key = request.get("license_key")
+        if not license_key:
+            raise HTTPException(status_code=400, detail="License key required")
+        
+        validation = enterprise_license_system.validate_license(license_key)
+        return validation
+        
+    except Exception as e:
+        logger.error(f"License validation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v30/license/activate")
+async def activate_v30_license(request: dict):
+    """Activate V30 Enterprise license"""
+    try:
+        license_key = request.get("license_key")
+        node_info = request.get("node_info", {})
+        
+        if not license_key:
+            raise HTTPException(status_code=400, detail="License key required")
+        
+        activation = enterprise_license_system.activate_license(license_key, node_info)
+        return activation
+        
+    except Exception as e:
+        logger.error(f"License activation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v30/hardware/validate")
+async def validate_v30_hardware():
+    """Validate enterprise hardware requirements"""
+    try:
+        validation_result = hardware_validator.comprehensive_validation()
+        return validation_result
+        
+    except Exception as e:
+        logger.error(f"Hardware validation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v30/system/initialize")
+async def initialize_v30_system():
+    """Initialize V30 Enterprise system"""
+    global v30_control_system
+    
+    try:
+        if not v30_control_system:
+            v30_control_system = CentralControlSystem()
+        
+        if v30_control_system.is_running:
+            return {"success": True, "message": "V30 system already running"}
+        
+        init_result = await v30_control_system.initialize_system()
+        return init_result
+        
+    except Exception as e:
+        logger.error(f"V30 system initialization error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v30/system/status")
+async def get_v30_system_status():
+    """Get V30 Enterprise system status"""
+    try:
+        if not v30_control_system:
+            return {
+                "initialized": False,
+                "message": "V30 system not initialized"
+            }
+        
+        status = v30_control_system.get_system_status()
+        return status
+        
+    except Exception as e:
+        logger.error(f"V30 system status error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v30/mining/distributed/start")
+async def start_v30_distributed_mining(request: dict):
+    """Start V30 distributed mining"""
+    global v30_control_system
+    
+    try:
+        if not v30_control_system or not v30_control_system.is_running:
+            raise HTTPException(
+                status_code=400, 
+                detail="V30 system not initialized. Call /api/v30/system/initialize first."
+            )
+        
+        coin_config = request.get("coin_config", {})
+        wallet_address = request.get("wallet_address", "")
+        include_local = request.get("include_local", True)
+        
+        if not coin_config or not wallet_address:
+            raise HTTPException(
+                status_code=400, 
+                detail="coin_config and wallet_address required"
+            )
+        
+        result = await v30_control_system.start_distributed_mining(
+            coin_config, wallet_address, include_local
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"V30 distributed mining start error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v30/mining/distributed/stop")
+async def stop_v30_distributed_mining():
+    """Stop V30 distributed mining"""
+    global v30_control_system
+    
+    try:
+        if not v30_control_system:
+            raise HTTPException(status_code=400, detail="V30 system not initialized")
+        
+        result = await v30_control_system.stop_distributed_mining()
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"V30 distributed mining stop error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v30/nodes/list")
+async def list_v30_nodes():
+    """List all connected V30 mining nodes"""
+    try:
+        if not v30_control_system or not v30_control_system.distributed_server:
+            return {"nodes": [], "total": 0}
+        
+        node_manager = v30_control_system.distributed_server.node_manager
+        nodes_data = []
+        
+        for node_id, node_info in node_manager.nodes.items():
+            nodes_data.append({
+                "node_id": node_id,
+                "hostname": node_info.hostname,
+                "ip_address": node_info.ip_address,
+                "status": node_info.status,
+                "connected_time": node_info.connected_time,
+                "last_heartbeat": node_info.last_heartbeat,
+                "system_specs": node_info.system_specs,
+                "capabilities": node_info.capabilities
+            })
+        
+        return {
+            "nodes": nodes_data,
+            "total": len(nodes_data),
+            "active": len([n for n in nodes_data if n["status"] == "connected"])
+        }
+        
+    except Exception as e:
+        logger.error(f"V30 nodes list error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v30/stats/comprehensive")
+async def get_v30_comprehensive_stats():
+    """Get comprehensive V30 system statistics"""
+    try:
+        if not v30_control_system:
+            return {"error": "V30 system not initialized"}
+        
+        # Force stats update
+        await v30_control_system._update_system_stats()
+        
+        status = v30_control_system.get_system_status()
+        return status
+        
+    except Exception as e:
+        logger.error(f"V30 comprehensive stats error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
 # WEBSOCKET CONNECTION
 # ============================================================================
 

@@ -182,11 +182,16 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Saved Pools & Custom Coins API Testing Complete"
     - "V30 Enterprise Features Complete"
     - "All Backend APIs Functional"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+  newly_tested_features:
+    - "Saved Pools API (GET, POST, PUT, DELETE, USE)"
+    - "Custom Coins API (GET, POST, PUT, DELETE, GET ALL)"
+    - "API Validation & Error Handling"
 
 frontend:
   - task: "Enterprise Thread Manager Component"

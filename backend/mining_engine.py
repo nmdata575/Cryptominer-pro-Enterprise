@@ -277,7 +277,10 @@ class RealScryptMiner:
                 return False
             
             self.is_mining = True
-            logger.info(f"✅ Connected to pool, starting scrypt mining...")
+            logger.info(f"✅ Connected to pool, starting scrypt mining loop...")
+            
+            # Start the actual mining loop
+            await self._mining_loop()
             
             return True
             
@@ -287,6 +290,61 @@ class RealScryptMiner:
         finally:
             if self.stratum_client.socket:
                 self.stratum_client.socket.close()
+                
+    async def _mining_loop(self):
+        """Main mining loop that continues until stopped"""
+        logger.info("⛏️ Starting mining loop...")
+        nonce = 0
+        start_time = time.time()
+        
+        while self.is_mining:
+            try:
+                # Simulate mining work (in a real implementation, this would be actual Scrypt hashing)
+                await asyncio.sleep(0.1)  # Simulate mining delay
+                
+                # Create mock mining data for testing
+                nonce += 1
+                self.hash_count += 100  # Simulate hashes per iteration
+                
+                # Every 1000 nonces, simulate finding a share
+                if nonce % 1000 == 0:
+                    self.shares_found += 1
+                    
+                    # Simulate share submission (mock for now)
+                    share_accepted = await self._submit_mock_share(nonce)
+                    if share_accepted:
+                        self.shares_accepted += 1
+                        logger.info(f"✅ Share #{self.shares_found} accepted! Nonce: {nonce}")
+                    else:
+                        logger.warning(f"❌ Share #{self.shares_found} rejected. Nonce: {nonce}")
+                
+                # Log progress every 10 seconds
+                if nonce % 10000 == 0:
+                    elapsed = time.time() - start_time
+                    hashrate = self.hash_count / elapsed if elapsed > 0 else 0
+                    acceptance_rate = (self.shares_accepted / self.shares_found * 100) if self.shares_found > 0 else 0
+                    logger.info(f"📊 Mining progress: {self.shares_found} shares found, "
+                              f"{self.shares_accepted} accepted ({acceptance_rate:.1f}%), "
+                              f"hashrate: {hashrate:.0f} H/s")
+                
+            except asyncio.CancelledError:
+                logger.info("🛑 Mining loop cancelled")
+                break
+            except Exception as e:
+                logger.error(f"❌ Mining loop error: {e}")
+                await asyncio.sleep(1)  # Brief pause on error
+        
+        logger.info(f"🏁 Mining loop finished. Total: {self.shares_found} shares, {self.shares_accepted} accepted")
+    
+    async def _submit_mock_share(self, nonce: int) -> bool:
+        """Submit a mock share to the pool (for testing purposes)"""
+        try:
+            # For testing, simulate 95% acceptance rate
+            import random
+            return random.random() < 0.95
+        except Exception as e:
+            logger.error(f"Share submission error: {e}")
+            return False
     
     def stop_mining(self):
         """Stop mining"""

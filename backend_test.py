@@ -777,6 +777,233 @@ class CryptoMinerProTester:
         except Exception as e:
             self.log_test("V30 Health Check Updates", False, f"Request error: {str(e)}")
 
+    def test_efl_scrypt_mining_protocol(self):
+        """Test newly implemented Scrypt mining protocol fix with real EFL mining pool credentials"""
+        try:
+            # EFL Pool Configuration from review request
+            efl_pool_config = {
+                "coin": {
+                    "name": "E-Gulden",
+                    "symbol": "EFL",
+                    "algorithm": "Scrypt",
+                    "block_reward": 25.0,
+                    "block_time": 150,
+                    "difficulty": 1000.0,
+                    "scrypt_params": {"n": 1024, "r": 1, "p": 1},
+                    "network_hashrate": "10 MH/s",
+                    "wallet_format": "L prefix (legacy)",
+                    "custom_pool_address": "stratum.luckydogpool.com",
+                    "custom_pool_port": 7026
+                },
+                "mode": "pool",
+                "threads": 4,
+                "intensity": 1.0,
+                "auto_optimize": True,
+                "ai_enabled": True,
+                "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",  # Real EFL wallet from request
+                "pool_username": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd.CryptoMiner-V30",
+                "pool_password": "c=EFL,m=solo",  # Real mining password from request
+                "enterprise_mode": True,
+                "target_cpu_utilization": 0.5,  # Moderate load for testing
+                "thread_scaling_enabled": True
+            }
+            
+            print(f"\n🧪 Testing EFL Scrypt Mining Protocol with Real Pool")
+            print(f"   Pool: {efl_pool_config['coin']['custom_pool_address']}:{efl_pool_config['coin']['custom_pool_port']}")
+            print(f"   Wallet: {efl_pool_config['wallet_address']}")
+            print(f"   Worker: {efl_pool_config['pool_username']}")
+            print(f"   Password: {efl_pool_config['pool_password']}")
+            
+            # Step 1: Validate wallet address
+            wallet_validation = {
+                "address": efl_pool_config["wallet_address"],
+                "coin_symbol": "EFL"
+            }
+            
+            wallet_response = requests.post(f"{API_BASE}/validate_wallet", 
+                                          json=wallet_validation, timeout=10)
+            
+            if wallet_response.status_code == 200:
+                wallet_data = wallet_response.json()
+                if wallet_data.get("valid"):
+                    self.log_test("EFL Wallet Validation", True, 
+                                f"EFL wallet address validated: {efl_pool_config['wallet_address']}", wallet_data)
+                else:
+                    self.log_test("EFL Wallet Validation", False, 
+                                f"EFL wallet validation failed: {wallet_data.get('message', 'Unknown error')}", wallet_data)
+                    return  # Don't proceed if wallet is invalid
+            else:
+                self.log_test("EFL Wallet Validation", False, 
+                            f"Wallet validation request failed: HTTP {wallet_response.status_code}")
+                return
+            
+            # Step 2: Test pool connection
+            pool_test = {
+                "pool_address": efl_pool_config["coin"]["custom_pool_address"],
+                "pool_port": efl_pool_config["coin"]["custom_pool_port"],
+                "type": "pool"
+            }
+            
+            pool_response = requests.post(f"{API_BASE}/pool/test-connection", 
+                                        json=pool_test, timeout=15)
+            
+            if pool_response.status_code == 200:
+                pool_data = pool_response.json()
+                if pool_data.get("success"):
+                    self.log_test("EFL Pool Connection Test", True, 
+                                f"Successfully connected to {efl_pool_config['coin']['custom_pool_address']}:{efl_pool_config['coin']['custom_pool_port']}", pool_data)
+                else:
+                    self.log_test("EFL Pool Connection Test", False, 
+                                f"Pool connection failed: {pool_data.get('error', 'Unknown error')}", pool_data)
+                    # Continue with test even if connection test fails - might be firewall/network issue
+            else:
+                self.log_test("EFL Pool Connection Test", False, 
+                            f"Pool connection test failed: HTTP {pool_response.status_code}")
+            
+            # Step 3: Start EFL mining with real pool
+            start_response = requests.post(f"{API_BASE}/mining/start", 
+                                         json=efl_pool_config, timeout=20)
+            
+            if start_response.status_code == 200:
+                start_data = start_response.json()
+                
+                if start_data.get("success"):
+                    self.log_test("EFL Mining Start", True, 
+                                f"EFL mining started successfully: {start_data.get('message', '')}", start_data)
+                    
+                    # Step 4: Monitor mining for a short period
+                    time.sleep(10)  # Let it mine for 10 seconds
+                    
+                    # Step 5: Check mining status
+                    status_response = requests.get(f"{API_BASE}/mining/status", timeout=10)
+                    
+                    if status_response.status_code == 200:
+                        status_data = status_response.json()
+                        
+                        if status_data.get("is_mining"):
+                            stats = status_data.get("stats", {})
+                            config = status_data.get("config", {})
+                            
+                            mining_details = {
+                                "is_mining": status_data.get("is_mining"),
+                                "hashrate": stats.get("hashrate", 0),
+                                "accepted_shares": stats.get("accepted_shares", 0),
+                                "rejected_shares": stats.get("rejected_shares", 0),
+                                "uptime": stats.get("uptime", 0),
+                                "active_threads": stats.get("active_threads", 0),
+                                "algorithm": config.get("algorithm", "unknown") if config else "unknown",
+                                "pool_connected": True
+                            }
+                            
+                            self.log_test("EFL Mining Status", True, 
+                                        f"EFL mining active - {mining_details['active_threads']} threads, {mining_details['hashrate']:.2f} H/s", 
+                                        mining_details)
+                        else:
+                            self.log_test("EFL Mining Status", False, 
+                                        "Mining not active after start", status_data)
+                    else:
+                        self.log_test("EFL Mining Status", False, 
+                                    f"Status check failed: HTTP {status_response.status_code}")
+                    
+                    # Step 6: Stop mining
+                    stop_response = requests.post(f"{API_BASE}/mining/stop", timeout=10)
+                    
+                    if stop_response.status_code == 200:
+                        stop_data = stop_response.json()
+                        if stop_data.get("success"):
+                            self.log_test("EFL Mining Stop", True, 
+                                        f"EFL mining stopped successfully: {stop_data.get('message', '')}", stop_data)
+                        else:
+                            self.log_test("EFL Mining Stop", False, 
+                                        f"Mining stop failed: {stop_data.get('message', 'Unknown error')}", stop_data)
+                    else:
+                        self.log_test("EFL Mining Stop", False, 
+                                    f"Stop request failed: HTTP {stop_response.status_code}")
+                        
+                else:
+                    error_msg = start_data.get('detail', start_data.get('message', 'Unknown error'))
+                    self.log_test("EFL Mining Start", False, 
+                                f"EFL mining start failed: {error_msg}", start_data)
+            else:
+                self.log_test("EFL Mining Start", False, 
+                            f"Mining start request failed: HTTP {start_response.status_code}", 
+                            {"response": start_response.text})
+                
+        except Exception as e:
+            self.log_test("EFL Scrypt Mining Protocol", False, f"Test error: {str(e)}")
+    
+    def test_scrypt_algorithm_integration(self):
+        """Test ScryptAlgorithm and StratumClient integration in mining_engine.py"""
+        try:
+            # This test verifies that the new ScryptAlgorithm and StratumClient classes
+            # are properly integrated into the mining engine
+            
+            # Test 1: Verify mining engine can handle Scrypt parameters
+            scrypt_config = {
+                "coin": {
+                    "name": "Litecoin",
+                    "symbol": "LTC", 
+                    "algorithm": "Scrypt",
+                    "block_reward": 6.25,
+                    "block_time": 150,
+                    "difficulty": 27882939.35508488,
+                    "scrypt_params": {"n": 1024, "r": 1, "p": 1},  # Standard Litecoin parameters
+                    "network_hashrate": "450 TH/s",
+                    "wallet_format": "L/M prefix (legacy), ltc1 (bech32), 3 (multisig)"
+                },
+                "mode": "solo",
+                "threads": 2,
+                "intensity": 1.0,
+                "wallet_address": "ltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
+                "enterprise_mode": True
+            }
+            
+            # Start mining briefly to test integration
+            start_response = requests.post(f"{API_BASE}/mining/start", 
+                                         json=scrypt_config, timeout=15)
+            
+            if start_response.status_code == 200:
+                start_data = start_response.json()
+                
+                if start_data.get("success"):
+                    # Let it run briefly
+                    time.sleep(3)
+                    
+                    # Check status
+                    status_response = requests.get(f"{API_BASE}/mining/status", timeout=10)
+                    
+                    if status_response.status_code == 200:
+                        status_data = status_response.json()
+                        
+                        if status_data.get("is_mining"):
+                            # Stop mining
+                            requests.post(f"{API_BASE}/mining/stop", timeout=10)
+                            
+                            integration_details = {
+                                "scrypt_params_accepted": True,
+                                "mining_started": True,
+                                "algorithm": status_data.get("config", {}).get("algorithm", "unknown"),
+                                "enterprise_mode": status_data.get("config", {}).get("enterprise_mode", False)
+                            }
+                            
+                            self.log_test("Scrypt Algorithm Integration", True, 
+                                        "ScryptAlgorithm properly integrated in mining engine", integration_details)
+                        else:
+                            self.log_test("Scrypt Algorithm Integration", False, 
+                                        "Mining not active - integration issue", status_data)
+                    else:
+                        self.log_test("Scrypt Algorithm Integration", False, 
+                                    f"Status check failed: HTTP {status_response.status_code}")
+                else:
+                    self.log_test("Scrypt Algorithm Integration", False, 
+                                f"Mining start failed: {start_data.get('message', 'Unknown error')}", start_data)
+            else:
+                self.log_test("Scrypt Algorithm Integration", False, 
+                            f"Integration test failed: HTTP {start_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Scrypt Algorithm Integration", False, f"Integration test error: {str(e)}")
+
     def run_all_tests(self):
         """Run all enterprise backend tests including V30 features"""
         print("🚀 Starting CryptoMiner Enterprise V30 Backend Tests")

@@ -693,7 +693,7 @@ async def create_custom_coin(coin: CustomCoin):
 async def update_custom_coin(coin_id: str, coin: CustomCoin):
     """Update an existing custom coin configuration"""
     try:
-        if not db:
+        if db is None:
             raise HTTPException(status_code=500, detail="Database not connected")
         
         from bson import ObjectId

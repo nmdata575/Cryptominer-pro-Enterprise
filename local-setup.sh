@@ -226,8 +226,28 @@ install_python312_from_deadsnakes() {
     
     # Add deadsnakes PPA for newer Python versions
     log "Adding deadsnakes PPA..."
-    sudo add-apt-repository ppa:deadsnakes/ppa -y
-    sudo apt update
+    if sudo add-apt-repository ppa:deadsnakes/ppa -y; then
+        log "Successfully added deadsnakes PPA"
+    else
+        error "Failed to add deadsnakes PPA"
+        return 1
+    fi
+    
+    # Update package list and check if it works
+    if sudo apt update 2>/dev/null; then
+        log "Package list updated successfully"
+    else
+        warning "Package update failed - PPA may not support this Ubuntu version"
+        return 1
+    fi
+    
+    # Check if Python 3.12 is available from the PPA
+    if apt-cache show python3.12 &>/dev/null; then
+        log "Python 3.12 available from deadsnakes PPA"
+    else
+        warning "Python 3.12 not available from deadsnakes PPA for this Ubuntu version"
+        return 1
+    fi
     
     # Install Python 3.12 and related packages
     log "Installing Python 3.12 packages from deadsnakes..."

@@ -643,7 +643,7 @@ async def use_saved_pool(pool_id: str):
 async def get_custom_coins():
     """Get all custom coin configurations"""
     try:
-        if not db:
+        if db is None:
             raise HTTPException(status_code=500, detail="Database not connected")
         
         coins = []

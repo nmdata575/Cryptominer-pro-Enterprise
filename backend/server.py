@@ -211,7 +211,7 @@ class DatabaseManager:
             logger.info("🔄 Database not connected, attempting connection...")
             await self.connect()
         
-        if self.is_connected and self.db:
+        if self.is_connected and self.db is not None:
             return self.db
         else:
             raise Exception("Database connection unavailable")

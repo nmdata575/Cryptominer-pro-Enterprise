@@ -307,6 +307,24 @@ const App = () => {
         </div>
         <h1 className="app-title">⛏️ CryptoMiner Pro</h1>
         <p className="app-subtitle">AI-Powered Mining Dashboard</p>
+        
+        {/* Quick Access Buttons */}
+        <div className="header-actions">
+          <button
+            onClick={() => setShowSavedPools(true)}
+            className="btn btn-secondary"
+            title="Manage saved pool configurations"
+          >
+            💾 Saved Pools
+          </button>
+          <button
+            onClick={() => setShowCustomCoins(true)}
+            className="btn btn-secondary"
+            title="Manage custom coins"
+          >
+            🪙 Custom Coins
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}

@@ -495,7 +495,7 @@ async def get_saved_pools():
 async def save_pool_configuration(pool: SavedPool):
     """Save a new pool configuration"""
     try:
-        if not db:
+        if db is None:
             raise HTTPException(status_code=500, detail="Database not connected")
         
         # Check if pool name already exists

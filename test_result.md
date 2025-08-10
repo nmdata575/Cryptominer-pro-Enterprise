@@ -281,6 +281,30 @@ frontend:
           agent: "testing"
           comment: "✅ SCRYPT MINING PROTOCOL FIX SUCCESSFUL - Successfully tested with real EFL mining pool (stratum.luckydogpool.com:7026). Fixed JSON parsing in StratumClient, added EFL wallet validation, resolved thread pool statistics error. ScryptAlgorithm and StratumClient properly integrated. Pool connection working with 0.2-0.3s response times. Mining engine starts successfully with real pool credentials."
 
+  - task: "Saved Pools API Implementation"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ SAVED POOLS API FULLY FUNCTIONAL - All CRUD operations working perfectly. GET /api/pools/saved (list pools), POST /api/pools/saved (create pool), PUT /api/pools/saved/{pool_id} (update pool), DELETE /api/pools/saved/{pool_id} (delete pool), POST /api/pools/saved/{pool_id}/use (use pool config). Tested with real EFL pool configuration (LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd, stratum.luckydogpool.com:7026). Proper validation of wallet addresses, error handling for non-existent pools, and mining config generation working correctly. Data persisted in MongoDB saved_pools collection."
+
+  - task: "Custom Coins API Implementation"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CUSTOM COINS API FULLY FUNCTIONAL - All CRUD operations working perfectly. GET /api/coins/custom (list custom coins), POST /api/coins/custom (create coin), PUT /api/coins/custom/{coin_id} (update coin), DELETE /api/coins/custom/{coin_id} (delete coin), GET /api/coins/all (combined preset + custom coins). Tested with hypothetical CMPC cryptocurrency. Proper validation of duplicate symbols, error handling for non-existent coins, and preset/custom coin combination working correctly. Data persisted in MongoDB custom_coins collection."
+
 agent_communication:
     - agent: "testing"
       message: "✅ ALL ENTERPRISE BACKEND TESTS PASSED (100% success rate). The CryptoMiner Pro backend successfully supports enterprise-scale features including 250k+ thread management, enterprise database options, enhanced system detection, and the new EnterpriseScryptMiner class. All 10 comprehensive tests passed including high thread count mining (32, 64, 128 threads), database connection testing, AI system integration, and enterprise metrics reporting."
@@ -290,3 +314,5 @@ agent_communication:
       message: "🔥 V30 ENTERPRISE SYSTEM FULLY TESTED - Comprehensive testing of all V30 features completed with 90.5% success rate (19/21 tests passed). All critical V30 systems working: License System (5000 keys generated), Hardware Validation (enterprise requirements), System Initialization (6 features), Distributed Mining Control, Node Management, and Comprehensive Statistics. Minor issues with AI insights timing but core functionality confirmed working. V30 system ready for production use."
     - agent: "testing"  
       message: "🎯 SCRYPT MINING PROTOCOL FIX VERIFIED - Critical Scrypt mining functionality successfully tested with real EFL mining pool. Fixed JSON parsing, thread statistics, and added EFL wallet support. ScryptAlgorithm and StratumClient working correctly with actual pool connection. Mining engine properly starts with real credentials. The previously reported share submission issues have been resolved."
+    - agent: "testing"
+      message: "🆕 SAVED POOLS & CUSTOM COINS API TESTING COMPLETE - Comprehensive testing of newly implemented API endpoints completed with 100% success rate (10/10 tests passed). All CRUD operations working perfectly for both saved pools and custom coins. Tested with real EFL pool configuration and hypothetical CMPC cryptocurrency. Proper validation, error handling, and data persistence confirmed. MongoDB collections (saved_pools, custom_coins) working correctly. Use functionality returns properly formatted mining configs. These features greatly enhance user experience by allowing quick reuse of pool configurations and support for custom coins."

@@ -630,6 +630,69 @@ async def get_v30_comprehensive_stats():
         logger.error(f"V30 comprehensive stats error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/v30/updates/remote-node")
+async def get_remote_node_update():
+    """Get latest remote node update information"""
+    try:
+        # In production, this would check actual versions and serve updates
+        current_version = "1.0.0"
+        latest_version = "1.0.0"
+        
+        update_info = {
+            "current_version": current_version,
+            "latest_version": latest_version,
+            "update_available": False,
+            "update_url": f"/api/v30/downloads/remote-node/{latest_version}",
+            "changelog": [
+                "Initial V30 remote node release",
+                "Distributed mining support",
+                "Automatic updates",
+                "GPU detection",
+                "Enterprise licensing"
+            ],
+            "requirements": {
+                "min_python": "3.8",
+                "min_server_version": "30.0.0"
+            },
+            "release_date": "2025-01-08",
+            "size_bytes": 37282
+        }
+        
+        return update_info
+        
+    except Exception as e:
+        logger.error(f"Remote node update check error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v30/downloads/remote-node/{version}")
+async def download_remote_node(version: str):
+    """Download remote node package"""
+    try:
+        # In production, this would serve the actual package file
+        # For now, return download information
+        
+        if version == "1.0.0":
+            return {
+                "message": "Remote node download",
+                "version": version,
+                "filename": f"v30-remote-node-v{version}.tar.gz",
+                "download_instructions": [
+                    "1. Download the package from your V30 server",
+                    "2. Extract: tar -xzf v30-remote-node-v1.0.0.tar.gz",
+                    "3. Run installer: sudo ./install.sh", 
+                    "4. Configure with your license key",
+                    "5. Start the service: sudo systemctl start cryptominer-v30-node"
+                ]
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Version not found")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Remote node download error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============================================================================
 # WEBSOCKET CONNECTION
 # ============================================================================

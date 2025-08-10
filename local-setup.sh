@@ -176,6 +176,7 @@ install_dependencies() {
         "redis-server"
         "gnupg"
         "lsb-release"
+        "software-properties-common"
     )
     
     sudo apt install -y "${packages[@]}"

@@ -583,6 +583,8 @@ async def delete_saved_pool(pool_id: str):
             "message": "Pool configuration deleted successfully"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Delete pool error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

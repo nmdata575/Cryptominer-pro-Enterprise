@@ -469,6 +469,311 @@ async def get_system_stats():
         return {"error": str(e)}
 
 # ============================================================================
+# SAVED POOLS API ENDPOINTS
+# ============================================================================
+
+@app.get("/api/pools/saved")
+async def get_saved_pools():
+    """Get all saved pool configurations"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        pools = []
+        async for pool in db.saved_pools.find().sort("name", 1):
+            # Convert ObjectId to string for JSON serialization
+            pool["_id"] = str(pool["_id"])
+            pools.append(pool)
+        
+        return {"pools": pools, "count": len(pools)}
+        
+    except Exception as e:
+        logger.error(f"Get saved pools error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/pools/saved")
+async def save_pool_configuration(pool: SavedPool):
+    """Save a new pool configuration"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        # Check if pool name already exists
+        existing = await db.saved_pools.find_one({"name": pool.name})
+        if existing:
+            raise HTTPException(status_code=400, detail="Pool name already exists")
+        
+        # Validate wallet address
+        if pool.wallet_address:
+            is_valid, message = validate_wallet_address(pool.wallet_address, pool.coin_symbol)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=f"Invalid wallet address: {message}")
+        
+        pool_data = pool.dict()
+        pool_data["created_at"] = datetime.utcnow()
+        pool_data["last_used"] = None
+        
+        result = await db.saved_pools.insert_one(pool_data)
+        
+        return {
+            "success": True,
+            "message": "Pool configuration saved successfully",
+            "pool_id": str(result.inserted_id)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Save pool error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/pools/saved/{pool_id}")
+async def update_saved_pool(pool_id: str, pool: SavedPool):
+    """Update an existing saved pool configuration"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        # Validate wallet address
+        if pool.wallet_address:
+            is_valid, message = validate_wallet_address(pool.wallet_address, pool.coin_symbol)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=f"Invalid wallet address: {message}")
+        
+        from bson import ObjectId
+        
+        pool_data = pool.dict()
+        pool_data["updated_at"] = datetime.utcnow()
+        
+        result = await db.saved_pools.update_one(
+            {"_id": ObjectId(pool_id)},
+            {"$set": pool_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Pool configuration not found")
+        
+        return {
+            "success": True,
+            "message": "Pool configuration updated successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update pool error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/pools/saved/{pool_id}")
+async def delete_saved_pool(pool_id: str):
+    """Delete a saved pool configuration"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        from bson import ObjectId
+        
+        result = await db.saved_pools.delete_one({"_id": ObjectId(pool_id)})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Pool configuration not found")
+        
+        return {
+            "success": True,
+            "message": "Pool configuration deleted successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Delete pool error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/pools/saved/{pool_id}/use")
+async def use_saved_pool(pool_id: str):
+    """Mark a saved pool as recently used and return its configuration"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        from bson import ObjectId
+        
+        # Update last used timestamp
+        result = await db.saved_pools.update_one(
+            {"_id": ObjectId(pool_id)},
+            {"$set": {"last_used": datetime.utcnow()}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Pool configuration not found")
+        
+        # Get the updated pool configuration
+        pool = await db.saved_pools.find_one({"_id": ObjectId(pool_id)})
+        if not pool:
+            raise HTTPException(status_code=404, detail="Pool configuration not found")
+        
+        # Convert to dict and format for mining config
+        pool["_id"] = str(pool["_id"])
+        
+        return {
+            "success": True,
+            "pool": pool,
+            "mining_config": {
+                "coin": {
+                    "symbol": pool["coin_symbol"],
+                    "custom_pool_address": pool["pool_address"],
+                    "custom_pool_port": pool["pool_port"]
+                },
+                "wallet_address": pool["wallet_address"],
+                "pool_username": pool.get("pool_username", pool["wallet_address"]),
+                "pool_password": pool["pool_password"],
+                "mode": "pool"
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Use saved pool error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# CUSTOM COINS API ENDPOINTS
+# ============================================================================
+
+@app.get("/api/coins/custom")
+async def get_custom_coins():
+    """Get all custom coin configurations"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        coins = []
+        async for coin in db.custom_coins.find().sort("name", 1):
+            # Convert ObjectId to string for JSON serialization
+            coin["_id"] = str(coin["_id"])
+            coins.append(coin)
+        
+        return {"coins": coins, "count": len(coins)}
+        
+    except Exception as e:
+        logger.error(f"Get custom coins error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/coins/custom")
+async def create_custom_coin(coin: CustomCoin):
+    """Create a new custom coin configuration"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        # Check if coin symbol already exists
+        existing = await db.custom_coins.find_one({"symbol": coin.symbol.upper()})
+        if existing:
+            raise HTTPException(status_code=400, detail="Coin symbol already exists")
+        
+        coin_data = coin.dict()
+        coin_data["symbol"] = coin_data["symbol"].upper()  # Normalize symbol
+        coin_data["created_at"] = datetime.utcnow()
+        coin_data["usage_count"] = 0
+        
+        result = await db.custom_coins.insert_one(coin_data)
+        
+        return {
+            "success": True,
+            "message": "Custom coin created successfully",
+            "coin_id": str(result.inserted_id)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Create custom coin error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/coins/custom/{coin_id}")
+async def update_custom_coin(coin_id: str, coin: CustomCoin):
+    """Update an existing custom coin configuration"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        from bson import ObjectId
+        
+        coin_data = coin.dict()
+        coin_data["symbol"] = coin_data["symbol"].upper()  # Normalize symbol
+        coin_data["updated_at"] = datetime.utcnow()
+        
+        result = await db.custom_coins.update_one(
+            {"_id": ObjectId(coin_id)},
+            {"$set": coin_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Custom coin not found")
+        
+        return {
+            "success": True,
+            "message": "Custom coin updated successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update custom coin error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/coins/custom/{coin_id}")
+async def delete_custom_coin(coin_id: str):
+    """Delete a custom coin configuration"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="Database not connected")
+        
+        from bson import ObjectId
+        
+        result = await db.custom_coins.delete_one({"_id": ObjectId(coin_id)})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Custom coin not found")
+        
+        return {
+            "success": True,
+            "message": "Custom coin deleted successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Delete custom coin error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/coins/all")
+async def get_all_coins():
+    """Get both preset and custom coins combined"""
+    try:
+        # Get preset coins
+        presets = get_coin_presets()
+        
+        # Get custom coins
+        custom_coins = []
+        if db:
+            async for coin in db.custom_coins.find().sort("name", 1):
+                coin["_id"] = str(coin["_id"])
+                coin["is_custom"] = True
+                custom_coins.append(coin)
+        
+        # Mark presets as not custom
+        for preset in presets:
+            preset["is_custom"] = False
+        
+        return {
+            "preset_coins": presets,
+            "custom_coins": custom_coins,
+            "total_count": len(presets) + len(custom_coins)
+        }
+        
+    except Exception as e:
+        logger.error(f"Get all coins error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
 # V30 ENTERPRISE API ENDPOINTS
 # ============================================================================
 

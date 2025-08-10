@@ -888,12 +888,20 @@ class EnterpriseScryptMiner:
         logger.info("Stopping enterprise mining...")
         self.is_mining = False
         
+        # Stop real miner if it exists
+        if hasattr(self, 'real_miner') and self.real_miner:
+            logger.info("Stopping real pool miner...")
+            self.real_miner.stop_mining()
+        
         # Cleanup pools
         self.cleanup_pools()
         
         # Wait for main mining thread
         if hasattr(self, 'mining_thread') and self.mining_thread.is_alive():
+            logger.info("Waiting for mining thread to finish...")
             self.mining_thread.join(timeout=10)
+            if self.mining_thread.is_alive():
+                logger.warning("Mining thread did not finish within timeout")
         
         logger.info("Enterprise mining stopped")
         return True, "Enterprise mining stopped successfully"

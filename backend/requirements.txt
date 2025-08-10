@@ -1,4 +1,4 @@
-# CryptoMiner Pro - Consolidated Python Dependencies (Python 3.13 Compatible)
+# CryptoMiner Pro - Python 3.13 Compatible Dependencies
 # FastAPI and Web Framework
 fastapi==0.110.0
 uvicorn[standard]==0.27.0
@@ -12,10 +12,10 @@ cryptography==42.0.0
 scrypt==0.8.20
 base58==2.1.1
 
-# AI and Machine Learning (Python 3.13 compatible)
+# AI and Machine Learning (Python 3.13 compatible versions)
 numpy==1.26.4
 scikit-learn==1.4.0
-pandas==2.2.0
+pandas==2.2.1  # Updated for better Python 3.13 support
 
 # Database and Storage
 pymongo==4.6.1

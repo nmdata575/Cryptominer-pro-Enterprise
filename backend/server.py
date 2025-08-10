@@ -196,6 +196,12 @@ async def shutdown_event():
 # API ENDPOINTS
 # ============================================================================
 
+@app.get("/")
+async def root():
+    """Root endpoint - redirect to docs"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/docs")
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint with database connectivity status"""

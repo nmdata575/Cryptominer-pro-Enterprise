@@ -30,6 +30,111 @@ from dataclasses import dataclass, asdict
 logger = logging.getLogger(__name__)
 
 # ============================================================================
+# V30 COMMUNICATION PROTOCOL SYSTEM
+# ============================================================================
+
+class MessageType(IntEnum):
+    """Protocol message types"""
+    # Node Registration
+    NODE_REGISTER = 0x01
+    NODE_REGISTER_ACK = 0x02
+    NODE_HEARTBEAT = 0x03
+    NODE_HEARTBEAT_ACK = 0x04
+    NODE_DISCONNECT = 0x05
+    
+    # Mining Coordination
+    WORK_REQUEST = 0x10
+    WORK_ASSIGNMENT = 0x11
+    WORK_COMPLETE = 0x12
+    WORK_RESULT = 0x13
+    MINING_START = 0x14
+    MINING_STOP = 0x15
+    
+    # Statistics & Monitoring
+    STATS_REQUEST = 0x20
+    STATS_RESPONSE = 0x21
+    PERFORMANCE_UPDATE = 0x22
+    SYSTEM_STATUS = 0x23
+    
+    # Control Commands
+    CONFIG_UPDATE = 0x30
+    CONTROL_COMMAND = 0x31
+    LICENSE_VALIDATE = 0x32
+    LICENSE_RESPONSE = 0x33
+    
+    # Error Handling
+    ERROR = 0xE0
+    UNKNOWN = 0xE1
+
+@dataclass
+class NodeInfo:
+    node_id: str
+    hostname: str
+    ip_address: str
+    port: int
+    license_key: str
+    capabilities: Dict[str, Any]
+    system_specs: Dict[str, Any]
+    connected_time: float
+    last_heartbeat: float
+    status: str = "connected"
+
+@dataclass
+class MiningWork:
+    work_id: str
+    coin_config: Dict[str, Any]
+    wallet_address: str
+    start_nonce: int
+    nonce_range: int
+    difficulty_target: str
+    timestamp: float
+    assigned_node: Optional[str] = None
+
+@dataclass 
+class WorkResult:
+    work_id: str
+    node_id: str
+    found_nonce: Optional[int]
+    hash_result: Optional[str]
+    hashes_computed: int
+    processing_time: float
+    success: bool
+    shares_found: int = 0
+
+# ============================================================================
+# GPU MINING SYSTEM
+# ============================================================================
+
+@dataclass
+class GPUMiningStats:
+    gpu_id: int
+    gpu_type: str  # "NVIDIA" or "AMD"
+    gpu_name: str
+    hashrate: float = 0.0
+    temperature: Optional[int] = None
+    power_draw: Optional[float] = None
+    memory_used: Optional[int] = None
+    memory_total: Optional[int] = None
+    uptime: float = 0.0
+    accepted_shares: int = 0
+    rejected_shares: int = 0
+    is_mining: bool = False
+
+@dataclass
+class HybridMiningStats:
+    total_hashrate: float = 0.0
+    cpu_hashrate: float = 0.0
+    gpu_hashrate: float = 0.0
+    nvidia_hashrate: float = 0.0
+    amd_hashrate: float = 0.0
+    total_gpus: int = 0
+    active_gpus: int = 0
+    nvidia_gpus: int = 0
+    amd_gpus: int = 0
+    cpu_threads: int = 0
+    uptime: float = 0.0
+
+# ============================================================================
 # ENTERPRISE LICENSE SYSTEM
 # ============================================================================
 

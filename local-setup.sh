@@ -17,6 +17,7 @@ INSTALL_DIR="/opt/cryptominer-pro"
 SERVICE_NAME="cryptominer-pro"
 PYTHON_VERSION="3.11"
 NODE_VERSION="18"
+PYTHON_CMD="python3"  # Will be updated by check_and_install_python function
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

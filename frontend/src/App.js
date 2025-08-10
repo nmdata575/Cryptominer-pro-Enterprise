@@ -263,6 +263,40 @@ const App = () => {
     }
   };
 
+  // Pool Management Functions
+  const handleUsePool = (miningConfig, poolInfo) => {
+    // Update wallet config with pool information
+    setWalletConfig(prev => ({
+      ...prev,
+      mode: 'pool',
+      wallet_address: miningConfig.wallet_address,
+      pool_username: miningConfig.pool_username,
+      pool_password: miningConfig.pool_password,
+      custom_pool_address: poolInfo.pool_address,
+      custom_pool_port: poolInfo.pool_port
+    }));
+
+    // Update selected coin if it exists
+    if (miningConfig.coin && miningConfig.coin.symbol) {
+      // Find the coin from presets or create a simple one
+      const coinConfig = {
+        name: poolInfo.coin_symbol,
+        symbol: poolInfo.coin_symbol,
+        algorithm: 'Scrypt',
+        custom_pool_address: poolInfo.pool_address,
+        custom_pool_port: poolInfo.pool_port
+      };
+      setSelectedCoin(coinConfig);
+    }
+
+    console.log('Pool configuration loaded:', poolInfo.name);
+  };
+
+  const handleSelectCustomCoin = (coinConfig) => {
+    setSelectedCoin(coinConfig);
+    console.log('Custom coin selected:', coinConfig.name);
+  };
+
   return (
     <div className="App">
       {/* Header */}

@@ -1074,22 +1074,24 @@ const CustomCoinsManager = ({ onSelectCoin, onClose }) => {
 
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
-    useEffect(() => {
-        fetchCustomCoins();
-    }, [fetchCustomCoins]);
-
     const fetchCustomCoins = useCallback(async () => {
         try {
             const response = await fetch(`${backendUrl}/api/coins/custom`);
             if (response.ok) {
                 const data = await response.json();
                 setCustomCoins(data.coins || []);
+            } else {
+                console.error('Failed to fetch custom coins');
             }
         } catch (error) {
-            console.error('Failed to fetch custom coins:', error);
+            console.error('Error fetching custom coins:', error);
         }
         setLoading(false);
     }, [backendUrl]);
+
+    useEffect(() => {
+        fetchCustomCoins();
+    }, [fetchCustomCoins]);
 
     const handleSave = async () => {
         try {

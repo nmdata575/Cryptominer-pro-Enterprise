@@ -695,24 +695,25 @@ async def get_saved_pools():
 async def save_pool_configuration(pool: SavedPool):
     """Save a new pool configuration"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
-        # Check if pool name already exists
+        # Check if pool with same name exists
         existing = await db.saved_pools.find_one({"name": pool.name})
         if existing:
-            raise HTTPException(status_code=400, detail="Pool name already exists")
+            return {"success": False, "error": "Pool name already exists"}
         
-        # Validate wallet address
-        if pool.wallet_address:
-            is_valid, message = validate_wallet_address(pool.wallet_address, pool.coin_symbol)
-            if not is_valid:
-                raise HTTPException(status_code=400, detail=f"Invalid wallet address: {message}")
+        # Prepare pool data
+        pool_data = {
+            "name": pool.name,
+            "coin_symbol": pool.coin_symbol,
+            "pool_address": pool.pool_address,
+            "pool_port": pool.pool_port,
+            "wallet_address": pool.wallet_address,
+            "created_at": datetime.utcnow().isoformat(),
+            "last_used": None
+        }
         
-        pool_data = pool.dict()
-        pool_data["created_at"] = datetime.utcnow()
-        pool_data["last_used"] = None
-        
+        # Insert into database
         result = await db.saved_pools.insert_one(pool_data)
         
         return {
@@ -721,11 +722,9 @@ async def save_pool_configuration(pool: SavedPool):
             "pool_id": str(result.inserted_id)
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Save pool error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"success": False, "error": str(e)}
 
 @app.put("/api/pools/saved/{pool_id}")
 async def update_saved_pool(pool_id: str, pool: SavedPool):

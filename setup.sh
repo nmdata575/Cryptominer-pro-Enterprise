@@ -78,7 +78,7 @@ install_dependencies() {
     
     sudo apt update
     
-    # Essential packages
+    # Essential packages (without MongoDB - we'll install it separately)
     local packages=(
         "curl"
         "wget"
@@ -92,11 +92,15 @@ install_dependencies() {
         "libssl-dev"
         "libffi-dev"
         "pkg-config"
-        "mongodb"
         "redis-server"
+        "gnupg"
+        "lsb-release"
     )
     
     sudo apt install -y "${packages[@]}"
+    
+    # Install MongoDB with proper repository setup
+    install_mongodb
     
     # Install Node.js
     if ! command -v node &> /dev/null; then

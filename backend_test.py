@@ -613,6 +613,16 @@ class BackendTester:
                     "name": "Electronic Gulden", 
                     "symbol": "EFL",
                     "algorithm": "Scrypt",
+                    "block_reward": 25.0,
+                    "block_time": 150,
+                    "difficulty": 1000.0,
+                    "scrypt_params": {
+                        "n": 1024,
+                        "r": 1,
+                        "p": 1
+                    },
+                    "network_hashrate": "Unknown",
+                    "wallet_format": "L prefix",
                     "custom_pool_address": "stratum.luckydogpool.com",
                     "custom_pool_port": 7026
                 },

@@ -627,6 +627,8 @@ class BackendTester:
                     "custom_pool_port": 7026
                 },
                 "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
+                "pool_username": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
+                "pool_password": "x",
                 "threads": 4,
                 "mode": "pool"
             }

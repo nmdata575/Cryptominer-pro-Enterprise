@@ -825,8 +825,8 @@ class EnterpriseScryptMiner:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
-            # Create real miner instance
-            real_miner = RealScryptMiner()
+            # Create real miner instance and store reference
+            self.real_miner = RealScryptMiner()
             
             # Prepare username format: wallet_address.worker_name
             worker_name = f"CryptoMiner-V30-{int(time.time())}"
@@ -838,11 +838,12 @@ class EnterpriseScryptMiner:
             
             # Update our mining status
             self.is_mining = True
+            self.start_time = time.time()
             
             # Start real pool mining with proper error handling
             try:
                 success = loop.run_until_complete(
-                    real_miner.start_mining(pool_host, pool_port, username, "x")
+                    self.real_miner.start_mining(pool_host, pool_port, username, "x")
                 )
                 
                 if success:
@@ -856,12 +857,12 @@ class EnterpriseScryptMiner:
             
             # Update our stats with real miner results
             try:
-                real_stats = real_miner.get_stats()
+                real_stats = self.real_miner.get_stats()
                 with self.stats_lock:
                     self.stats.hashrate = real_stats["hashrate"]
                     self.stats.accepted_shares = real_stats["shares_accepted"]
                     self.stats.blocks_found = real_stats["shares_found"]
-                    self.stats.uptime = time.time() - (getattr(self, 'start_time', time.time()))
+                    self.stats.uptime = time.time() - self.start_time
                 
                 logger.info(f"📊 Final stats: {real_stats['shares_found']} shares found, "
                           f"{real_stats['shares_accepted']} accepted ({real_stats['acceptance_rate']:.1f}%)")
@@ -875,6 +876,8 @@ class EnterpriseScryptMiner:
             logger.error(f"❌ Real pool mining setup error: {e}")
         finally:
             self.is_mining = False
+            if hasattr(self, 'real_miner'):
+                self.real_miner.is_mining = False
             logger.info("🛑 Pool mining thread finished")
     
     def stop_mining(self):

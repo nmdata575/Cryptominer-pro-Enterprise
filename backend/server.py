@@ -531,7 +531,7 @@ async def save_pool_configuration(pool: SavedPool):
 async def update_saved_pool(pool_id: str, pool: SavedPool):
     """Update an existing saved pool configuration"""
     try:
-        if not db:
+        if db is None:
             raise HTTPException(status_code=500, detail="Database not connected")
         
         # Validate wallet address

@@ -625,10 +625,11 @@ class EnterpriseScryptMiner:
                 self.stats.memory_usage = memory.percent
                 
                 # Active threads count
-                active_threads = sum(
-                    pool._threads for pool in self.thread_pools 
-                    if hasattr(pool, '_threads')
-                )
+                active_threads = 0
+                for pool in self.thread_pools:
+                    if hasattr(pool, '_threads'):
+                        active_threads += len(pool._threads)
+                
                 self.stats.active_threads = active_threads
                 self.stats.total_threads = len(self.thread_pools) * 1000  # Approximate
                 

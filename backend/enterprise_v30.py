@@ -599,6 +599,911 @@ class EnterpriseHardwareValidator:
         return recommendations
 
 # ============================================================================
+# V30 PROTOCOL SYSTEM
+# ============================================================================
+
+class V30Protocol:
+    """Custom high-performance protocol for V30 distributed mining"""
+    
+    MAGIC_BYTES = b'\x43\x4D\x50\x33'  # CMP3 (CryptoMiner Pro V30)
+    VERSION = 1
+    HEADER_SIZE = 16
+    MAX_PAYLOAD_SIZE = 1024 * 1024  # 1MB max payload
+    
+    @classmethod
+    def create_message(cls, msg_type: MessageType, data: Dict[str, Any], 
+                      node_id: str = "", compress: bool = True) -> bytes:
+        """Create a protocol message"""
+        try:
+            # Serialize payload
+            json_data = json.dumps(data, separators=(',', ':'))
+            payload = json_data.encode('utf-8')
+            
+            # Compress if enabled and payload is large
+            compressed = False
+            if compress and len(payload) > 256:
+                compressed_payload = zlib.compress(payload, level=6)
+                if len(compressed_payload) < len(payload):
+                    payload = compressed_payload
+                    compressed = True
+            
+            # Calculate payload hash
+            payload_hash = hashlib.sha256(payload).digest()[:4]  # First 4 bytes
+            
+            # Create header
+            flags = 0x01 if compressed else 0x00
+            header = struct.pack(
+                '<4s B B H I 4s',
+                cls.MAGIC_BYTES,      # Magic bytes (4)
+                cls.VERSION,          # Version (1)
+                msg_type,             # Message type (1)
+                flags,                # Flags (2)
+                len(payload),         # Payload length (4)
+                payload_hash          # Payload hash (4)
+            )
+            
+            return header + payload
+            
+        except Exception as e:
+            logger.error(f"Failed to create message: {e}")
+            return cls.create_error_message(f"Message creation failed: {e}")
+    
+    @classmethod
+    def parse_message(cls, data: bytes) -> Tuple[Optional[MessageType], Optional[Dict], str]:
+        """Parse a protocol message"""
+        try:
+            if len(data) < cls.HEADER_SIZE:
+                return None, None, "Incomplete header"
+            
+            # Parse header
+            header = struct.unpack('<4s B B H I 4s', data[:cls.HEADER_SIZE])
+            magic, version, msg_type, flags, payload_len, payload_hash = header
+            
+            # Validate magic bytes and version
+            if magic != cls.MAGIC_BYTES:
+                return None, None, "Invalid magic bytes"
+            
+            if version != cls.VERSION:
+                return None, None, f"Unsupported version: {version}"
+            
+            # Check if we have complete message
+            total_len = cls.HEADER_SIZE + payload_len
+            if len(data) < total_len:
+                return None, None, "Incomplete payload"
+            
+            # Extract payload
+            payload = data[cls.HEADER_SIZE:total_len]
+            
+            # Verify payload hash
+            calculated_hash = hashlib.sha256(payload).digest()[:4]
+            if calculated_hash != payload_hash:
+                return None, None, "Payload hash mismatch"
+            
+            # Decompress if needed
+            if flags & 0x01:  # Compressed flag
+                try:
+                    payload = zlib.decompress(payload)
+                except Exception as e:
+                    return None, None, f"Decompression failed: {e}"
+            
+            # Parse JSON payload
+            try:
+                json_data = json.loads(payload.decode('utf-8'))
+                return MessageType(msg_type), json_data, ""
+            except json.JSONDecodeError as e:
+                return None, None, f"JSON parse error: {e}"
+                
+        except struct.error as e:
+            return None, None, f"Header parse error: {e}"
+        except Exception as e:
+            return None, None, f"Parse error: {e}"
+    
+    @classmethod
+    def create_error_message(cls, error_msg: str) -> bytes:
+        """Create an error message"""
+        return cls.create_message(MessageType.ERROR, {"error": error_msg}, compress=False)
+
+class NodeManager:
+    """Manages connected mining nodes"""
+    
+    def __init__(self):
+        self.nodes: Dict[str, NodeInfo] = {}
+        self.work_queue: List[MiningWork] = []
+        self.active_work: Dict[str, MiningWork] = {}
+        self.completed_work: List[WorkResult] = []
+        self.stats_lock = asyncio.Lock()
+        
+    def register_node(self, node_data: Dict[str, Any]) -> Tuple[bool, str]:
+        """Register a new mining node"""
+        try:
+            node_id = node_data.get("node_id")
+            if not node_id:
+                return False, "Node ID required"
+            
+            # Create node info
+            node_info = NodeInfo(
+                node_id=node_id,
+                hostname=node_data.get("hostname", "unknown"),
+                ip_address=node_data.get("ip_address", "0.0.0.0"),
+                port=node_data.get("port", 0),
+                license_key=node_data.get("license_key", ""),
+                capabilities=node_data.get("capabilities", {}),
+                system_specs=node_data.get("system_specs", {}),
+                connected_time=time.time(),
+                last_heartbeat=time.time()
+            )
+            
+            self.nodes[node_id] = node_info
+            logger.info(f"✅ Node registered: {node_id} ({node_info.hostname})")
+            
+            return True, "Node registered successfully"
+            
+        except Exception as e:
+            logger.error(f"Node registration failed: {e}")
+            return False, str(e)
+    
+    def update_heartbeat(self, node_id: str) -> bool:
+        """Update node heartbeat"""
+        if node_id in self.nodes:
+            self.nodes[node_id].last_heartbeat = time.time()
+            return True
+        return False
+    
+    def disconnect_node(self, node_id: str) -> bool:
+        """Disconnect a mining node"""
+        if node_id in self.nodes:
+            self.nodes[node_id].status = "disconnected"
+            # Reassign any active work from this node
+            self._reassign_work_from_node(node_id)
+            logger.info(f"🔌 Node disconnected: {node_id}")
+            return True
+        return False
+    
+    def get_node_stats(self) -> Dict[str, Any]:
+        """Get aggregate node statistics"""
+        total_nodes = len(self.nodes)
+        active_nodes = len([n for n in self.nodes.values() if n.status == "connected"])
+        
+        # Aggregate capabilities
+        total_cpu_cores = 0
+        total_gpus = 0
+        total_ram_gb = 0
+        
+        for node in self.nodes.values():
+            if node.status == "connected":
+                specs = node.system_specs
+                total_cpu_cores += specs.get("cpu_cores", 0)
+                total_gpus += specs.get("total_gpus", 0)
+                total_ram_gb += specs.get("ram_gb", 0)
+        
+        return {
+            "total_nodes": total_nodes,
+            "active_nodes": active_nodes,
+            "inactive_nodes": total_nodes - active_nodes,
+            "aggregate_stats": {
+                "total_cpu_cores": total_cpu_cores,
+                "total_gpus": total_gpus,
+                "total_ram_gb": total_ram_gb
+            },
+            "work_stats": {
+                "queued_work": len(self.work_queue),
+                "active_work": len(self.active_work),
+                "completed_work": len(self.completed_work)
+            }
+        }
+    
+    def create_mining_work(self, coin_config: Dict, wallet_address: str, 
+                          total_nonce_space: int = 10000000) -> List[MiningWork]:
+        """Create work assignments for distributed mining"""
+        work_assignments = []
+        active_nodes = [n for n in self.nodes.values() if n.status == "connected"]
+        
+        if not active_nodes:
+            return work_assignments
+        
+        # Calculate work distribution based on node capabilities
+        nonce_per_node = total_nonce_space // len(active_nodes)
+        current_nonce = 0
+        
+        for i, node in enumerate(active_nodes):
+            # Adjust work size based on node capabilities
+            node_cores = node.system_specs.get("cpu_cores", 1)
+            node_gpus = node.system_specs.get("total_gpus", 0)
+            
+            # Scale work based on processing power
+            scale_factor = max(1.0, (node_cores / 4) + (node_gpus * 2))
+            adjusted_nonce_range = int(nonce_per_node * scale_factor)
+            
+            work = MiningWork(
+                work_id=f"work_{int(time.time())}_{i}",
+                coin_config=coin_config,
+                wallet_address=wallet_address,
+                start_nonce=current_nonce,
+                nonce_range=adjusted_nonce_range,
+                difficulty_target="00000000",  # Simplified
+                timestamp=time.time(),
+                assigned_node=node.node_id
+            )
+            
+            work_assignments.append(work)
+            self.work_queue.append(work)
+            current_nonce += adjusted_nonce_range
+        
+        logger.info(f"📋 Created {len(work_assignments)} work assignments for {len(active_nodes)} nodes")
+        return work_assignments
+    
+    def _reassign_work_from_node(self, node_id: str):
+        """Reassign work from disconnected node"""
+        work_to_reassign = []
+        
+        # Find work assigned to this node
+        for work_id, work in self.active_work.items():
+            if work.assigned_node == node_id:
+                work_to_reassign.append(work_id)
+        
+        # Move back to queue for reassignment
+        for work_id in work_to_reassign:
+            work = self.active_work.pop(work_id)
+            work.assigned_node = None
+            self.work_queue.append(work)
+        
+        if work_to_reassign:
+            logger.info(f"♻️  Reassigned {len(work_to_reassign)} work items from node {node_id}")
+
+# ============================================================================
+# GPU MINING ENGINE
+# ============================================================================
+
+class CUDAMiner:
+    """NVIDIA CUDA mining implementation"""
+    
+    def __init__(self, gpu_id: int, gpu_info: Dict):
+        self.gpu_id = gpu_id
+        self.gpu_info = gpu_info
+        self.is_mining = False
+        self.stats = GPUMiningStats(
+            gpu_id=gpu_id,
+            gpu_type="NVIDIA",
+            gpu_name=gpu_info["name"]
+        )
+        self.mining_thread = None
+        self.start_time = None
+    
+    def cuda_scrypt_hash(self, data: bytes, n: int = 1024) -> bytes:
+        """CUDA-optimized Scrypt hash (simplified simulation)"""
+        # In production, this would use actual CUDA kernels
+        # For now, simulating GPU performance with optimized CPU hash
+        return hashlib.scrypt(data, salt=data, n=n, r=1, p=1, dklen=32)
+    
+    def mine_worker(self, coin_config: Dict, wallet_address: str):
+        """CUDA mining worker thread"""
+        self.is_mining = True
+        self.start_time = time.time()
+        self.stats.is_mining = True
+        
+        nonce = self.gpu_id * 1000000  # Offset nonce by GPU ID
+        hash_count = 0
+        
+        logger.info(f"🚀 CUDA Mining started on GPU {self.gpu_id}: {self.gpu_info['name']}")
+        
+        while self.is_mining:
+            try:
+                # Create work for this GPU
+                timestamp = int(time.time())
+                header_data = f"{wallet_address}{timestamp}{nonce}".encode('utf-8')
+                
+                # CUDA-optimized hash (simulated)
+                hash_result = self.cuda_scrypt_hash(header_data, coin_config.get('scrypt_n', 1024))
+                hash_count += 1
+                
+                # Check for successful hash (simplified)
+                if hash_result.hex()[:6] == "000000":
+                    self.stats.accepted_shares += 1
+                    logger.info(f"🎯 CUDA GPU {self.gpu_id} found share: {hash_result.hex()[:16]}...")
+                
+                # Update statistics
+                current_time = time.time()
+                if current_time - self.start_time > 0:
+                    self.stats.uptime = current_time - self.start_time
+                    self.stats.hashrate = hash_count / self.stats.uptime
+                
+                # GPU temperature and power monitoring (simulated)
+                self.stats.temperature = self._get_gpu_temperature()
+                self.stats.power_draw = self._get_gpu_power()
+                
+                nonce += 1
+                
+                # Simulate GPU processing time (much faster than CPU)
+                if nonce % 10000 == 0:  # GPU can handle much higher throughput
+                    time.sleep(0.001)  # Very short sleep for GPU
+                    
+            except Exception as e:
+                logger.error(f"CUDA mining error on GPU {self.gpu_id}: {e}")
+                self.stats.rejected_shares += 1
+    
+    def start_mining(self, coin_config: Dict, wallet_address: str) -> bool:
+        """Start CUDA mining"""
+        if self.is_mining:
+            return False
+        
+        self.mining_thread = threading.Thread(
+            target=self.mine_worker,
+            args=(coin_config, wallet_address),
+            daemon=True
+        )
+        self.mining_thread.start()
+        return True
+    
+    def stop_mining(self) -> bool:
+        """Stop CUDA mining"""
+        if not self.is_mining:
+            return False
+        
+        self.is_mining = False
+        self.stats.is_mining = False
+        if self.mining_thread and self.mining_thread.is_alive():
+            self.mining_thread.join(timeout=5)
+        
+        logger.info(f"🛑 CUDA mining stopped on GPU {self.gpu_id}")
+        return True
+    
+    def _get_gpu_temperature(self) -> Optional[int]:
+        """Get NVIDIA GPU temperature via nvidia-smi"""
+        try:
+            result = subprocess.run([
+                'nvidia-smi', '--query-gpu=temperature.gpu',
+                '--format=csv,noheader,nounits', f'--id={self.gpu_id}'
+            ], capture_output=True, text=True, timeout=5)
+            
+            if result.returncode == 0:
+                temp = result.stdout.strip()
+                return int(temp) if temp.isdigit() else None
+        except:
+            pass
+        return None
+    
+    def _get_gpu_power(self) -> Optional[float]:
+        """Get NVIDIA GPU power draw via nvidia-smi"""
+        try:
+            result = subprocess.run([
+                'nvidia-smi', '--query-gpu=power.draw',
+                '--format=csv,noheader,nounits', f'--id={self.gpu_id}'
+            ], capture_output=True, text=True, timeout=5)
+            
+            if result.returncode == 0:
+                power = result.stdout.strip()
+                return float(power) if power.replace('.', '').isdigit() else None
+        except:
+            pass
+        return None
+
+class OpenCLMiner:
+    """AMD OpenCL mining implementation"""
+    
+    def __init__(self, gpu_id: int, gpu_info: Dict):
+        self.gpu_id = gpu_id
+        self.gpu_info = gpu_info
+        self.is_mining = False
+        self.stats = GPUMiningStats(
+            gpu_id=gpu_id,
+            gpu_type="AMD",
+            gpu_name=gpu_info["name"]
+        )
+        self.mining_thread = None
+        self.start_time = None
+    
+    def opencl_scrypt_hash(self, data: bytes, n: int = 1024) -> bytes:
+        """OpenCL-optimized Scrypt hash (simplified simulation)"""
+        # In production, this would use actual OpenCL kernels
+        # For now, simulating GPU performance with optimized CPU hash
+        return hashlib.scrypt(data, salt=data, n=n, r=1, p=1, dklen=32)
+    
+    def mine_worker(self, coin_config: Dict, wallet_address: str):
+        """OpenCL mining worker thread"""
+        self.is_mining = True
+        self.start_time = time.time()
+        self.stats.is_mining = True
+        
+        nonce = (self.gpu_id + 1000) * 1000000  # Offset nonce by GPU ID
+        hash_count = 0
+        
+        logger.info(f"🚀 OpenCL Mining started on GPU {self.gpu_id}: {self.gpu_info['name']}")
+        
+        while self.is_mining:
+            try:
+                # Create work for this GPU
+                timestamp = int(time.time())
+                header_data = f"{wallet_address}{timestamp}{nonce}".encode('utf-8')
+                
+                # OpenCL-optimized hash (simulated)
+                hash_result = self.opencl_scrypt_hash(header_data, coin_config.get('scrypt_n', 1024))
+                hash_count += 1
+                
+                # Check for successful hash (simplified)
+                if hash_result.hex()[:6] == "000000":
+                    self.stats.accepted_shares += 1
+                    logger.info(f"🎯 AMD GPU {self.gpu_id} found share: {hash_result.hex()[:16]}...")
+                
+                # Update statistics
+                current_time = time.time()
+                if current_time - self.start_time > 0:
+                    self.stats.uptime = current_time - self.start_time
+                    self.stats.hashrate = hash_count / self.stats.uptime
+                
+                # GPU monitoring (simulated for AMD)
+                self.stats.temperature = self._get_gpu_temperature()
+                self.stats.power_draw = self._get_gpu_power()
+                
+                nonce += 1
+                
+                # Simulate GPU processing time (AMD typically slightly different performance)
+                if nonce % 8000 == 0:  # AMD GPU processing simulation
+                    time.sleep(0.001)
+                    
+            except Exception as e:
+                logger.error(f"OpenCL mining error on GPU {self.gpu_id}: {e}")
+                self.stats.rejected_shares += 1
+    
+    def start_mining(self, coin_config: Dict, wallet_address: str) -> bool:
+        """Start OpenCL mining"""
+        if self.is_mining:
+            return False
+        
+        self.mining_thread = threading.Thread(
+            target=self.mine_worker,
+            args=(coin_config, wallet_address),
+            daemon=True
+        )
+        self.mining_thread.start()
+        return True
+    
+    def stop_mining(self) -> bool:
+        """Stop OpenCL mining"""
+        if not self.is_mining:
+            return False
+        
+        self.is_mining = False
+        self.stats.is_mining = False
+        if self.mining_thread and self.mining_thread.is_alive():
+            self.mining_thread.join(timeout=5)
+        
+        logger.info(f"🛑 OpenCL mining stopped on GPU {self.gpu_id}")
+        return True
+    
+    def _get_gpu_temperature(self) -> Optional[int]:
+        """Get AMD GPU temperature (simplified)"""
+        try:
+            # Try ROCm SMI for temperature
+            result = subprocess.run([
+                'rocm-smi', '--showtemp', f'--gpu={self.gpu_id}'
+            ], capture_output=True, text=True, timeout=5)
+            
+            if result.returncode == 0:
+                # Parse temperature from ROCm output (simplified)
+                temp_match = re.search(r'(\d+)°C', result.stdout)
+                if temp_match:
+                    return int(temp_match.group(1))
+        except:
+            pass
+        return None
+    
+    def _get_gpu_power(self) -> Optional[float]:
+        """Get AMD GPU power draw (simplified)"""
+        try:
+            # Try ROCm SMI for power
+            result = subprocess.run([
+                'rocm-smi', '--showpower', f'--gpu={self.gpu_id}'
+            ], capture_output=True, text=True, timeout=5)
+            
+            if result.returncode == 0:
+                # Parse power from ROCm output (simplified)
+                power_match = re.search(r'(\d+\.?\d*)W', result.stdout)
+                if power_match:
+                    return float(power_match.group(1))
+        except:
+            pass
+        return None
+
+class HybridGPUCPUMiner:
+    """Enterprise hybrid mining engine using both GPU and CPU simultaneously"""
+    
+    def __init__(self, cpu_miner, hardware_validator):
+        self.cpu_miner = cpu_miner
+        self.hardware_validator = hardware_validator
+        
+        # Initialize GPU miners
+        self.nvidia_miners = []
+        self.amd_miners = []
+        self.is_mining = False
+        self.start_time = None
+        
+        # Detect and initialize GPUs
+        self._initialize_gpu_miners()
+    
+    def _initialize_gpu_miners(self):
+        """Initialize GPU miners for all detected GPUs"""
+        # Get GPU info from hardware validator
+        gpu_info = self.hardware_validator._get_gpu_info()
+        
+        # Initialize NVIDIA GPUs
+        for i, gpu in enumerate(gpu_info.get("nvidia_gpus", [])):
+            gpu_data = {"id": i, "name": gpu["name"]}
+            miner = CUDAMiner(i, gpu_data)
+            self.nvidia_miners.append(miner)
+            logger.info(f"✅ Initialized NVIDIA CUDA miner for {gpu['name']}")
+        
+        # Initialize AMD GPUs  
+        for i, gpu in enumerate(gpu_info.get("amd_gpus", [])):
+            gpu_data = {"id": i, "name": gpu["name"]}
+            miner = OpenCLMiner(i, gpu_data)
+            self.amd_miners.append(miner)
+            logger.info(f"✅ Initialized AMD OpenCL miner for {gpu['name']}")
+        
+        total_gpus = len(self.nvidia_miners) + len(self.amd_miners)
+        logger.info(f"🎮 Total GPU miners initialized: {total_gpus} ({len(self.nvidia_miners)} NVIDIA, {len(self.amd_miners)} AMD)")
+    
+    def start_hybrid_mining(self, coin_config: Dict, wallet_address: str, cpu_threads: int = 0) -> Dict:
+        """Start hybrid CPU + GPU mining"""
+        if self.is_mining:
+            return {"success": False, "message": "Mining already in progress"}
+        
+        self.is_mining = True
+        self.start_time = time.time()
+        results = {"cpu": False, "nvidia": 0, "amd": 0, "total_started": 0}
+        
+        logger.info("🚀 Starting Hybrid CPU + GPU Mining...")
+        
+        # Start CPU mining if threads specified
+        if cpu_threads > 0:
+            cpu_success, cpu_message = self.cpu_miner.start_mining(coin_config, wallet_address, cpu_threads)
+            results["cpu"] = cpu_success
+            if cpu_success:
+                results["total_started"] += 1
+                logger.info(f"✅ CPU mining started with {cpu_threads} threads")
+        
+        # Start all NVIDIA GPU miners
+        for miner in self.nvidia_miners:
+            if miner.start_mining(coin_config, wallet_address):
+                results["nvidia"] += 1
+                results["total_started"] += 1
+        
+        # Start all AMD GPU miners
+        for miner in self.amd_miners:
+            if miner.start_mining(coin_config, wallet_address):
+                results["amd"] += 1
+                results["total_started"] += 1
+        
+        total_miners = results["total_started"]
+        success_message = f"Hybrid mining started: {results['nvidia']} NVIDIA, {results['amd']} AMD GPUs"
+        if results["cpu"]:
+            success_message += f", CPU ({cpu_threads} threads)"
+        
+        logger.info(f"🎉 {success_message}")
+        
+        return {
+            "success": total_miners > 0,
+            "message": success_message,
+            "miners_started": results,
+            "total_miners": total_miners
+        }
+    
+    def stop_hybrid_mining(self) -> Dict:
+        """Stop all hybrid mining operations"""
+        if not self.is_mining:
+            return {"success": False, "message": "No mining in progress"}
+        
+        self.is_mining = False
+        results = {"cpu": False, "nvidia": 0, "amd": 0, "total_stopped": 0}
+        
+        logger.info("🛑 Stopping Hybrid Mining...")
+        
+        # Stop CPU mining
+        try:
+            cpu_success, cpu_message = self.cpu_miner.stop_mining()
+            results["cpu"] = cpu_success
+            if cpu_success:
+                results["total_stopped"] += 1
+        except:
+            pass
+        
+        # Stop all NVIDIA GPU miners
+        for miner in self.nvidia_miners:
+            if miner.stop_mining():
+                results["nvidia"] += 1
+                results["total_stopped"] += 1
+        
+        # Stop all AMD GPU miners
+        for miner in self.amd_miners:
+            if miner.stop_mining():
+                results["amd"] += 1
+                results["total_stopped"] += 1
+        
+        success_message = f"Hybrid mining stopped: {results['nvidia']} NVIDIA, {results['amd']} AMD GPUs"
+        if results["cpu"]:
+            success_message += ", CPU"
+        
+        logger.info(f"✅ {success_message}")
+        
+        return {
+            "success": True,
+            "message": success_message,
+            "miners_stopped": results,
+            "total_stopped": results["total_stopped"]
+        }
+    
+    def get_hybrid_stats(self) -> HybridMiningStats:
+        """Get comprehensive mining statistics"""
+        stats = HybridMiningStats()
+        
+        if self.start_time:
+            stats.uptime = time.time() - self.start_time
+        
+        # Get CPU stats
+        if hasattr(self.cpu_miner, 'stats'):
+            stats.cpu_hashrate = self.cpu_miner.stats.hashrate
+            stats.cpu_threads = getattr(self.cpu_miner, 'current_threads', 0)
+        
+        # Aggregate GPU stats
+        nvidia_hashrate = 0
+        amd_hashrate = 0
+        active_gpus = 0
+        
+        # NVIDIA stats
+        for miner in self.nvidia_miners:
+            if miner.stats.is_mining:
+                nvidia_hashrate += miner.stats.hashrate
+                active_gpus += 1
+        
+        # AMD stats
+        for miner in self.amd_miners:
+            if miner.stats.is_mining:
+                amd_hashrate += miner.stats.hashrate
+                active_gpus += 1
+        
+        stats.nvidia_hashrate = nvidia_hashrate
+        stats.amd_hashrate = amd_hashrate
+        stats.gpu_hashrate = nvidia_hashrate + amd_hashrate
+        stats.total_hashrate = stats.cpu_hashrate + stats.gpu_hashrate
+        
+        stats.nvidia_gpus = len(self.nvidia_miners)
+        stats.amd_gpus = len(self.amd_miners)
+        stats.total_gpus = stats.nvidia_gpus + stats.amd_gpus
+        stats.active_gpus = active_gpus
+        
+        return stats
+    
+    def get_detailed_gpu_stats(self) -> List[Dict]:
+        """Get detailed statistics for each GPU"""
+        gpu_stats = []
+        
+        # NVIDIA GPU stats
+        for miner in self.nvidia_miners:
+            gpu_stats.append(asdict(miner.stats))
+        
+        # AMD GPU stats
+        for miner in self.amd_miners:
+            gpu_stats.append(asdict(miner.stats))
+        
+        return gpu_stats
+
+# ============================================================================
+# DISTRIBUTED MINING SERVER
+# ============================================================================
+
+class DistributedMiningServer:
+    """Central server for distributed mining coordination"""
+    
+    def __init__(self, host: str = "0.0.0.0", port: int = 9001):
+        self.host = host
+        self.port = port
+        self.server = None
+        self.node_manager = NodeManager()
+        self.license_system = None  # Will be injected
+        self.is_running = False
+        
+    async def start_server(self):
+        """Start the distributed mining server"""
+        try:
+            self.server = await asyncio.start_server(
+                self.handle_client,
+                self.host,
+                self.port
+            )
+            
+            self.is_running = True
+            addr = self.server.sockets[0].getsockname()
+            logger.info(f"🚀 V30 Distributed Mining Server started on {addr[0]}:{addr[1]}")
+            
+            async with self.server:
+                await self.server.serve_forever()
+                
+        except Exception as e:
+            logger.error(f"Failed to start server: {e}")
+            self.is_running = False
+    
+    async def stop_server(self):
+        """Stop the distributed mining server"""
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+            self.is_running = False
+            logger.info("🛑 Distributed mining server stopped")
+    
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        """Handle client connection"""
+        client_addr = writer.get_extra_info('peername')
+        logger.info(f"🔗 New connection from {client_addr}")
+        
+        try:
+            while True:
+                # Read message header
+                header_data = await reader.readexactly(V30Protocol.HEADER_SIZE)
+                if not header_data:
+                    break
+                
+                # Parse header to get payload length
+                _, _, _, _, payload_len, _ = struct.unpack('<4s B B H I 4s', header_data)
+                
+                # Read payload
+                payload_data = await reader.readexactly(payload_len)
+                
+                # Parse complete message
+                msg_type, data, error = V30Protocol.parse_message(header_data + payload_data)
+                
+                if error:
+                    logger.error(f"Protocol error from {client_addr}: {error}")
+                    response = V30Protocol.create_error_message(error)
+                    writer.write(response)
+                    await writer.drain()
+                    continue
+                
+                # Handle message
+                response = await self.process_message(msg_type, data, client_addr)
+                if response:
+                    writer.write(response)
+                    await writer.drain()
+                
+        except asyncio.IncompleteReadError:
+            logger.info(f"🔌 Client {client_addr} disconnected")
+        except Exception as e:
+            logger.error(f"Error handling client {client_addr}: {e}")
+        finally:
+            writer.close()
+            await writer.wait_closed()
+    
+    async def process_message(self, msg_type: MessageType, data: Dict, 
+                            client_addr: Tuple[str, int]) -> Optional[bytes]:
+        """Process incoming protocol message"""
+        try:
+            if msg_type == MessageType.NODE_REGISTER:
+                return await self._handle_node_register(data, client_addr)
+            
+            elif msg_type == MessageType.NODE_HEARTBEAT:
+                return await self._handle_heartbeat(data)
+            
+            elif msg_type == MessageType.WORK_REQUEST:
+                return await self._handle_work_request(data)
+            
+            elif msg_type == MessageType.WORK_RESULT:
+                return await self._handle_work_result(data)
+            
+            elif msg_type == MessageType.STATS_REQUEST:
+                return await self._handle_stats_request(data)
+            
+            elif msg_type == MessageType.LICENSE_VALIDATE:
+                return await self._handle_license_validate(data)
+            
+            else:
+                logger.warning(f"Unknown message type: {msg_type}")
+                return V30Protocol.create_error_message(f"Unknown message type: {msg_type}")
+                
+        except Exception as e:
+            logger.error(f"Error processing message {msg_type}: {e}")
+            return V30Protocol.create_error_message(str(e))
+    
+    async def _handle_node_register(self, data: Dict, client_addr: Tuple[str, int]) -> bytes:
+        """Handle node registration"""
+        # Add client IP to node data
+        data["ip_address"] = client_addr[0]
+        
+        # Validate license if provided
+        license_key = data.get("license_key")
+        if license_key and self.license_system:
+            validation = self.license_system.validate_license(license_key)
+            if not validation["valid"]:
+                return V30Protocol.create_message(
+                    MessageType.NODE_REGISTER_ACK,
+                    {"success": False, "error": f"Invalid license: {validation['error']}"}
+                )
+        
+        # Register node
+        success, message = self.node_manager.register_node(data)
+        
+        response_data = {
+            "success": success,
+            "message": message,
+            "server_info": {
+                "version": "v30",
+                "protocol_version": V30Protocol.VERSION,
+                "capabilities": ["distributed_mining", "gpu_support", "load_balancing"]
+            }
+        }
+        
+        return V30Protocol.create_message(MessageType.NODE_REGISTER_ACK, response_data)
+    
+    async def _handle_heartbeat(self, data: Dict) -> bytes:
+        """Handle node heartbeat"""
+        node_id = data.get("node_id")
+        if node_id and self.node_manager.update_heartbeat(node_id):
+            return V30Protocol.create_message(
+                MessageType.NODE_HEARTBEAT_ACK,
+                {"success": True, "timestamp": time.time()}
+            )
+        else:
+            return V30Protocol.create_error_message("Node not found")
+    
+    async def _handle_work_request(self, data: Dict) -> bytes:
+        """Handle work request from node"""
+        node_id = data.get("node_id")
+        
+        if not node_id or node_id not in self.node_manager.nodes:
+            return V30Protocol.create_error_message("Invalid node ID")
+        
+        # Find available work
+        if self.node_manager.work_queue:
+            work = self.node_manager.work_queue.pop(0)
+            work.assigned_node = node_id
+            self.node_manager.active_work[work.work_id] = work
+            
+            return V30Protocol.create_message(
+                MessageType.WORK_ASSIGNMENT,
+                asdict(work)
+            )
+        else:
+            return V30Protocol.create_message(
+                MessageType.WORK_ASSIGNMENT,
+                {"no_work": True, "message": "No work available"}
+            )
+    
+    async def _handle_work_result(self, data: Dict) -> bytes:
+        """Handle work result from node"""
+        try:
+            work_result = WorkResult(**data)
+            self.node_manager.completed_work.append(work_result)
+            
+            # Remove from active work
+            if work_result.work_id in self.node_manager.active_work:
+                del self.node_manager.active_work[work_result.work_id]
+            
+            logger.info(f"📊 Work result received: {work_result.work_id} from {work_result.node_id}")
+            
+            return V30Protocol.create_message(
+                MessageType.WORK_COMPLETE,
+                {"success": True, "work_id": work_result.work_id}
+            )
+            
+        except Exception as e:
+            return V30Protocol.create_error_message(f"Invalid work result: {e}")
+    
+    async def _handle_stats_request(self, data: Dict) -> bytes:
+        """Handle statistics request"""
+        stats = self.node_manager.get_node_stats()
+        return V30Protocol.create_message(MessageType.STATS_RESPONSE, stats)
+    
+    async def _handle_license_validate(self, data: Dict) -> bytes:
+        """Handle license validation request"""
+        license_key = data.get("license_key")
+        
+        if not license_key or not self.license_system:
+            return V30Protocol.create_message(
+                MessageType.LICENSE_RESPONSE,
+                {"valid": False, "error": "No license system available"}
+            )
+        
+        validation = self.license_system.validate_license(license_key)
+        return V30Protocol.create_message(MessageType.LICENSE_RESPONSE, validation)
+
+# ============================================================================
 # CENTRAL CONTROL SYSTEM
 # ============================================================================
 

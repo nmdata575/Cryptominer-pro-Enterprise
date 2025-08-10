@@ -678,7 +678,7 @@ const SavedPoolsManager = ({ onUsePool, onClose, currentConfig }) => {
         fetchSavedPools();
     }, []);
 
-    const fetchSavedPools = async () => {
+    const fetchSavedPools = useCallback(async () => {
         try {
             const response = await fetch(`${backendUrl}/api/pools/saved`);
             if (response.ok) {
@@ -689,7 +689,7 @@ const SavedPoolsManager = ({ onUsePool, onClose, currentConfig }) => {
             console.error('Failed to fetch saved pools:', error);
         }
         setLoading(false);
-    };
+    }, [backendUrl]);
 
     const handleSave = async () => {
         try {

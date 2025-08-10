@@ -216,12 +216,20 @@ class EnterpriseScryptMiner:
         return struct.pack('<16I', *x)
 
     def scrypt_hash(self, data: bytes, n: int = 1024, r: int = 1, p: int = 1) -> bytes:
-        """Optimized Scrypt hash function with fallback"""
+        """Real Scrypt hash using proper cgminer-compatible implementation"""
         try:
-            import scrypt
-            return scrypt.hash(data, data, n, r, p, 32)
-        except ImportError:
-            # Fast fallback for high-throughput mining
+            # Use the real scrypt implementation with Litecoin parameters
+            return ScryptAlgorithm.scrypt_hash(
+                password=data,
+                salt=data,
+                N=n,
+                r=r, 
+                p=p,
+                dk_len=32
+            )
+        except Exception as e:
+            logger.error(f"Scrypt hash error: {e}")
+            # Fallback only if real scrypt fails
             return hashlib.scrypt(data, salt=data, n=n, r=r, p=p, dklen=32)
 
     def mining_worker(self, thread_id: int, coin_config: CoinConfig, wallet_address: str, 

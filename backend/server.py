@@ -128,7 +128,7 @@ class WalletAddress(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     """Initialize database connection and AI system"""
-    global db_client, db
+    global db_client, db, v30_control_system
     
     try:
         db_client = AsyncIOMotorClient(MONGO_URL)
@@ -145,6 +145,11 @@ async def startup_event():
         # Start AI system
         ai_system.start_ai_system()
         logger.info("AI system started")
+        
+        # Initialize V30 Enterprise System
+        v30_control_system = CentralControlSystem()
+        # Note: V30 system will be initialized when first accessed to avoid port conflicts
+        logger.info("V30 Enterprise System ready for initialization")
         
     except Exception as e:
         logger.error(f"Startup error: {e}")

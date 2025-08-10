@@ -1549,6 +1549,24 @@ class CryptoMinerProTester:
             for test in self.failed_tests:
                 print(f"   • {test}")
         
+        # NEW API Features Summary
+        print(f"\n🆕 SAVED POOLS & CUSTOM COINS API STATUS:")
+        api_tests = [
+            "Saved Pools - GET",
+            "Saved Pools - POST", 
+            "Saved Pools - PUT",
+            "Saved Pools - DELETE",
+            "Saved Pools - USE",
+            "Custom Coins - GET",
+            "Custom Coins - POST",
+            "Custom Coins - PUT", 
+            "Custom Coins - DELETE",
+            "Custom Coins - GET ALL"
+        ]
+        
+        api_passed = [test for test in api_tests if any(test in passed for passed in self.passed_tests)]
+        print(f"   API Tests Passed: {len(api_passed)}/{len(api_tests)}")
+        
         # V30 Enterprise Features Summary
         print(f"\n🔥 V30 ENTERPRISE FEATURES STATUS:")
         v30_tests = [

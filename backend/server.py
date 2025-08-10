@@ -37,6 +37,13 @@ from utils import (
     performance_monitor
 )
 
+# Import V30 Enterprise components
+from enterprise_license import EnterpriseV30License
+from hardware_validator import EnterpriseHardwareValidator
+from gpu_mining_engine import HybridGPUCPUMiner
+from v30_protocol import DistributedMiningServer
+from v30_central_control import CentralControlSystem
+
 # Environment
 from dotenv import load_dotenv
 load_dotenv()

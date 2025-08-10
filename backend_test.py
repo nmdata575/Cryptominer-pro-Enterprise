@@ -489,7 +489,7 @@ class BackendTester:
             # Verify pool was created
             response = self.session.get(f"{self.base_url}/pools/saved")
             data = response.json()
-            new_count = data["count"]
+            new_count = len(data["pools"])
             
             if new_count != initial_count + 1:
                 self.log_test("Saved Pools API", False, f"Pool count didn't increase: {initial_count} -> {new_count}")

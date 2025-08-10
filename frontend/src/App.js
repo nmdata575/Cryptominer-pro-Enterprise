@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MiningDashboard from './components/MiningDashboard';
 import SystemComponents from './components/SystemComponents';
 import AIComponents from './components/AIComponents';
-import EnterpriseThreadManager from './components/EnterpriseThreadManager';
-import EnterpriseDBConfig from './components/EnterpriseDBConfig';
-import { SavedPoolsManager, CustomCoinsManager } from './components/AdvancedComponents';
+import { SavedPoolsManager, CustomCoinsManager, EnterpriseThreadManager, EnterpriseDBConfig } from './components/AdvancedComponents';
 import './styles.css';
 
 const App = () => {

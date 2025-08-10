@@ -1,6 +1,4 @@
-<file>
-      <absolute_file_name>/app/backend/enterprise_v30.py</absolute_file_name>
-      <content">#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 CryptoMiner Pro - Consolidated Enterprise V30 Module
 Combines license management, hardware validation, and central control functionality

@@ -202,6 +202,17 @@ async def root():
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/docs")
 
+@app.get("/api")
+async def api_root():
+    """API root endpoint"""
+    return {
+        "message": "CryptoMiner Pro API v30",
+        "version": "2.0.0",
+        "edition": "Enterprise",
+        "docs": "/docs",
+        "health": "/api/health"
+    }
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint with database connectivity status"""

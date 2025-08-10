@@ -14,7 +14,7 @@ const EnterpriseThreadManager = ({ miningConfig, onConfigChange, systemStats }) 
 
   useEffect(() => {
     fetchCpuInfo();
-  }, []);
+  }, [fetchCpuInfo]);
 
   const fetchCpuInfo = async () => {
     setLoadingCpuInfo(true);

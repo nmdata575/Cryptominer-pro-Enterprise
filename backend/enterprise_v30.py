@@ -1532,7 +1532,6 @@ class CentralControlSystem:
             logger.info("Initializing V30 Enterprise Central Control System...")
             
             # Initialize distributed server
-            from v30_protocol import DistributedMiningServer
             self.distributed_server = DistributedMiningServer()
             
             # Mark as running

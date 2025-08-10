@@ -562,7 +562,7 @@ class BackendTester:
             # Verify coin was created
             response = self.session.get(f"{self.base_url}/coins/custom")
             data = response.json()
-            new_count = data["count"]
+            new_count = len(data["coins"])
             
             if new_count != initial_count + 1:
                 self.log_test("Custom Coins API", False, f"Coin count didn't increase: {initial_count} -> {new_count}")

@@ -725,7 +725,7 @@ async def update_custom_coin(coin_id: str, coin: CustomCoin):
 async def delete_custom_coin(coin_id: str):
     """Delete a custom coin configuration"""
     try:
-        if not db:
+        if db is None:
             raise HTTPException(status_code=500, detail="Database not connected")
         
         from bson import ObjectId

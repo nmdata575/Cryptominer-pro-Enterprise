@@ -371,6 +371,29 @@ const App = () => {
           />
         </div>
       </div>
+
+      {/* Saved Pools Manager Modal */}
+      {showSavedPools && (
+        <SavedPoolsManager
+          onUsePool={handleUsePool}
+          onClose={() => setShowSavedPools(false)}
+          currentConfig={{
+            coin: selectedCoin,
+            wallet_address: walletConfig.wallet_address,
+            pool_username: walletConfig.pool_username,
+            pool_password: walletConfig.pool_password,
+            mode: walletConfig.mode
+          }}
+        />
+      )}
+
+      {/* Custom Coins Manager Modal */}
+      {showCustomCoins && (
+        <CustomCoinsManager
+          onSelectCoin={handleSelectCustomCoin}
+          onClose={() => setShowCustomCoins(false)}
+        />
+      )}
     </div>
   );
 };

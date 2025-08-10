@@ -749,7 +749,15 @@ async def get_all_coins():
     """Get both preset and custom coins combined"""
     try:
         # Get preset coins
-        presets = get_coin_presets()
+        presets_dict = get_coin_presets()
+        presets = []
+        
+        # Convert preset dict to list and mark as not custom
+        for key, preset in presets_dict.items():
+            preset_copy = preset.copy()
+            preset_copy["is_custom"] = False
+            preset_copy["preset_key"] = key
+            presets.append(preset_copy)
         
         # Get custom coins
         custom_coins = []
@@ -758,10 +766,6 @@ async def get_all_coins():
                 coin["_id"] = str(coin["_id"])
                 coin["is_custom"] = True
                 custom_coins.append(coin)
-        
-        # Mark presets as not custom
-        for preset in presets:
-            preset["is_custom"] = False
         
         return {
             "preset_coins": presets,

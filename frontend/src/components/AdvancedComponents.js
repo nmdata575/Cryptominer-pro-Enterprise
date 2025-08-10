@@ -676,7 +676,7 @@ const SavedPoolsManager = ({ onUsePool, onClose, currentConfig }) => {
 
     useEffect(() => {
         fetchSavedPools();
-    }, []);
+    }, [fetchSavedPools]);
 
     const fetchSavedPools = useCallback(async () => {
         try {

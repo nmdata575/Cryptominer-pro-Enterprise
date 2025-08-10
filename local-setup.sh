@@ -262,32 +262,39 @@ setup_directories() {
 
 # Setup Python environment
 setup_python_environment() {
-    log "Setting up Python environment..."
+    log "Setting up Python environment with $PYTHON_CMD..."
     
     cd "$INSTALL_DIR/backend"
     
     # Ensure we have the right Python version and venv module
-    if ! python3 -m venv --help &> /dev/null; then
-        error "python3-venv module not available. Installing..."
-        sudo apt install -y python3-venv python3-pip python3-virtualenv
+    if ! $PYTHON_CMD -m venv --help &> /dev/null; then
+        error "venv module not available for $PYTHON_CMD"
+        return 1
     fi
     
-    # Remove existing venv if it exists but is broken
-    if [ -d "venv" ] && [ ! -f "venv/bin/python3" ]; then
-        log "Removing broken virtual environment..."
-        rm -rf venv
-    fi
-    
-    # Create virtual environment
-    if [ ! -d "venv" ]; then
-        log "Creating Python virtual environment..."
+    # Remove existing venv if it exists but is broken or uses wrong Python version
+    if [ -d "venv" ]; then
+        local existing_python=""
+        if [ -f "venv/bin/python" ]; then
+            existing_python=$(venv/bin/python --version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+        fi
         
-        if python3 -m venv venv; then
-            success "Virtual environment created with python3 -m venv"
-        elif virtualenv venv; then
-            success "Virtual environment created with virtualenv"
+        local target_python=$($PYTHON_CMD --version | cut -d' ' -f2)
+        
+        if [ "$existing_python" != "$target_python" ] || [ ! -f "venv/bin/python3" ]; then
+            log "Removing existing virtual environment (Python version mismatch or broken)"
+            rm -rf venv
+        fi
+    fi
+    
+    # Create virtual environment with the selected Python version
+    if [ ! -d "venv" ]; then
+        log "Creating Python virtual environment with $PYTHON_CMD..."
+        
+        if $PYTHON_CMD -m venv venv; then
+            success "Virtual environment created successfully"
         else
-            error "Failed to create virtual environment"
+            error "Failed to create virtual environment with $PYTHON_CMD"
             return 1
         fi
         
@@ -297,7 +304,7 @@ setup_python_environment() {
             return 1
         fi
     else
-        log "Virtual environment already exists"
+        log "Virtual environment already exists and is compatible"
     fi
     
     # Activate virtual environment
@@ -309,16 +316,42 @@ setup_python_environment() {
         return 1
     fi
     
-    log "Virtual environment activated: $VIRTUAL_ENV"
+    local venv_python_version=$(python --version | cut -d' ' -f2)
+    log "Virtual environment activated with Python $venv_python_version"
     
-    # Upgrade pip
-    log "Upgrading pip..."
-    python -m pip install --upgrade pip
+    # Upgrade pip and build tools
+    log "Upgrading pip and build tools..."
+    python -m pip install --upgrade pip setuptools wheel
     
-    # Install Python dependencies
+    # Install Python dependencies with optimized settings
     log "Installing Python dependencies..."
     if [ -f "requirements.txt" ]; then
-        pip install -r requirements.txt
+        # Install with prefer-binary to avoid compilation issues
+        pip install --prefer-binary --no-cache-dir -r requirements.txt
+        
+        # Verify critical packages are installed
+        if ! python -c "import fastapi, pymongo, uvicorn" 2>/dev/null; then
+            error "Critical packages failed to install"
+            return 1
+        fi
+        
+        # Check if AI packages installed successfully
+        if python -c "import pandas, numpy, sklearn" 2>/dev/null; then
+            success "All packages including AI libraries installed successfully"
+        else
+            warning "Some AI packages may have failed to install (basic mining will still work)"
+            log "Attempting to install core packages individually..."
+            
+            # Try to install numpy and scikit-learn individually
+            pip install --prefer-binary numpy || warning "NumPy installation failed"
+            pip install --prefer-binary scikit-learn || warning "Scikit-learn installation failed"
+            
+            # Skip pandas if it fails, as it's not critical for core functionality
+            if ! pip install --prefer-binary "pandas>=2.1.0,<3.0.0"; then
+                warning "Pandas installation failed - AI features will be limited"
+                log "Core mining functionality will work normally"
+            fi
+        fi
     else
         error "requirements.txt not found"
         return 1

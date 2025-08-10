@@ -1078,7 +1078,7 @@ const CustomCoinsManager = ({ onSelectCoin, onClose }) => {
         fetchCustomCoins();
     }, []);
 
-    const fetchCustomCoins = async () => {
+    const fetchCustomCoins = useCallback(async () => {
         try {
             const response = await fetch(`${backendUrl}/api/coins/custom`);
             if (response.ok) {
@@ -1089,7 +1089,7 @@ const CustomCoinsManager = ({ onSelectCoin, onClose }) => {
             console.error('Failed to fetch custom coins:', error);
         }
         setLoading(false);
-    };
+    }, [backendUrl]);
 
     const handleSave = async () => {
         try {

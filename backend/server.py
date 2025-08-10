@@ -670,20 +670,26 @@ async def get_system_stats():
 async def get_saved_pools():
     """Get all saved pool configurations"""
     try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
+        db = await db_manager.get_database()
         
         pools = []
         async for pool in db.saved_pools.find().sort("name", 1):
-            # Convert ObjectId to string for JSON serialization
-            pool["_id"] = str(pool["_id"])
-            pools.append(pool)
-        
-        return {"pools": pools, "count": len(pools)}
-        
+            pool_data = {
+                "id": str(pool["_id"]),
+                "name": pool["name"],
+                "coin_symbol": pool["coin_symbol"],
+                "pool_address": pool["pool_address"],
+                "pool_port": pool["pool_port"],
+                "wallet_address": pool["wallet_address"],
+                "created_at": pool.get("created_at", datetime.utcnow().isoformat()),
+                "last_used": pool.get("last_used")
+            }
+            pools.append(pool_data)
+            
+        return {"success": True, "pools": pools}
     except Exception as e:
         logger.error(f"Get saved pools error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"success": False, "error": str(e), "pools": []}
 
 @app.post("/api/pools/saved")
 async def save_pool_configuration(pool: SavedPool):

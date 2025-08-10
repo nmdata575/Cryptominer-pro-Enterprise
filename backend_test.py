@@ -453,11 +453,11 @@ class BackendTester:
                 return False
             
             data = response.json()
-            if "pools" not in data or "count" not in data:
-                self.log_test("Saved Pools API", False, "Missing pools or count field in GET response")
+            if "pools" not in data or not data.get("success"):
+                self.log_test("Saved Pools API", False, "Missing pools field or success=false in GET response")
                 return False
             
-            initial_count = data["count"]
+            initial_count = len(data["pools"])
             
             # Test POST - Create new pool
             test_pool = {

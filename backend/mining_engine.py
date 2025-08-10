@@ -214,13 +214,29 @@ class StratumClient:
         logger.debug(f"Sent: {message}")
     
     def _receive_message(self) -> Optional[Dict]:
-        """Receive JSON message from pool"""
+        """Receive JSON message from pool - handle multiple messages in single packet"""
         try:
             data = self.socket.recv(4096).decode('utf-8').strip()
             if data:
-                message = json.loads(data)
-                logger.debug(f"Received: {message}")
-                return message
+                # Handle multiple JSON messages separated by newlines
+                lines = data.split('\n')
+                messages = []
+                
+                for line in lines:
+                    line = line.strip()
+                    if line:  # Skip empty lines
+                        try:
+                            message = json.loads(line)
+                            messages.append(message)
+                            logger.debug(f"Received: {message}")
+                        except json.JSONDecodeError as e:
+                            logger.error(f"JSON parse error for line '{line}': {e}")
+                            continue
+                
+                # Return the first valid message (most relevant for Stratum protocol)
+                if messages:
+                    return messages[0]
+                    
         except Exception as e:
             logger.error(f"Failed to receive message: {e}")
         return None

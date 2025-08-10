@@ -816,12 +816,18 @@ class BackendTester:
     def test_v30_distributed_mining_control(self) -> bool:
         """Test V30 distributed mining control endpoints"""
         try:
-            # Test start distributed mining
+            # Test start distributed mining with complete coin config
             mining_config = {
                 "coin_config": {
                     "name": "Electronic Gulden",
                     "symbol": "EFL",
-                    "algorithm": "Scrypt"
+                    "algorithm": "Scrypt",
+                    "block_reward": 25.0,
+                    "block_time": 150,
+                    "difficulty": 1000.0,
+                    "scrypt_params": {"n": 1024, "r": 1, "p": 1},
+                    "network_hashrate": "Unknown",
+                    "wallet_format": "L prefix"
                 },
                 "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
                 "include_local": True

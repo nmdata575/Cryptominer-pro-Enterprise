@@ -591,7 +591,7 @@ async def delete_saved_pool(pool_id: str):
 async def use_saved_pool(pool_id: str):
     """Mark a saved pool as recently used and return its configuration"""
     try:
-        if not db:
+        if db is None:
             raise HTTPException(status_code=500, detail="Database not connected")
         
         from bson import ObjectId

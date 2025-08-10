@@ -548,8 +548,79 @@ setup_python_environment() {
     # Install Python dependencies with optimized settings
     log "Installing Python dependencies..."
     if [ -f "requirements.txt" ]; then
-        # Install with prefer-binary to avoid compilation issues
-        pip install --prefer-binary --no-cache-dir -r requirements.txt
+        # Install with prefer-binary to avoid compilation issues and handle conflicts
+        log "Installing core dependencies first..."
+        
+        # Install essential packages first to avoid conflicts
+        pip install --prefer-binary --no-cache-dir \
+            fastapi==0.110.0 \
+            uvicorn[standard]==0.27.0 \
+            websockets==12.0 \
+            python-multipart==0.0.7 \
+            aiofiles==23.2.1 \
+            cryptography==42.0.0 \
+            base58==2.1.1 \
+            pymongo==4.6.1 \
+            psutil==5.9.8 \
+            requests==2.31.0 \
+            python-dotenv==1.0.0 \
+            pydantic==2.6.0
+        
+        # Try to install remaining packages, skipping problematic ones
+        log "Installing additional dependencies..."
+        
+        # Skip problematic metadata package and install others individually
+        local remaining_packages=(
+            "pytest==8.0.0"
+        )
+        
+        for package in "${remaining_packages[@]}"; do
+            if pip install --prefer-binary --no-cache-dir "$package"; then
+                log "✅ Installed $package"
+            else
+                warning "❌ Failed to install $package (skipping)"
+            fi
+        done
+        
+        # Try AI packages with fallbacks
+        log "Installing AI/ML packages with fallbacks..."
+        
+        # Try NumPy first (required by most ML packages)
+        if pip install --prefer-binary --no-cache-dir "numpy>=1.24.0,<2.0.0"; then
+            success "NumPy installed successfully"
+            
+            # Try scikit-learn
+            if pip install --prefer-binary --no-cache-dir "scikit-learn>=1.3.0,<2.0.0"; then
+                success "Scikit-learn installed successfully"
+            else
+                warning "Scikit-learn installation failed"
+            fi
+            
+            # Try pandas (most problematic with Python 3.13)
+            if pip install --prefer-binary --no-cache-dir "pandas>=2.1.0,<3.0.0"; then
+                success "Pandas installed successfully"
+            else
+                warning "Pandas installation failed - AI features will be limited"
+                log "Attempting to install pandas with no-deps to avoid conflicts..."
+                if pip install --prefer-binary --no-deps --no-cache-dir pandas; then
+                    success "Pandas installed with --no-deps"
+                else
+                    warning "Pandas completely failed - core mining will still work"
+                fi
+            fi
+        else
+            warning "NumPy installation failed - installing alternative math libraries"
+            # Continue without NumPy/pandas - core functionality will still work
+        fi
+        
+        # Try scrypt package for mining
+        log "Installing mining-specific packages..."
+        if pip install --prefer-binary --no-cache-dir scrypt==0.8.20; then
+            success "Scrypt library installed successfully"
+        else
+            warning "Scrypt library failed, installing alternative crypto library"
+            pip install --prefer-binary --no-cache-dir pycryptodome
+        fi
         
         # Verify critical packages are installed
         if ! python -c "import fastapi, pymongo, uvicorn" 2>/dev/null; then
@@ -557,23 +628,22 @@ setup_python_environment() {
             return 1
         fi
         
-        # Check if AI packages installed successfully
+        success "Core packages installed successfully"
+        
+        # Check what AI packages are available
+        local ai_status=""
         if python -c "import pandas, numpy, sklearn" 2>/dev/null; then
-            success "All packages including AI libraries installed successfully"
+            ai_status="All AI libraries available"
+        elif python -c "import numpy, sklearn" 2>/dev/null; then
+            ai_status="NumPy and scikit-learn available (pandas missing)"
+        elif python -c "import numpy" 2>/dev/null; then
+            ai_status="Only NumPy available (limited AI features)"
         else
-            warning "Some AI packages may have failed to install (basic mining will still work)"
-            log "Attempting to install core packages individually..."
-            
-            # Try to install numpy and scikit-learn individually
-            pip install --prefer-binary numpy || warning "NumPy installation failed"
-            pip install --prefer-binary scikit-learn || warning "Scikit-learn installation failed"
-            
-            # Skip pandas if it fails, as it's not critical for core functionality
-            if ! pip install --prefer-binary "pandas>=2.1.0,<3.0.0"; then
-                warning "Pandas installation failed - AI features will be limited"
-                log "Core mining functionality will work normally"
-            fi
+            ai_status="No AI libraries available (core mining only)"
         fi
+        
+        log "AI Package Status: $ai_status"
+        
     else
         error "requirements.txt not found"
         return 1

@@ -45,6 +45,8 @@ const App = () => {
     remote_db_enabled: false,
     remote_mongo_url: ''
   });
+  const [showSavedPools, setShowSavedPools] = useState(false);
+  const [showCustomCoins, setShowCustomCoins] = useState(false);
 
   // Initialize WebSocket connection
   useEffect(() => {

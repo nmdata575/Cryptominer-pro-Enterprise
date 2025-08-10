@@ -1494,6 +1494,14 @@ class CryptoMinerProTester:
         print(f"📡 Testing backend at: {BACKEND_URL}")
         print("=" * 60)
         
+        # NEW: Saved Pools and Custom Coins API Tests (as requested in review)
+        print("\n🆕 NEWLY IMPLEMENTED SAVED POOLS & CUSTOM COINS API TESTING:")
+        print("=" * 60)
+        self.test_saved_pools_api()
+        self.test_custom_coins_api()
+        self.test_saved_pools_validation()
+        self.test_custom_coins_validation()
+        
         # NEW: EFL Scrypt Mining Protocol Tests (as requested in review)
         print("\n🔥 NEWLY IMPLEMENTED SCRYPT MINING PROTOCOL TESTING:")
         print("=" * 60)

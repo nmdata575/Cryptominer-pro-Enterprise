@@ -325,7 +325,7 @@ python3 pool_test.py
 **Frontend Not Loading:**
 ```bash
 # Check frontend service
-sudo supervisorctl status frontend
+sudo supervisorctl status mining_system:frontend
 
 # Verify backend connectivity
 curl http://localhost:8001/api/health

@@ -199,6 +199,7 @@ remove_application_files() {
         "/var/log/cryptominer-pro"
         "/var/lib/cryptominer-pro"
         "/etc/cryptominer-pro"
+        "/data/db/crypto_miner_db"
     )
     
     for path in "${common_paths[@]}"; do

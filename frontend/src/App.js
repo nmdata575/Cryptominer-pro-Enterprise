@@ -16,7 +16,7 @@ const App = () => {
     wallet_address: 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
     pool_username: 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
     pool_password: 'd=24000',
-    custom_pool_address: 'stratum+tcp://ltc.luckymonster.pro',
+    custom_pool_address: 'ltc.luckymonster.pro',
     custom_pool_port: 4112,
     custom_rpc_host: '',
     custom_rpc_port: '',

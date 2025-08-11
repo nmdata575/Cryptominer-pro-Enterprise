@@ -405,7 +405,7 @@ autostart=true
 autorestart=true
 stderr_logfile=/var/log/supervisor/frontend.err.log
 stdout_logfile=/var/log/supervisor/frontend.out.log
-environment=PORT=3334
+environment=PORT=3333
 EOF
     
     # Reload supervisor

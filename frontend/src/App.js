@@ -47,8 +47,33 @@ const App = () => {
 
   // Initialize WebSocket connection
   useEffect(() => {
-    connectWebSocket();
-    fetchInitialData();
+    // Temporarily disable WebSocket and API calls for debugging
+    console.log('App component mounted successfully');
+    
+    // Try a simple backend connection test
+    const testConnection = async () => {
+      try {
+        console.log('Testing backend connection...');
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/health`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Backend connection successful:', data);
+          setConnectionStatus('Connected');
+          
+          // Only connect WebSocket after successful health check
+          connectWebSocket();
+          fetchInitialData();
+        } else {
+          console.error('Backend health check failed');
+          setConnectionStatus('Error');
+        }
+      } catch (error) {
+        console.error('Backend connection failed:', error);
+        setConnectionStatus('Error');
+      }
+    };
+    
+    testConnection();
     
     return () => {
       if (websocket) {

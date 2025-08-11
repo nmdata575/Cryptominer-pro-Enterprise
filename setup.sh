@@ -370,7 +370,10 @@ setup_frontend_environment() {
     if [ ! -f .env ]; then
         cat > .env << EOF
 REACT_APP_BACKEND_URL=http://localhost:8001
+PORT=3333
 GENERATE_SOURCEMAP=false
+FAST_REFRESH=true
+DANGEROUSLY_DISABLE_HOST_CHECK=true
 EOF
         log "Created default frontend .env file"
     fi

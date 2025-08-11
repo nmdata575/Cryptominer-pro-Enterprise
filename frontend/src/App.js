@@ -160,7 +160,6 @@ const App = () => {
   };
 
   const handleEnterpriseConfigChange = (newConfig) => {
-    setEnterpriseConfig(newConfig);
     // Note: In a production environment, this would trigger a backend configuration update
     console.log('Enterprise config updated:', newConfig);
   };

@@ -141,12 +141,12 @@ install_mongodb() {
     fi
     
     # Import MongoDB GPG key
-    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
-        sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+    curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | \
+        sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
     
     # Add MongoDB repository
-    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu $ubuntu_version/mongodb-org/7.0 multiverse" | \
-        sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu $ubuntu_version/mongodb-org/8.0 multiverse" | \
+        sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
     
     # Update package list and install MongoDB
     sudo apt update

@@ -94,20 +94,17 @@ stop_services() {
     
     # Stop supervisor services
     if command -v supervisorctl &> /dev/null; then
-        if sudo supervisorctl status mining_system:backend &> /dev/null; then
-            sudo supervisorctl stop mining_system:backend
-            success "Stopped backend service"
-        fi
+        # Stop all mining_system services
+        sudo supervisorctl stop mining_system:backend 2>/dev/null || true
+        sudo supervisorctl stop mining_system:frontend 2>/dev/null || true
+        sudo supervisorctl stop mining_system:all 2>/dev/null || true
+        success "Stopped mining_system services"
         
-        if sudo supervisorctl status mining_system:frontend &> /dev/null; then
-            sudo supervisorctl stop mining_system:frontend
-            success "Stopped frontend service"
-        fi
-        
-        if sudo supervisorctl status mining_system:all &> /dev/null; then
-            sudo supervisorctl stop mining_system:all
-            success "Stopped all mining services"
-        fi
+        # Also check for older service names
+        sudo supervisorctl stop mining_app:backend 2>/dev/null || true
+        sudo supervisorctl stop mining_app:frontend 2>/dev/null || true
+        sudo supervisorctl stop cryptominer-pro:backend 2>/dev/null || true
+        sudo supervisorctl stop cryptominer-pro:frontend 2>/dev/null || true
     fi
     
     # Stop any systemd services

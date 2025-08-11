@@ -13,7 +13,7 @@ const MiningDashboard = ({
   onMiningStop,
   onConfigChange 
 }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  // const [activeTab, setActiveTab] = useState('overview'); // Reserved for future tabbed interface
   const [collapsedSections, setCollapsedSections] = useState({
     minerSetup: false,
     miningPerformance: false,

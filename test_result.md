@@ -460,6 +460,12 @@ frontend:
           comment: "✅ CUSTOM COINS API FULLY FUNCTIONAL - All CRUD operations working perfectly. GET /api/coins/custom (list custom coins), POST /api/coins/custom (create coin), PUT /api/coins/custom/{coin_id} (update coin), DELETE /api/coins/custom/{coin_id} (delete coin), GET /api/coins/all (combined preset + custom coins). Tested with hypothetical CMPC cryptocurrency. Proper validation of duplicate symbols, error handling for non-existent coins, and preset/custom coin combination working correctly. Data persisted in MongoDB custom_coins collection."
 
 agent_communication:
+    - agent: "main"
+      message: "🔍 REGRESSION ISSUE DIAGNOSIS STARTED - User reported critical regressions despite 100% previous success rate: 1) Database showing 'Disconnected' in frontend, 2) Mining showing 0.00 H/s despite ACTIVE status, 3) Thread Manager stuck on 'Analyzing system capabilities...', 4) Database connection instability. Starting systematic investigation."
+    - agent: "main" 
+      message: "✅ DATABASE CONNECTION ISSUE RESOLVED - Root cause identified: MongoDB service was not running after container restart. Fixed by starting mongod service and restarting backend. Database now shows 'connected' status with heartbeat_active: true and proper connection pooling (maxPoolSize=50, minPoolSize=5). Backend APIs responding correctly."
+    - agent: "main"
+      message: "🚨 FRONTEND ROUTING ISSUE CONFIRMED - External URL (https://c6db4a82-7f00-4029-bb3a-ed7a73ef471c.preview.emergentagent.com) returns blank white page, but internal localhost:3333 serves React app correctly. This is a Kubernetes ingress routing problem, not application code issue. Frontend components are functional but not accessible through external URL."
     - agent: "testing"
       message: "✅ ALL ENTERPRISE BACKEND TESTS PASSED (100% success rate). The CryptoMiner Pro backend successfully supports enterprise-scale features including 250k+ thread management, enterprise database options, enhanced system detection, and the new EnterpriseScryptMiner class. All 10 comprehensive tests passed including high thread count mining (32, 64, 128 threads), database connection testing, AI system integration, and enterprise metrics reporting."
     - agent: "testing"

@@ -123,11 +123,12 @@ install_dependencies() {
 
 # Install MongoDB with proper repository setup
 install_mongodb() {
-    log "Installing MongoDB..."
+    log "Installing MongoDB 8.0 (latest stable)..."
     
     # Check if MongoDB is already installed
     if command -v mongod &> /dev/null; then
-        success "MongoDB already installed"
+        local current_version=$(mongod --version | head -1 | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*')
+        success "MongoDB already installed ($current_version)"
         return 0
     fi
     

@@ -122,14 +122,15 @@ stop_services() {
     fi
     
     # Kill any remaining processes
-    if pgrep -f "cryptominer" > /dev/null; then
-        sudo pkill -f "cryptominer"
+    if pgrep -f "cryptominer\|mining_system\|server.py.*mining\|yarn.*start" > /dev/null; then
+        sudo pkill -f "cryptominer\|mining_system\|server.py.*mining\|yarn.*start" 2>/dev/null || true
         success "Killed remaining CryptoMiner processes"
     fi
     
-    if pgrep -f "mining_system" > /dev/null; then
-        sudo pkill -f "mining_system"
-        success "Killed remaining mining system processes"
+    # Kill any Python processes running from the installation directory
+    if pgrep -f "$INSTALL_DIR" > /dev/null; then
+        sudo pkill -f "$INSTALL_DIR" 2>/dev/null || true
+        success "Killed processes from installation directory"
     fi
 }
 

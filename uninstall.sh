@@ -231,6 +231,8 @@ cleanup_logs() {
     log "Cleaning up log files..."
     
     local log_paths=(
+        "/var/log/supervisor/backend.*"
+        "/var/log/supervisor/frontend.*"
         "/var/log/supervisor/mining_*"
         "/var/log/supervisor/cryptominer*"
         "/var/log/cryptominer*"

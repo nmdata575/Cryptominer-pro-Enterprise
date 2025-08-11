@@ -139,9 +139,9 @@ remove_supervisor_config() {
     log "Removing supervisor configurations..."
     
     local supervisor_configs=(
+        "/etc/supervisor/conf.d/mining_system.conf"
         "/etc/supervisor/conf.d/mining_app.conf"
         "/etc/supervisor/conf.d/cryptominer-pro.conf"
-        "/etc/supervisor/conf.d/mining_system.conf"
     )
     
     for config in "${supervisor_configs[@]}"; do

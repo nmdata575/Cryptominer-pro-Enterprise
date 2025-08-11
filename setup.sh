@@ -467,7 +467,7 @@ verify_installation() {
     # Check if frontend is responding
     local frontend_check=0
     for i in {1..30}; do
-        if curl -s http://localhost:3334 > /dev/null; then
+        if curl -s http://localhost:3333 > /dev/null; then
             frontend_check=1
             break
         fi

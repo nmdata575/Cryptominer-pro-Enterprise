@@ -46,10 +46,79 @@ const App = () => {
   const [showCustomCoins, setShowCustomCoins] = useState(false);
 
   // Initialize WebSocket connection
-  useEffect(() => {
-    // Temporarily disable WebSocket and API calls for debugging
-    console.log('App component mounted successfully');
+  const connectWebSocket = useCallback(() => {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+    const wsUrl = backendUrl.replace('http', 'ws') + '/ws';
     
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      setConnectionStatus('Connected');
+      setWebsocket(ws);
+    };
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === 'mining_update') {
+        setMiningStatus({
+          is_mining: data.is_mining,
+          stats: data.stats
+        });
+      } else if (data.type === 'system_update') {
+        setSystemStats(data.data);
+      }
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+      setConnectionStatus('Disconnected');
+      
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        console.log('Attempting to reconnect WebSocket...');
+        connectWebSocket();
+      }, 5000);
+    };
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setConnectionStatus('Error');
+    };
+  }, []);
+
+  const fetchInitialData = useCallback(async () => {
+    try {
+      // Fetch coin presets
+      const coinsResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/coins/presets`);
+      if (coinsResponse.ok) {
+        const coinsData = await coinsResponse.json();
+        const coins = Object.values(coinsData.presets);
+        if (coins.length > 0 && !selectedCoin) {
+          setSelectedCoin(coins[0]); // Default to first coin (Litecoin)
+        }
+      }
+
+      // Fetch initial mining status
+      const statusResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/mining/status`);
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        setMiningStatus(statusData);
+      }
+
+      // Fetch system stats
+      const systemResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/system/stats`);
+      if (systemResponse.ok) {
+        const systemData = await systemResponse.json();
+        setSystemStats(systemData);
+      }
+    } catch (error) {
+      console.error('Failed to fetch initial data:', error);
+    }
+  }, [selectedCoin]);
+
+  useEffect(() => {
     // Try a simple backend connection test
     const testConnection = async () => {
       try {
@@ -80,7 +149,7 @@ const App = () => {
         websocket.close();
       }
     };
-  }, []);
+  }, [connectWebSocket, fetchInitialData, websocket]);
 
   const connectWebSocket = () => {
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';

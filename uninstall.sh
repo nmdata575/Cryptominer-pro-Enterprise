@@ -296,13 +296,13 @@ cleanup_mongodb_data() {
             
             # Connect to MongoDB and drop the database
             if command -v mongosh &> /dev/null; then
-                mongosh --eval "db.dropDatabase()" crypto_miner_db 2>/dev/null || true
+                mongosh --eval "use crypto_miner_db; db.dropDatabase()" 2>/dev/null || true
                 success "Removed CryptoMiner Pro database (using mongosh)"
             elif command -v mongo &> /dev/null; then
-                mongo --eval "db.dropDatabase()" crypto_miner_db 2>/dev/null || true
+                mongo crypto_miner_db --eval "db.dropDatabase()" 2>/dev/null || true
                 success "Removed CryptoMiner Pro database (using mongo)"
             else
-                # Try using Python pymongo
+                # Try using Python pymongo if available
                 python3 -c "
 import pymongo
 try:
@@ -315,17 +315,30 @@ except Exception as e:
             fi
             
             # Remove Docker MongoDB container if it exists
-            if command -v docker &> /dev/null && docker ps -a | grep -q mongodb; then
-                docker stop mongodb 2>/dev/null || true
-                docker rm mongodb 2>/dev/null || true
-                success "Removed MongoDB Docker container"
+            if command -v docker &> /dev/null; then
+                if docker ps -a --format "table {{.Names}}" | grep -q "mongodb"; then
+                    docker stop mongodb 2>/dev/null || true
+                    docker rm mongodb 2>/dev/null || true
+                    success "Removed MongoDB Docker container"
+                fi
             fi
             
-            # Remove MongoDB data directory if using Docker
-            if [ -d "/opt/mongodb" ]; then
-                sudo rm -rf /opt/mongodb
-                success "Removed MongoDB data directory"
-            fi
+            # Remove MongoDB data directory if using local data storage
+            local mongodb_data_paths=(
+                "/data/db"
+                "/opt/mongodb"
+                "/var/lib/mongodb"
+            )
+            
+            for data_path in "${mongodb_data_paths[@]}"; do
+                if [ -d "$data_path" ] && [ -w "$data_path" ]; then
+                    # Only remove if it's empty or contains only our database
+                    if [ -d "$data_path/crypto_miner_db" ]; then
+                        sudo rm -rf "$data_path/crypto_miner_db"
+                        success "Removed CryptoMiner Pro data from: $data_path"
+                    fi
+                fi
+            done
         else
             log "Skipped database cleanup"
         fi

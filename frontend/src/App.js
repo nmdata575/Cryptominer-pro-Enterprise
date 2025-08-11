@@ -38,10 +38,6 @@ const App = () => {
   const [systemStats, setSystemStats] = useState({});
   const [connectionStatus, setConnectionStatus] = useState('Disconnected');
   const [websocket, setWebsocket] = useState(null);
-  const [enterpriseConfig, setEnterpriseConfig] = useState({
-    remote_db_enabled: false,
-    remote_mongo_url: ''
-  });
   const [showSavedPools, setShowSavedPools] = useState(false);
   const [showCustomCoins, setShowCustomCoins] = useState(false);
 

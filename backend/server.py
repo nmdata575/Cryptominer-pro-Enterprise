@@ -99,31 +99,30 @@ class DatabaseManager:
     async def connect(self):
         """Connect to MongoDB with connection pooling and proper configuration"""
         try:
-            logger.info(f"Connecting to MongoDB with authentication...")
+            logger.info(f"Connecting to MongoDB...")
             
-            # Configure connection with proper settings for stability
+            # Configure connection with proper settings for stability and connection persistence
             self.client = AsyncIOMotorClient(
                 MONGO_URL,
-                # Connection pool settings
+                # Connection pool settings for stability
                 maxPoolSize=50,                    # Maximum connections in pool
-                minPoolSize=5,                     # Minimum connections in pool
-                maxIdleTimeMS=300000,             # 5 minutes max idle time (increased)
-                # Timeouts
-                serverSelectionTimeoutMS=10000,    # 10 seconds to select server (increased)
-                socketTimeoutMS=30000,            # 30 seconds socket timeout (increased)
-                connectTimeoutMS=15000,           # 15 seconds connect timeout (increased)
-                # Heartbeat and keepalive
-                heartbeatFrequencyMS=30000,       # 30 seconds heartbeat frequency (increased)
+                minPoolSize=10,                    # Minimum connections in pool (increased)
+                maxIdleTimeMS=600000,             # 10 minutes max idle time (increased)
+                # Timeouts - increased for stability
+                serverSelectionTimeoutMS=15000,   # 15 seconds to select server
+                socketTimeoutMS=60000,            # 60 seconds socket timeout
+                connectTimeoutMS=20000,           # 20 seconds connect timeout
+                # Heartbeat and keepalive - optimized for persistence
+                heartbeatFrequencyMS=30000,       # 30 seconds heartbeat frequency
                 # Retry settings
                 retryWrites=True,
                 retryReads=True,
                 # Write concern for durability
                 w='majority',
-                # Authentication settings
-                authSource='admin',               # Specify auth database
-                authMechanism='SCRAM-SHA-1',      # Use SCRAM authentication
-                # Connection persistence
-                maxConnecting=10,                 # Max concurrent connections
+                # Connection persistence settings
+                maxConnecting=20,                 # Max concurrent connections
+                # Disable problematic auth mechanism detection if no auth needed
+                directConnection=False,
             )
             
             self.db = self.client[DATABASE_NAME]

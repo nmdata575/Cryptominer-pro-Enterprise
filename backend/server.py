@@ -99,24 +99,31 @@ class DatabaseManager:
     async def connect(self):
         """Connect to MongoDB with connection pooling and proper configuration"""
         try:
+            logger.info(f"Connecting to MongoDB with authentication...")
+            
             # Configure connection with proper settings for stability
             self.client = AsyncIOMotorClient(
                 MONGO_URL,
                 # Connection pool settings
                 maxPoolSize=50,                    # Maximum connections in pool
                 minPoolSize=5,                     # Minimum connections in pool
-                maxIdleTimeMS=60000,              # 60 seconds max idle time
+                maxIdleTimeMS=300000,             # 5 minutes max idle time (increased)
                 # Timeouts
-                serverSelectionTimeoutMS=5000,     # 5 seconds to select server
-                socketTimeoutMS=20000,            # 20 seconds socket timeout
-                connectTimeoutMS=10000,           # 10 seconds connect timeout
+                serverSelectionTimeoutMS=10000,    # 10 seconds to select server (increased)
+                socketTimeoutMS=30000,            # 30 seconds socket timeout (increased)
+                connectTimeoutMS=15000,           # 15 seconds connect timeout (increased)
                 # Heartbeat and keepalive
-                heartbeatFrequencyMS=10000,       # 10 seconds heartbeat frequency
+                heartbeatFrequencyMS=30000,       # 30 seconds heartbeat frequency (increased)
                 # Retry settings
                 retryWrites=True,
                 retryReads=True,
-                # Write concern for durability (removed maxStalenessSeconds conflict)
-                w='majority'
+                # Write concern for durability
+                w='majority',
+                # Authentication settings
+                authSource='admin',               # Specify auth database
+                authMechanism='SCRAM-SHA-1',      # Use SCRAM authentication
+                # Connection persistence
+                maxConnecting=10,                 # Max concurrent connections
             )
             
             self.db = self.client[DATABASE_NAME]

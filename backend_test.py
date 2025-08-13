@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-CryptoMiner Pro Backend API Testing Suite
-Tests all backend APIs after enterprise file consolidation
+CryptoMiner Pro Backend COMPREHENSIVE DIAGNOSTIC Testing Suite
+Focuses on database connection stability, mining engine functionality, and system health
+Addresses specific regression issues reported by user
 """
 
 import requests
@@ -9,7 +10,10 @@ import json
 import time
 import sys
 import os
+import threading
+import concurrent.futures
 from typing import Dict, Any, List, Tuple
+from datetime import datetime
 
 # Backend URL from environment
 BACKEND_URL = "https://c6db4a82-7f00-4029-bb3a-ed7a73ef471c.preview.emergentagent.com/api"

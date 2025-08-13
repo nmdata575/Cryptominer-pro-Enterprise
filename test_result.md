@@ -229,8 +229,8 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "5.0"
-  test_sequence: 5
+  version: "6.0"
+  test_sequence: 6
   run_ui: true
   v30_testing_completed: true
   v30_features_tested: 8
@@ -252,6 +252,12 @@ metadata:
   comprehensive_tests_total: 20
   target_success_rate_met: true
   phase_3_ready: true
+  regression_diagnostic_completed: true
+  regression_issues_resolved: true
+  database_service_restored: true
+  diagnostic_test_success_rate: "100%"
+  diagnostic_tests_passed: 4
+  diagnostic_tests_total: 4
 
 test_plan:
   current_focus:

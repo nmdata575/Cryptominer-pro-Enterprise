@@ -163,13 +163,46 @@ setup_python_environment() {
     
     cd "$INSTALL_DIR/backend"
     
-    # Create virtual environment
-    python3 -m venv venv
-    source venv/bin/activate
+    # Remove existing broken venv
+    if [ -d "venv" ] && [ ! -f "venv/bin/python3" ]; then
+        log_info "Removing broken virtual environment..."
+        rm -rf venv
+    fi
     
-    # Install dependencies
-    pip install --upgrade pip setuptools wheel
-    pip install -r requirements.txt
+    # Create virtual environment
+    if [ ! -d "venv" ]; then
+        log_info "Creating Python virtual environment..."
+        if python3 -m venv venv; then
+            log_success "Virtual environment created successfully"
+        else
+            log_error "Failed to create virtual environment"
+            exit 1
+        fi
+    fi
+    
+    # Verify virtual environment
+    if [ ! -f "venv/bin/python3" ]; then
+        log_error "Virtual environment creation failed - python3 not found"
+        exit 1
+    fi
+    
+    # Activate virtual environment and install dependencies
+    log_info "Installing Python dependencies..."
+    
+    # Use the venv python directly instead of sourcing
+    ./venv/bin/python3 -m pip install --upgrade pip setuptools wheel
+    
+    if [ -f "requirements.txt" ]; then
+        if ./venv/bin/python3 -m pip install -r requirements.txt; then
+            log_success "Python dependencies installed successfully"
+        else
+            log_error "Failed to install Python dependencies"
+            exit 1
+        fi
+    else
+        log_error "requirements.txt not found"
+        exit 1
+    fi
     
     # Create backend .env file
     cat > .env << EOF

@@ -226,8 +226,20 @@ setup_frontend_environment() {
     
     cd "$INSTALL_DIR/frontend"
     
+    # Check if package.json exists
+    if [ ! -f "package.json" ]; then
+        log_error "package.json not found in frontend directory"
+        exit 1
+    fi
+    
     # Install dependencies
-    yarn install
+    log_info "Installing frontend dependencies with Yarn..."
+    if yarn install; then
+        log_success "Frontend dependencies installed successfully"
+    else
+        log_error "Failed to install frontend dependencies"
+        exit 1
+    fi
     
     # Create frontend .env file
     cat > .env << EOF

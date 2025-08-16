@@ -350,7 +350,10 @@ class BackendTester:
                     "algorithm": "Scrypt",
                     "block_reward": 25.0,
                     "block_time": 150,
-                    "scrypt_params": {"n": 1024, "r": 1, "p": 1}
+                    "difficulty": 1000.0,
+                    "scrypt_params": {"n": 1024, "r": 1, "p": 1},
+                    "network_hashrate": "Unknown",
+                    "wallet_format": "Standard"
                 },
                 "mode": "pool",
                 "threads": 4,

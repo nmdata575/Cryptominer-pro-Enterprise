@@ -144,13 +144,13 @@ class BackendTester:
                 if response.status == 200:
                     data = await response.json()
                     
-                    presets = data.get("presets", [])
+                    presets = data.get("presets", {})
                     if not presets:
                         self.log_test("Coin Presets API", False, "No presets returned")
                         return
                     
                     # Check for common coins
-                    coin_symbols = [coin.get("symbol", "") for coin in presets]
+                    coin_symbols = [coin_data.get("symbol", "") for coin_data in presets.values()]
                     expected_coins = ["LTC", "DOGE"]
                     found_coins = [coin for coin in expected_coins if coin in coin_symbols]
                     

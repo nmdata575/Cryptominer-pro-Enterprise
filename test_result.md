@@ -240,8 +240,8 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "6.0"
-  test_sequence: 6
+  version: "6.1"
+  test_sequence: 7
   run_ui: true
   v30_testing_completed: true
   v30_features_tested: 8
@@ -270,6 +270,10 @@ metadata:
   post_naming_fixes_test_success_rate: "100%"
   post_naming_fixes_tests_passed: 13
   post_naming_fixes_tests_total: 13
+  post_naming_fixes_frontend_verification_completed: true
+  frontend_after_naming_fixes_success_rate: "100%"
+  real_time_polling_verified: true
+  one_second_polling_active: true
 
 test_plan:
   current_focus:

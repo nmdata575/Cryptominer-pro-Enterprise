@@ -1314,6 +1314,11 @@ main() {
             log_success "Verification completed"
             ;;
             
+        "status"|"--status")
+            log_info "Running comprehensive status check..."
+            display_completion_message
+            ;;
+            
         "security"|"--security")
             log_info "Setting up MongoDB security..."
             setup_mongodb_security
@@ -1329,6 +1334,7 @@ Usage: $0 [MODE]
 Modes:
     install, --install    Full installation (default)
     verify, --verify      Verify existing installation
+    status, --status      Show comprehensive status report
     security, --security  Set up MongoDB security only
     help, --help, -h      Show this help message
 
@@ -1340,10 +1346,12 @@ Features:
     ✅ Robust error handling and rollback
     ✅ Production-ready configuration
     ✅ Comprehensive verification testing
+    ✅ Real-time status monitoring
 
 Examples:
     $0                    # Full installation
     $0 --verify          # Verify installation
+    $0 --status          # Show status report
     $0 --security        # Setup MongoDB security
 
 EOF

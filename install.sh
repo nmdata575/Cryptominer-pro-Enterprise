@@ -344,7 +344,7 @@ programs=backend,frontend
 priority=999
 
 [program:backend]
-command=python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+command=/app/backend/venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 directory=$INSTALL_DIR/backend
 autostart=true
 autorestart=true

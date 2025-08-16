@@ -15,8 +15,8 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # Configuration
-INSTALL_DIR="$HOME/CryptominerV30"
-BACKUP_DIR="$HOME/cryptominer-backup-$(date +%Y%m%d-%H%M%S)"
+INSTALL_DIR="/app"
+BACKUP_DIR="/tmp/cryptominer-backup-$(date +%Y%m%d-%H%M%S)"
 DB_NAME="crypto_miner_db"
 
 log_info() { echo -e "${BLUE}[INFO] $1${NC}"; }

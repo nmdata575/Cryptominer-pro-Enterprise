@@ -1304,6 +1304,11 @@ main() {
             setup_frontend_environment
             setup_system_services
             start_services
+            
+            # Allow services time to fully start before verification
+            log_info "Allowing services time to fully initialize..."
+            sleep 10
+            
             verify_installation
             display_completion_message
             ;;

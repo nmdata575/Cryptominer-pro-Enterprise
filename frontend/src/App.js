@@ -332,6 +332,21 @@ const App = () => {
 
   // Pool Management Functions
   const handleUsePool = (miningConfig, poolInfo) => {
+    // Handle case where miningConfig might be undefined
+    if (!miningConfig) {
+      console.error('Mining config is undefined, creating from pool info');
+      // Create a basic mining config from pool info
+      miningConfig = {
+        wallet_address: poolInfo.wallet_address,
+        pool_username: poolInfo.pool_username || poolInfo.wallet_address,
+        pool_password: poolInfo.pool_password || 'x',
+        coin: {
+          symbol: poolInfo.coin_symbol,
+          name: poolInfo.coin_symbol
+        }
+      };
+    }
+
     // Update wallet config with pool information
     setWalletConfig(prev => ({
       ...prev,

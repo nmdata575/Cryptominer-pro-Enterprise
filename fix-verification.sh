@@ -3,7 +3,7 @@
 # Quick fix for verification script
 # This will update the verification to check actual service responsiveness
 
-INSTALL_DIR="/root/CryptominerV30"
+INSTALL_DIR="$HOME/CryptominerV30"
 
 echo "🔍 Testing actual service status..."
 

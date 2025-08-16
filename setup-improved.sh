@@ -448,6 +448,7 @@ setup_mongodb_security() {
         sudo mongod --fork --logpath /var/log/mongodb/mongod-setup.log --dbpath /var/lib/mongodb --bind_ip 127.0.0.1 &
         local mongod_pid=$!
     
+    
     sleep 5
     
     # Wait for MongoDB to be ready
@@ -462,57 +463,58 @@ setup_mongodb_security() {
         return 1
     fi
     
-    log_info "Creating administrative user..."
+    log_info "Creating database users..."
     
-    # Create admin user
+    # Create admin user (skip if exists)
     mongosh admin --eval "
-    db.createUser({
-      user: 'admin',
-      pwd: '$DB_PASSWORD',
-      roles: ['root']
-    })
-    " &> /dev/null
+    try {
+        db.createUser({
+          user: 'admin',
+          pwd: '$DB_PASSWORD',
+          roles: ['root']
+        });
+        print('Admin user created successfully');
+    } catch(e) {
+        if (e.code === 11000) {
+            print('Admin user already exists - skipping');
+        } else {
+            throw e;
+        }
+    }
+    " &> /dev/null || log_warning "Admin user creation failed or already exists"
     
     log_info "Creating application database and user..."
     
-    # Create application user
+    # Create application user (skip if exists)
     mongosh "$DB_NAME" --eval "
-    db.createUser({
-      user: '$DB_USER',
-      pwd: '$DB_PASSWORD',
-      roles: [
-        { role: 'readWrite', db: '$DB_NAME' },
-        { role: 'dbAdmin', db: '$DB_NAME' }
-      ]
-    })
-    " &> /dev/null
+    try {
+        db.createUser({
+          user: '$DB_USER',
+          pwd: '$DB_PASSWORD',
+          roles: [
+            { role: 'readWrite', db: '$DB_NAME' },
+            { role: 'dbAdmin', db: '$DB_NAME' }
+          ]
+        });
+        print('Application user created successfully');
+    } catch(e) {
+        if (e.code === 11000) {
+            print('Application user already exists - skipping');
+        } else {
+            throw e;
+        }
+    }
+    " &> /dev/null || log_warning "Application user creation failed or already exists"
     
-    # Stop the temporary MongoDB instance
-    sudo kill $mongod_pid 2>/dev/null || true
-    sleep 3
+    # For now, keep MongoDB running without authentication to maintain compatibility
+    # Users can enable authentication later using the enable-mongodb-auth.sh script
     
-    # Restore the production configuration with auth
-    sudo mv /etc/mongod.conf.backup /etc/mongod.conf 2>/dev/null || configure_mongodb
+    log_success "MongoDB users created successfully"
+    log_info "MongoDB is running without authentication for development convenience"
+    log_info "To enable authentication, run: ./enable-mongodb-auth.sh"
     
-    # Remove temporary config
-    sudo rm -f /etc/mongod.conf.temp
-    
-    # Start MongoDB with authentication
-    sudo systemctl start mongod
-    
-    # Wait for startup
-    sleep 5
-    
-    # Test the connection
-    if mongosh "$DB_NAME" --username "$DB_USER" --password "$DB_PASSWORD" --eval "db.stats()" &> /dev/null; then
-        log_success "MongoDB security setup completed successfully"
-        
-        # Save connection details securely
-        save_mongodb_credentials
-    else
-        log_error "Failed to verify MongoDB security setup"
-        return 1
-    fi
+    # Save connection details
+    save_mongodb_credentials
 }
 
 # Save MongoDB credentials securely

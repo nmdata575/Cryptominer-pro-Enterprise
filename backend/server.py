@@ -716,6 +716,9 @@ async def save_pool_configuration(pool: SavedPool):
             "pool_address": pool.pool_address,
             "pool_port": pool.pool_port,
             "wallet_address": pool.wallet_address,
+            "pool_username": pool.pool_username or pool.wallet_address,
+            "pool_password": pool.pool_password,
+            "description": pool.description or "",
             "created_at": datetime.utcnow().isoformat(),
             "last_used": None
         }

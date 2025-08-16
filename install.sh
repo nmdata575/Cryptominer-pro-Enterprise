@@ -365,8 +365,12 @@ stopasgroup=true
 EOF
     
     # Reload supervisor
-    sudo supervisorctl reread
-    sudo supervisorctl update
+    log_info "Updating supervisor configuration..."
+    if sudo supervisorctl reread && sudo supervisorctl update; then
+        log_success "Supervisor configuration updated"
+    else
+        log_warning "Supervisor update completed with warnings (this is often normal)"
+    fi
     
     log_success "System services configured"
 }

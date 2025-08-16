@@ -143,7 +143,16 @@ setup_directories() {
         exit 1
     fi
     
-    # Remove existing installation
+    # Check if we're already in the target installation directory
+    if [ "$PWD" = "$INSTALL_DIR" ]; then
+        log_info "Already in installation directory: $INSTALL_DIR"
+        # Just create logs directory if it doesn't exist
+        mkdir -p "$INSTALL_DIR/logs"
+        log_success "Installation directory ready: $INSTALL_DIR"
+        return 0
+    fi
+    
+    # Remove existing installation if different location
     if [ -d "$INSTALL_DIR" ]; then
         log_info "Removing existing installation..."
         rm -rf "$INSTALL_DIR"

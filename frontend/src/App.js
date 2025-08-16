@@ -160,6 +160,16 @@ const App = () => {
 
   // Real-time polling for instant status updates
   const startRealTimePolling = useCallback(() => {
+    console.log('Starting real-time polling...');
+    
+    // Clear any existing intervals
+    if (window.miningStatusInterval) {
+      clearInterval(window.miningStatusInterval);
+    }
+    if (window.systemStatsInterval) {
+      clearInterval(window.systemStatsInterval);
+    }
+    
     // Poll mining status every 1 second for real-time updates
     window.miningStatusInterval = setInterval(async () => {
       try {
@@ -187,8 +197,8 @@ const App = () => {
       }
     }, 5000); // 5 second interval for system stats
     
-    console.log('Started real-time polling: Mining status (1s), System stats (5s)');
-  }, []);
+    console.log('Real-time polling started: Mining status (1s), System stats (5s)');
+  }, []); // No dependencies to avoid infinite loops
 
   const handleCoinSelect = (coin) => {
     setSelectedCoin(coin);

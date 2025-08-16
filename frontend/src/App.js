@@ -156,7 +156,7 @@ const App = () => {
         clearInterval(window.systemStatsInterval);
       }
     };
-  }, [connectWebSocket, fetchInitialData, websocket]);
+  }, []); // Empty dependency array to run only once
 
   // Real-time polling for instant status updates
   const startRealTimePolling = useCallback(() => {

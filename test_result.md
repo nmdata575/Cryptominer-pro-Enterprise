@@ -281,7 +281,7 @@ test_plan:
     - "System Ready for Production Use"
   stuck_tasks: []
   test_all: true
-  test_priority: "regression_diagnostic_complete"
+  test_priority: "post_naming_fixes_verification_complete"
   comprehensive_test_results:
     - "Health Check Enterprise API - ✅ PASS"
     - "System Info & Thread Management API - ✅ PASS"

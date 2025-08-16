@@ -432,32 +432,21 @@ EOF
 setup_mongodb_security() {
     log_security "Setting up MongoDB security and user accounts..."
     
-    # Ensure MongoDB is running without auth first
-    sudo systemctl stop mongod 2>/dev/null || true
-    
-    # Start MongoDB without authentication for initial setup
-    log_info "Starting MongoDB without authentication for initial setup..."
-    
-    # Backup original config
-    sudo cp /etc/mongod.conf /etc/mongod.conf.backup 2>/dev/null || true
-    
-    # Create temporary config without auth
-    sudo tee /etc/mongod.conf.temp > /dev/null << EOF
-storage:
-  dbPath: /var/lib/mongodb
-systemLog:
-  destination: file
-  path: /var/log/mongodb/mongod.log
-net:
-  port: 27017
-  bindIp: 127.0.0.1
-processManagement:
-  fork: true
-EOF
-    
-    # Start with temporary config
-    sudo mongod --config /etc/mongod.conf.temp --pidfilepath /var/run/mongodb/mongod-temp.pid &
-    local mongod_pid=$!
+    # Check if MongoDB is already running
+    if pgrep mongod > /dev/null; then
+        log_info "MongoDB is already running, proceeding with user setup..."
+        
+        # Test if MongoDB is accessible
+        if ! mongosh --eval "db.adminCommand('ping')" &> /dev/null; then
+            log_error "MongoDB is running but not accessible"
+            return 1
+        fi
+    else
+        log_info "Starting MongoDB for user setup..."
+        
+        # Start MongoDB without authentication for initial setup
+        sudo mongod --fork --logpath /var/log/mongodb/mongod-setup.log --dbpath /var/lib/mongodb --bind_ip 127.0.0.1 &
+        local mongod_pid=$!
     
     sleep 5
     

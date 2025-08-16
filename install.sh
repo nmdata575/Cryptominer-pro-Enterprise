@@ -136,6 +136,13 @@ setup_directories() {
     log_step "Setting up application directories..."
     show_progress
     
+    # Check if we're in the correct source directory
+    if [ ! -d "backend" ] || [ ! -d "frontend" ]; then
+        log_error "Backend and frontend directories not found in current directory"
+        log_error "Please run this script from the CryptoMiner Pro source directory"
+        exit 1
+    fi
+    
     # Remove existing installation
     if [ -d "$INSTALL_DIR" ]; then
         log_info "Removing existing installation..."
@@ -146,14 +153,31 @@ setup_directories() {
     mkdir -p "$INSTALL_DIR"
     
     # Copy application files
-    if [ -d "backend" ] && [ -d "frontend" ]; then
-        cp -r backend/ frontend/ "$INSTALL_DIR/"
-        mkdir -p "$INSTALL_DIR/logs"
-        log_success "Application files copied to $INSTALL_DIR"
-    else
-        log_error "Backend and frontend directories not found in current directory"
-        exit 1
-    fi
+    log_info "Copying backend files..."
+    cp -r backend/ "$INSTALL_DIR/"
+    
+    log_info "Copying frontend files..."
+    cp -r frontend/ "$INSTALL_DIR/"
+    
+    # Create additional directories
+    mkdir -p "$INSTALL_DIR/logs"
+    
+    # Verify critical files exist
+    local critical_files=(
+        "$INSTALL_DIR/backend/server.py"
+        "$INSTALL_DIR/backend/requirements.txt"
+        "$INSTALL_DIR/frontend/package.json"
+        "$INSTALL_DIR/frontend/src/App.js"
+    )
+    
+    for file in "${critical_files[@]}"; do
+        if [ ! -f "$file" ]; then
+            log_error "Critical file not found after copy: $file"
+            exit 1
+        fi
+    done
+    
+    log_success "Application files copied to $INSTALL_DIR"
 }
 
 # Setup Python environment

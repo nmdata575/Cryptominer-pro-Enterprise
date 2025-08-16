@@ -350,7 +350,7 @@ autostart=true
 autorestart=true
 stderr_logfile=$INSTALL_DIR/logs/backend.err.log
 stdout_logfile=$INSTALL_DIR/logs/backend.out.log
-environment=PATH="/root/.venv/bin:%(ENV_PATH)s"
+environment=PATH="/app/backend/venv/bin:%(ENV_PATH)s"
 
 [program:frontend]
 command=bash -c "cd $INSTALL_DIR/frontend && yarn start"

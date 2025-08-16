@@ -376,13 +376,46 @@ start_services() {
     log_step "Starting services..."
     show_progress
     
-    # Start application services
-    sudo supervisorctl start cryptominer-v30:backend cryptominer-v30:frontend
+    # Check current service status and start only if needed
+    local backend_status=$(sudo supervisorctl status cryptominer-v30:backend 2>/dev/null | awk '{print $2}' || echo "NOT_FOUND")
+    local frontend_status=$(sudo supervisorctl status cryptominer-v30:frontend 2>/dev/null | awk '{print $2}' || echo "NOT_FOUND")
     
-    # Wait for services to start
-    sleep 10
+    # Start backend if not running
+    if [[ "$backend_status" != "RUNNING" ]]; then
+        log_info "Starting backend service..."
+        if sudo supervisorctl start cryptominer-v30:backend; then
+            log_success "Backend started successfully"
+        else
+            log_warning "Backend start encountered issues but may be operational"
+        fi
+    else
+        log_info "Backend service already running"
+    fi
     
-    log_success "Services started"
+    # Start frontend if not running
+    if [[ "$frontend_status" != "RUNNING" ]]; then
+        log_info "Starting frontend service..."
+        if sudo supervisorctl start cryptominer-v30:frontend; then
+            log_success "Frontend started successfully"
+        else
+            log_warning "Frontend start encountered issues but may be operational"
+        fi
+    else
+        log_info "Frontend service already running"
+    fi
+    
+    # Wait for services to stabilize
+    sleep 5
+    
+    # Final status check
+    local final_backend=$(sudo supervisorctl status cryptominer-v30:backend 2>/dev/null | awk '{print $2}' || echo "UNKNOWN")
+    local final_frontend=$(sudo supervisorctl status cryptominer-v30:frontend 2>/dev/null | awk '{print $2}' || echo "UNKNOWN")
+    
+    if [[ "$final_backend" == "RUNNING" && "$final_frontend" == "RUNNING" ]]; then
+        log_success "All services operational"
+    else
+        log_warning "Services may need manual attention (Backend: $final_backend, Frontend: $final_frontend)"
+    fi
 }
 
 # Verify installation

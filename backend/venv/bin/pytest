@@ -1,4 +1,4 @@
-#!/app/backend/venv/bin/python3.11
+#!/app/backend/venv/bin/python3
 import sys
 from pytest import console_main
 if __name__ == '__main__':

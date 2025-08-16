@@ -820,7 +820,22 @@ async def use_saved_pool(pool_id: str):
             "wallet_address": pool["wallet_address"]
         }
         
-        return {"success": True, "pool": pool_config}
+        # Create mining configuration for frontend
+        mining_config = {
+            "wallet_address": pool["wallet_address"],
+            "pool_username": pool.get("pool_username", pool["wallet_address"]),
+            "pool_password": pool.get("pool_password", "x"),
+            "coin": {
+                "symbol": pool["coin_symbol"],
+                "name": pool["coin_symbol"]
+            }
+        }
+        
+        return {
+            "success": True, 
+            "pool": pool_config,
+            "mining_config": mining_config
+        }
         
     except Exception as e:
         logger.error(f"Use pool error: {e}")

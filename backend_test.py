@@ -265,10 +265,10 @@ class BackendTester:
                 if response.status == 200:
                     data = await response.json()
                     
-                    # Should return hardware validation results
-                    if "memory" in data and "cpu" in data:
-                        memory_gb = data.get("memory", {}).get("total_gb", 0)
-                        cpu_cores = data.get("cpu", {}).get("cores", 0)
+                    # Check if V30 hardware validation info is returned
+                    if "system_info" in data and "requirements_check" in data:
+                        memory_gb = data.get("system_info", {}).get("memory", {}).get("total_gb", 0)
+                        cpu_cores = data.get("system_info", {}).get("cpu", {}).get("physical_cores", 0)
                         
                         self.log_test("V30 Hardware Validation", True, 
                                     f"Memory: {memory_gb}GB, CPU cores: {cpu_cores}")

@@ -167,6 +167,7 @@ const App = () => {
         if (response.ok) {
           const statusData = await response.json();
           setMiningStatus(statusData);
+          setLastUpdate(new Date()); // Update timestamp
         }
       } catch (error) {
         console.error('Failed to fetch mining status:', error);

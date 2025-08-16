@@ -447,7 +447,7 @@ setup_mongodb_security() {
         # Start MongoDB without authentication for initial setup
         sudo mongod --fork --logpath /var/log/mongodb/mongod-setup.log --dbpath /var/lib/mongodb --bind_ip 127.0.0.1 &
         local mongod_pid=$!
-    
+    fi
     
     sleep 5
     

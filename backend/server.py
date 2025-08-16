@@ -602,10 +602,22 @@ async def test_pool_connection(request: dict):
         logger.error(f"Pool connection test error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# Cache for system info to prevent excessive calls
+_system_info_cache = {"data": None, "timestamp": 0}
+SYSTEM_INFO_CACHE_DURATION = 30  # 30 seconds cache
+
 @app.get("/api/system/cpu-info")
 async def get_cpu_info():
     """Get detailed CPU information including enterprise capabilities"""
     try:
+        current_time = time.time()
+        
+        # Check if we have cached data within the cache duration
+        if (_system_info_cache["data"] is not None and 
+            current_time - _system_info_cache["timestamp"] < SYSTEM_INFO_CACHE_DURATION):
+            logger.debug("Returning cached system info")
+            return _system_info_cache["data"]
+        
         system_detector = mining_engine.system_detector
         system_detector.refresh_system_info()
         

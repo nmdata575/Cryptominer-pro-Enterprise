@@ -16,7 +16,7 @@ from typing import Dict, Any, List, Tuple
 from datetime import datetime
 
 # Backend URL from environment
-BACKEND_URL = "https://c6db4a82-7f00-4029-bb3a-ed7a73ef471c.preview.emergentagent.com/api"
+BACKEND_URL = "https://cryptominer-pro-1.preview.emergentagent.com/api"
 
 class BackendTester:
     def __init__(self):

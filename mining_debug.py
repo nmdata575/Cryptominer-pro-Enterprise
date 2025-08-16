@@ -9,7 +9,7 @@ import json
 import time
 import sys
 
-BACKEND_URL = "https://c6db4a82-7f00-4029-bb3a-ed7a73ef471c.preview.emergentagent.com/api"
+BACKEND_URL = "https://cryptominer-pro-1.preview.emergentagent.com/api"
 
 def test_mining_debug():
     """Debug mining start/stop issue"""

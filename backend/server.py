@@ -753,6 +753,9 @@ async def update_saved_pool(pool_id: str, pool: SavedPool):
             "pool_address": pool.pool_address,
             "pool_port": pool.pool_port,
             "wallet_address": pool.wallet_address,
+            "pool_username": pool.pool_username or pool.wallet_address,
+            "pool_password": pool.pool_password,
+            "description": pool.description or "",
             "updated_at": datetime.utcnow().isoformat()
         }
         

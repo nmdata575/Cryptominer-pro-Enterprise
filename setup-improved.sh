@@ -533,7 +533,10 @@ save_mongodb_credentials() {
 DB_NAME=$DB_NAME
 DB_USER=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
-MONGO_URL=mongodb://$DB_USER:$DB_PASSWORD@localhost:27017/$DB_NAME?authSource=$DB_NAME
+# Current connection (no auth for development convenience)
+MONGO_URL=mongodb://localhost:27017/$DB_NAME
+# Authenticated connection (use after enabling auth)
+MONGO_URL_AUTH=mongodb://$DB_USER:$DB_PASSWORD@localhost:27017/$DB_NAME?authSource=$DB_NAME
 EOF
     
     chmod 600 "$creds_file"

@@ -288,8 +288,8 @@ class BackendTester:
                     data = await response.json()
                     
                     # Check if V30 system info is returned
-                    if "initialized" in data:
-                        initialized = data.get("initialized", False)
+                    if "system_status" in data:
+                        initialized = data.get("system_status", {}).get("initialized", False)
                         
                         self.log_test("V30 System Status", True, 
                                     f"V30 system initialized: {initialized}")

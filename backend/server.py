@@ -688,6 +688,9 @@ async def get_saved_pools():
                 "pool_address": pool["pool_address"],
                 "pool_port": pool["pool_port"],
                 "wallet_address": pool["wallet_address"],
+                "pool_username": pool.get("pool_username", pool["wallet_address"]),
+                "pool_password": pool.get("pool_password", "x"),
+                "description": pool.get("description", ""),
                 "created_at": pool.get("created_at", datetime.utcnow().isoformat()),
                 "last_used": pool.get("last_used")
             }

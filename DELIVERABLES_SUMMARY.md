@@ -115,16 +115,22 @@ All user requirements have been successfully addressed and comprehensive install
 
 ## 🚀 **USAGE INSTRUCTIONS**
 
-### **For System Administrators**
+### **For System Administrators** **[ENHANCED]**
 ```bash
 # Check if system is ready for installation
 ./dependency-checker.sh
 
-# Install CryptoMiner Pro V30 with full compliance
+# Install CryptoMiner Pro V30 with full compliance (enhanced feedback)
 ./setup-improved.sh
+
+# Get comprehensive status report anytime
+./setup-improved.sh --status
 
 # Verify installation meets all requirements
 ./verify-installation.sh
+
+# Set up MongoDB security only
+./setup-improved.sh --security
 
 # Uninstall completely with backup
 ./uninstall-improved.sh

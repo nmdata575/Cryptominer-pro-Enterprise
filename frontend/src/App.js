@@ -40,6 +40,7 @@ const App = () => {
   const [websocket, setWebsocket] = useState(null);
   const [showSavedPools, setShowSavedPools] = useState(false);
   const [showCustomCoins, setShowCustomCoins] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(new Date()); // Track last update time
 
   // Initialize WebSocket connection
   const connectWebSocket = useCallback(() => {

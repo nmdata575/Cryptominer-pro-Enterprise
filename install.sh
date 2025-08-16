@@ -16,7 +16,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-INSTALL_DIR="$HOME/CryptominerV30"
+INSTALL_DIR="/app"
 SERVICE_NAME="cryptominer-v30"
 PYTHON_VERSION="3.12"
 NODE_VERSION="18"

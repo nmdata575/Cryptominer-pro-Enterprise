@@ -218,9 +218,20 @@ verify_frontend_environment() {
 verify_mongodb_security() {
     log_step "Verifying MongoDB security setup..."
     
-    # Check if MongoDB is running
+    # Check if MongoDB is running (check both systemd and direct process)
+    local mongodb_running=false
+    
     if systemctl is-active mongod &> /dev/null; then
-        log_success "MongoDB service is running"
+        log_success "MongoDB service is running (systemd)"
+        mongodb_running=true
+    elif pgrep mongod > /dev/null; then
+        log_success "MongoDB service is running (process)"
+        mongodb_running=true
+    else
+        log_error "MongoDB service is not running"
+    fi
+    
+    if $mongodb_running; then
         
         # Check if authentication is enabled
         if mongosh --eval "db.adminCommand('ismaster')" &> /dev/null; then

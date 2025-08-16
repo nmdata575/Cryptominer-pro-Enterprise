@@ -361,6 +361,11 @@ const App = () => {
         <div className="connection-status">
           <div className={`status-indicator ${connectionStatus === 'Connected' ? 'status-connected' : 'status-disconnected'}`}></div>
           <span>{connectionStatus}</span>
+          {connectionStatus === 'Connected' && (
+            <span className="last-update" title={`Last updated: ${lastUpdate.toLocaleTimeString()}`}>
+              📡 Live (Updated: {lastUpdate.toLocaleTimeString()})
+            </span>
+          )}
         </div>
         <h1 className="app-title">⛏️ CryptoMiner Pro</h1>
         <p className="app-subtitle">AI-Powered Mining Dashboard</p>

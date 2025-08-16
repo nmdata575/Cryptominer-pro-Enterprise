@@ -298,18 +298,40 @@ verify_services() {
         log_warning "Supervisor configuration not found (manual service management required)"
     fi
     
-    # Check if services are running
+    # Check if services are running (check both old and new service names)
     if command -v supervisorctl &> /dev/null; then
+        local backend_running=false
+        local frontend_running=false
+        
+        # Check new service names
         if sudo supervisorctl status cryptominer-v30:backend 2>/dev/null | grep -q "RUNNING"; then
-            log_success "Backend service is running"
+            log_success "Backend service is running (cryptominer-v30:backend)"
+            backend_running=true
+        # Check old service names
+        elif sudo supervisorctl status mining_system:backend 2>/dev/null | grep -q "RUNNING"; then
+            log_success "Backend service is running (mining_system:backend)"
+            backend_running=true
         else
             log_warning "Backend service is not running"
         fi
         
+        # Check new service names
         if sudo supervisorctl status cryptominer-v30:frontend 2>/dev/null | grep -q "RUNNING"; then
-            log_success "Frontend service is running"
+            log_success "Frontend service is running (cryptominer-v30:frontend)"
+            frontend_running=true
+        # Check old service names  
+        elif sudo supervisorctl status mining_system:frontend 2>/dev/null | grep -q "RUNNING"; then
+            log_success "Frontend service is running (mining_system:frontend)"
+            frontend_running=true
         else
             log_warning "Frontend service is not running"
+        fi
+        
+        # Overall supervisor status
+        if $backend_running && $frontend_running; then
+            log_success "All supervisor services are running"
+        else
+            log_error "Some supervisor services have issues"
         fi
     fi
 }

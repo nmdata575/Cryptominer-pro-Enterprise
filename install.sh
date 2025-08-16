@@ -437,18 +437,38 @@ verify_installation() {
         errors=$((errors + 1))
     fi
     
-    # Check services
-    if curl -s http://localhost:8001/api/health > /dev/null; then
+    # Check services with retry logic
+    log_info "Checking backend API (with retry)..."
+    local backend_ready=false
+    for i in {1..3}; do
+        if curl -s --max-time 5 http://localhost:8001/api/health > /dev/null; then
+            backend_ready=true
+            break
+        fi
+        sleep 2
+    done
+    
+    if $backend_ready; then
         log_success "Backend API responding"
     else
-        log_error "Backend API not responding"
+        log_error "Backend API not responding after retries"
         errors=$((errors + 1))
     fi
     
-    if curl -s http://localhost:3333 > /dev/null; then
+    log_info "Checking frontend (with retry)..."
+    local frontend_ready=false
+    for i in {1..3}; do
+        if curl -s --max-time 5 http://localhost:3333 > /dev/null; then
+            frontend_ready=true
+            break
+        fi
+        sleep 2
+    done
+    
+    if $frontend_ready; then
         log_success "Frontend responding"
     else
-        log_error "Frontend not responding"
+        log_error "Frontend not responding after retries"
         errors=$((errors + 1))
     fi
     

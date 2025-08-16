@@ -125,9 +125,12 @@ const App = () => {
           console.log('Backend connection successful:', data);
           setConnectionStatus('Connected');
           
-          // Only connect WebSocket after successful health check
+          // Connect WebSocket for real-time updates
           connectWebSocket();
           fetchInitialData();
+          
+          // Start aggressive polling for mining status (1 second intervals)
+          startRealTimePolling();
         } else {
           console.error('Backend health check failed');
           setConnectionStatus('Error');
@@ -144,8 +147,46 @@ const App = () => {
       if (websocket) {
         websocket.close();
       }
+      // Clean up polling intervals
+      if (window.miningStatusInterval) {
+        clearInterval(window.miningStatusInterval);
+      }
+      if (window.systemStatsInterval) {
+        clearInterval(window.systemStatsInterval);
+      }
     };
   }, [connectWebSocket, fetchInitialData, websocket]);
+
+  // Real-time polling for instant status updates
+  const startRealTimePolling = useCallback(() => {
+    // Poll mining status every 1 second for real-time updates
+    window.miningStatusInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/mining/status`);
+        if (response.ok) {
+          const statusData = await response.json();
+          setMiningStatus(statusData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch mining status:', error);
+      }
+    }, 1000); // 1 second interval for instant updates
+    
+    // Poll system stats every 5 seconds (less critical)
+    window.systemStatsInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/system/stats`);
+        if (response.ok) {
+          const systemData = await response.json();
+          setSystemStats(systemData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch system stats:', error);
+      }
+    }, 5000); // 5 second interval for system stats
+    
+    console.log('Started real-time polling: Mining status (1s), System stats (5s)');
+  }, []);
 
   const handleCoinSelect = (coin) => {
     setSelectedCoin(coin);

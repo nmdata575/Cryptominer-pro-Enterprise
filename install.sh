@@ -332,23 +332,27 @@ setup_services() {
     sudo tee /etc/supervisor/conf.d/cryptominer-v30.conf > /dev/null << EOF
 [group:cryptominer-v30]
 programs=backend,frontend
+priority=999
 
 [program:backend]
-command=$INSTALL_DIR/backend/venv/bin/python server.py
+command=python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 directory=$INSTALL_DIR/backend
 autostart=true
 autorestart=true
 stderr_logfile=$INSTALL_DIR/logs/backend.err.log
 stdout_logfile=$INSTALL_DIR/logs/backend.out.log
+environment=PATH="/root/.venv/bin:%(ENV_PATH)s"
 
 [program:frontend]
-command=yarn start
+command=bash -c "cd $INSTALL_DIR/frontend && yarn start"
 directory=$INSTALL_DIR/frontend
 autostart=true
 autorestart=true
 stderr_logfile=$INSTALL_DIR/logs/frontend.err.log
 stdout_logfile=$INSTALL_DIR/logs/frontend.out.log
-environment=PORT=3333
+environment=PORT=3333,NODE_ENV=development
+killasgroup=true
+stopasgroup=true
 EOF
     
     # Reload supervisor

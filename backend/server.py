@@ -639,6 +639,11 @@ async def get_cpu_info():
             }
         }
         
+        # Cache the result
+        _system_info_cache["data"] = cpu_info
+        _system_info_cache["timestamp"] = current_time
+        
+        logger.debug("Refreshed and cached system info")
         return cpu_info
         
     except Exception as e:

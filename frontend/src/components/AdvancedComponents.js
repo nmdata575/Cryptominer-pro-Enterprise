@@ -45,7 +45,7 @@ const EnterpriseThreadManager = ({ miningConfig, onConfigChange, systemStats }) 
     } finally {
       setLoadingCpuInfo(false);
     }
-  }, [miningConfig, onConfigChange]);
+  }, []);
 
   useEffect(() => {
     fetchCpuInfo();

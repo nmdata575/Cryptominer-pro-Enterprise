@@ -429,8 +429,31 @@ async def get_mining_status():
 async def start_mining(config: MiningConfig):
     """Start mining with given configuration"""
     try:
-        # Convert config to CoinConfig object
-        coin_config = CoinConfig(**config.coin)
+        # Get complete coin configuration from presets
+        coin_symbol = config.coin.get('symbol', '').upper()
+        coin_presets = get_coin_presets()
+        
+        # Find the matching coin preset
+        coin_config_data = None
+        for preset_key, preset_data in coin_presets.items():
+            if preset_data['symbol'] == coin_symbol:
+                coin_config_data = preset_data.copy()
+                break
+        
+        if not coin_config_data:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported coin: {coin_symbol}"
+            )
+        
+        # Add any custom pool information from the coin config
+        if 'custom_pool_address' in config.coin:
+            coin_config_data['custom_pool_address'] = config.coin['custom_pool_address']
+        if 'custom_pool_port' in config.coin:
+            coin_config_data['custom_pool_port'] = config.coin['custom_pool_port']
+            
+        # Create CoinConfig object with complete data
+        coin_config = CoinConfig(**coin_config_data)
         
         # Validate wallet address if provided
         if config.wallet_address and config.wallet_address.strip():

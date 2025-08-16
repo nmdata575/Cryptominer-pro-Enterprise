@@ -85,19 +85,54 @@ verify_dependencies() {
         local name="${package##*:}"
         [ "$name" = "$cmd" ] && name="$cmd"
         
-        if command -v "$cmd" &> /dev/null; then
-            local version
-            case "$cmd" in
-                "python3") version=$(python3 --version 2>&1) ;;
-                "node") version=$(node --version 2>&1) ;;
-                "yarn") version=$(yarn --version 2>&1) ;;
-                "mongod") version=$(mongod --version 2>&1 | head -1) ;;
-                *) version="installed" ;;
-            esac
-            log_success "$name: $version"
-        else
-            log_error "$name not found"
-        fi
+        # Special handling for certain packages
+        case "$cmd" in
+            "build-essential")
+                if command -v gcc &> /dev/null; then
+                    local version=$(gcc --version 2>&1 | head -1)
+                    log_success "$name: $version"
+                else
+                    log_error "$name not found"
+                fi
+                ;;
+            "python3-venv")
+                if python3 -c "import venv" 2>/dev/null; then
+                    log_success "$name: available"
+                else
+                    log_error "$name not found"
+                fi
+                ;;
+            "python3-pip")
+                if python3 -m pip --version &> /dev/null; then
+                    local version=$(python3 -m pip --version 2>&1)
+                    log_success "$name: $version"
+                else
+                    log_error "$name not found"
+                fi
+                ;;
+            "supervisor")
+                if command -v supervisorctl &> /dev/null; then
+                    log_success "$name: available"
+                else
+                    log_error "$name not found"
+                fi
+                ;;
+            *)
+                if command -v "$cmd" &> /dev/null; then
+                    local version
+                    case "$cmd" in
+                        "python3") version=$(python3 --version 2>&1) ;;
+                        "node") version=$(node --version 2>&1) ;;
+                        "yarn") version=$(yarn --version 2>&1) ;;
+                        "mongod") version=$(mongod --version 2>&1 | head -1) ;;
+                        *) version="installed" ;;
+                    esac
+                    log_success "$name: $version"
+                else
+                    log_error "$name not found"
+                fi
+                ;;
+        esac
     done
 }
 

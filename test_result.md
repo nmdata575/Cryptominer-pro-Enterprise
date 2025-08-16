@@ -266,9 +266,10 @@ metadata:
   regression_diagnostic_completed: true
   regression_issues_resolved: true
   database_service_restored: true
-  diagnostic_test_success_rate: "100%"
-  diagnostic_tests_passed: 4
-  diagnostic_tests_total: 4
+  post_naming_fixes_verification_completed: true
+  post_naming_fixes_test_success_rate: "100%"
+  post_naming_fixes_tests_passed: 13
+  post_naming_fixes_tests_total: 13
 
 test_plan:
   current_focus:

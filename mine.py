@@ -18,10 +18,9 @@ from pathlib import Path
 
 # Import existing modules
 sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
-from mining_engine import MiningEngine, SystemDetector
+from mining_engine import EnterpriseScryptMiner as MiningEngine, EnterpriseSystemDetector as SystemDetector, CoinConfig
 from ai_system import AISystem
 from utils import get_coin_presets, validate_wallet_address
-from enterprise_v30 import CentralControlSystem
 
 # Configure logging
 logging.basicConfig(

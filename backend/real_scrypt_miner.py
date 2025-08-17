@@ -403,19 +403,24 @@ class RealScryptMiner:
                     dk_len=32
                 )
                 
-                # Check if hash meets difficulty
-                hash_int = int.from_bytes(scrypt_hash[:4], byteorder='big')
-                target_int = int.from_bytes(self.stratum_client.target, byteorder='big') if self.stratum_client.target else 0xFFFFFFFF
+                # Check if hash meets difficulty - FIXED: Use proper comparison
+                # Convert hash to integer for comparison (little-endian)
+                hash_int = int.from_bytes(scrypt_hash, byteorder='little')
+                target_int = int.from_bytes(self.stratum_client.target, byteorder='little') if self.stratum_client.target else 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
                 
                 self.hash_count += 1
                 
                 # Log progress every 10000 hashes
                 if nonce % 10000 == 0:
-                    logger.info(f"⛏️  Thread {thread_id} progress: {nonce:,} hashes, hash: {scrypt_hash.hex()[:16]}...")
+                    logger.info(f"⛏️  Thread {thread_id} progress: {nonce:,} hashes, difficulty: {self.stratum_client.difficulty}")
                 
-                # Check if we found a valid share
-                if hash_int <= target_int:
-                    logger.info(f"🎯 SHARE FOUND by Thread {thread_id}! Nonce: {nonce}, Hash: {scrypt_hash.hex()}")
+                # Check if we found a valid share - FIXED: Proper difficulty comparison
+                if hash_int < target_int:
+                    logger.info(f"🎯 SHARE FOUND by Thread {thread_id}! Nonce: {nonce}")
+                    logger.info(f"   Hash: {scrypt_hash.hex()}")
+                    logger.info(f"   Hash int: {hash_int}")
+                    logger.info(f"   Target int: {target_int}")
+                    logger.info(f"   Difficulty: {self.stratum_client.difficulty}")
                     
                     # Submit share to pool - only if connection is still active
                     if self.is_mining and self.stratum_client.socket:

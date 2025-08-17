@@ -515,9 +515,17 @@ class RealScryptMiner:
             logger.error(f"Thread {thread_id} error: {e}")
     
     def stop_mining(self):
-        """Stop mining"""
+        """Stop mining and all threads"""
         self.is_mining = False
         logger.info("🛑 Stopping scrypt mining...")
+        
+        # Wait for all mining threads to finish
+        for thread in self.mining_threads:
+            if thread.is_alive():
+                thread.join(timeout=2)
+        
+        self.mining_threads.clear()
+        logger.info("🏁 All mining threads stopped")
     
     def get_stats(self) -> Dict[str, Any]:
         """Get mining statistics"""

@@ -6,10 +6,15 @@ CryptoMiner Pro V30 Terminal Edition is a streamlined, powerful cryptocurrency m
 
 ## Architecture
 
-The terminal edition simplifies the mining experience by consolidating all functionality into a single application:
+The terminal edition is a streamlined, single-file application that imports core modules:
 
 - **cryptominer.py** - Main terminal application with integrated web monitoring
-- **backend/** - Core mining engine, AI system, and utility modules
+- **backend/mining_engine.py** - Core mining algorithms and engine
+- **backend/ai_system.py** - AI optimization system  
+- **backend/utils.py** - Utility functions and coin definitions
+- **backend/enterprise_v30.py** - Enterprise mining implementations
+- **backend/real_scrypt_miner.py** - Scrypt mining implementation
+- **backend/randomx_miner.py** - RandomX mining implementation
 - **config.example.json** - Example configuration file
 
 ## Installation

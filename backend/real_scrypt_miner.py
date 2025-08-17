@@ -581,11 +581,15 @@ class RealScryptMiner:
             
             # Connect to pool
             if not await self.stratum_client.connect_to_pool(pool_host, pool_port, username, password):
-                logger.error("❌ Failed to connect to mining pool")
-                return False
+                # If we received notify but no explicit auth result, proceed optimistically while continuing auth attempts
+                if self.stratum_client.received_notify and not self.stratum_client.authorized:
+                    logger.warning("⚠️ No explicit auth result, but work received. Proceeding to mine while awaiting auth...")
+                else:
+                    logger.error("❌ Failed to connect to mining pool")
+                    return False
             
             self.is_mining = True
-            logger.info(f"✅ Connected to pool, starting scrypt mining with {self.thread_count} threads...")
+            logger.info(f"✅ Connected (or work received), starting scrypt mining with {self.thread_count} threads...")
             
             # Mining loop
             while self.is_mining:

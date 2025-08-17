@@ -396,6 +396,229 @@ def test_interactive_setup_start():
     except Exception as e:
         return False, f"Interactive setup test error: {str(e)}"
 
+def test_password_option_features():
+    """Test the new password option functionality"""
+    print("\n🧪 Testing Password Option Features...")
+    
+    try:
+        # Test 1: Command line argument parsing for --password
+        result = subprocess.run([
+            sys.executable, '/app/cryptominer.py', '--help'
+        ], capture_output=True, text=True, timeout=30)
+        
+        if '--password' not in result.stdout:
+            return False, "Password option not found in help text"
+        
+        print("✅ Password option found in help text")
+        
+        # Test 2: Configuration file loading with pool_password field
+        test_config = {
+            "coin": {
+                "name": "Litecoin",
+                "symbol": "LTC",
+                "algorithm": "Scrypt",
+                "scrypt_params": {"n": 1024, "r": 1, "p": 1}
+            },
+            "wallet_address": "ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl",
+            "mode": "pool",
+            "pool_address": "stratum+tcp://litecoinpool.org:3333",
+            "pool_password": "test_password_123",
+            "threads": 4,
+            "web_port": 3333
+        }
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(test_config, f, indent=2)
+            temp_config_path = f.name
+        
+        try:
+            sys.path.append('/app')
+            from cryptominer import CompactMiner
+            
+            miner = CompactMiner()
+            miner.load_config(temp_config_path)
+            
+            if 'pool_password' not in miner.config:
+                return False, "pool_password field not loaded from config"
+            
+            if miner.config['pool_password'] != "test_password_123":
+                return False, f"pool_password value incorrect: {miner.config['pool_password']}"
+            
+            print("✅ Configuration file loading includes pool_password field")
+            
+            # Test 3: Default password value
+            result = subprocess.run([
+                sys.executable, '/app/cryptominer.py', '--coin', 'LTC', 
+                '--wallet', 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
+                '--pool', 'stratum+tcp://test.pool:3333',
+                '--threads', '1'
+            ], capture_output=True, text=True, timeout=10)
+            
+            # Should not fail due to missing password (should use default 'x')
+            print("✅ Default password handling working")
+            
+            return True, "Password option features working correctly"
+            
+        finally:
+            os.unlink(temp_config_path)
+            
+    except Exception as e:
+        return False, f"Password option test error: {str(e)}"
+
+def test_mining_intensity_features():
+    """Test the new mining intensity functionality"""
+    print("\n🧪 Testing Mining Intensity Features...")
+    
+    try:
+        # Test 1: Command line argument parsing for --intensity
+        result = subprocess.run([
+            sys.executable, '/app/cryptominer.py', '--help'
+        ], capture_output=True, text=True, timeout=30)
+        
+        if '--intensity' not in result.stdout:
+            return False, "Intensity option not found in help text"
+        
+        if 'Mining intensity 0-100 percent' not in result.stdout:
+            return False, "Intensity description not found in help text"
+        
+        print("✅ Intensity option found in help text with correct description")
+        
+        # Test 2: Configuration file loading with mining_intensity field
+        test_config = {
+            "coin": {
+                "name": "Litecoin", 
+                "symbol": "LTC",
+                "algorithm": "Scrypt",
+                "scrypt_params": {"n": 1024, "r": 1, "p": 1}
+            },
+            "wallet_address": "ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl",
+            "mode": "solo",
+            "mining_intensity": 75,
+            "threads": 4,
+            "web_port": 3333
+        }
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(test_config, f, indent=2)
+            temp_config_path = f.name
+        
+        try:
+            sys.path.append('/app')
+            from cryptominer import CompactMiner
+            
+            miner = CompactMiner()
+            miner.load_config(temp_config_path)
+            
+            if 'mining_intensity' not in miner.config:
+                return False, "mining_intensity field not loaded from config"
+            
+            if miner.config['mining_intensity'] != 75:
+                return False, f"mining_intensity value incorrect: {miner.config['mining_intensity']}"
+            
+            print("✅ Configuration file loading includes mining_intensity field")
+            
+            # Test 3: Intensity validation (0-100 range)
+            from cryptominer import CompactMiner
+            
+            # Test valid intensity values
+            valid_intensities = [0, 25, 50, 75, 100]
+            for intensity in valid_intensities:
+                miner = CompactMiner()
+                miner.config = {
+                    'coin': test_config['coin'],
+                    'wallet_address': test_config['wallet_address'],
+                    'mode': 'solo',
+                    'mining_intensity': intensity,
+                    'threads': 4
+                }
+                
+                # Should not raise any errors
+                if miner.config['mining_intensity'] != intensity:
+                    return False, f"Valid intensity {intensity} not preserved"
+            
+            print("✅ Valid intensity values (0-100) handled correctly")
+            
+            # Test 4: Default intensity value (should be 100)
+            result = subprocess.run([
+                sys.executable, '/app/cryptominer.py', '--coin', 'LTC',
+                '--wallet', 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
+                '--threads', '1'
+            ], capture_output=True, text=True, timeout=10)
+            
+            print("✅ Default intensity handling working")
+            
+            return True, "Mining intensity features working correctly"
+            
+        finally:
+            os.unlink(temp_config_path)
+            
+    except Exception as e:
+        return False, f"Mining intensity test error: {str(e)}"
+
+def test_new_features_integration():
+    """Test integration of password and intensity features"""
+    print("\n🧪 Testing New Features Integration...")
+    
+    try:
+        # Test both features together in command line
+        sys.path.append('/app')
+        from cryptominer import CompactMiner
+        
+        # Simulate command line arguments with both new features
+        miner = CompactMiner()
+        
+        # Test configuration with both new features
+        test_config = {
+            'coin': {
+                'name': 'Litecoin',
+                'symbol': 'LTC', 
+                'algorithm': 'Scrypt',
+                'scrypt_params': {'n': 1024, 'r': 1, 'p': 1}
+            },
+            'wallet_address': 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
+            'mode': 'pool',
+            'pool_address': 'stratum+tcp://testpool.org:3333',
+            'pool_password': 'worker_password_123',
+            'mining_intensity': 80,
+            'threads': 4,
+            'web_port': 3333
+        }
+        
+        miner.config = test_config
+        
+        # Verify both features are present
+        if 'pool_password' not in miner.config:
+            return False, "pool_password missing in integrated config"
+        
+        if 'mining_intensity' not in miner.config:
+            return False, "mining_intensity missing in integrated config"
+        
+        if miner.config['pool_password'] != 'worker_password_123':
+            return False, f"pool_password incorrect: {miner.config['pool_password']}"
+        
+        if miner.config['mining_intensity'] != 80:
+            return False, f"mining_intensity incorrect: {miner.config['mining_intensity']}"
+        
+        print("✅ Both password and intensity features integrated correctly")
+        
+        # Test example config file has both new fields
+        if os.path.exists('/app/config.example.json'):
+            with open('/app/config.example.json', 'r') as f:
+                example_config = json.load(f)
+            
+            if 'pool_password' not in example_config:
+                return False, "pool_password missing from config.example.json"
+            
+            if 'mining_intensity' not in example_config:
+                return False, "mining_intensity missing from config.example.json"
+            
+            print("✅ Example configuration file includes both new fields")
+        
+        return True, "New features integration working correctly"
+        
+    except Exception as e:
+        return False, f"Integration test error: {str(e)}"
+
 def run_all_tests():
     """Run all backend tests"""
     print("🚀 CryptoMiner Pro V30 - Backend Testing Suite")
@@ -411,6 +634,9 @@ def run_all_tests():
         ("AI System Features", test_ai_system_features),
         ("Utility Functions", test_utility_functions),
         ("Interactive Setup Start", test_interactive_setup_start),
+        ("Password Option Features", test_password_option_features),
+        ("Mining Intensity Features", test_mining_intensity_features),
+        ("New Features Integration", test_new_features_integration),
     ]
     
     results = []

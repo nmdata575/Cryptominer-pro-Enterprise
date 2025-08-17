@@ -50,11 +50,14 @@ Follow the guided setup to configure your mining operation.
 
 ### Command Line Mining
 ```bash
-# Mine Litecoin with pool
+# Mine Litecoin with pool (basic)
 python3 cryptominer.py --coin LTC --wallet ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl --pool stratum+tcp://litecoinpool.org:3333
 
-# Mine Dogecoin with auto-threads
-python3 cryptominer.py --coin DOGE --wallet DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L --pool stratum+tcp://dogepool.com:3333 --threads 16
+# Mine with custom password and reduced intensity
+python3 cryptominer.py --coin LTC --wallet ltc1address... --pool stratum+tcp://pool.com:3333 --password myworker --intensity 75
+
+# Mine Dogecoin with auto-threads and web monitoring
+python3 cryptominer.py --coin DOGE --wallet DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L --pool stratum+tcp://dogepool.com:3333 --threads 16 --web-port 8080
 
 # List available coins
 python3 cryptominer.py --list-coins

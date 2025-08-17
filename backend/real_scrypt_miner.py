@@ -65,7 +65,7 @@ class StratumClient:
                         pass
             
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(30)
+            self.socket.settimeout(120)  # Increased from 30 to 120 seconds for higher difficulties
             self.socket.connect((host, port))
             
             # Send mining.subscribe

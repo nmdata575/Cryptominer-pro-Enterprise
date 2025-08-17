@@ -1,355 +1,244 @@
-# CryptoMiner Pro V30 - Complete Documentation
+# CryptoMiner Pro V30 - Terminal Edition Documentation
 
-## 📋 **PROJECT OVERVIEW**
+## Overview
 
-CryptoMiner Pro V30 is an enterprise-grade cryptocurrency mining platform with web-based management, distributed mining capabilities, and comprehensive security features.
+CryptoMiner Pro V30 Terminal Edition is a streamlined, powerful cryptocurrency mining application that runs directly in your terminal with optional web monitoring. This documentation covers installation, configuration, and operation.
 
-### **Key Features:**
-- ✅ Web-based mining dashboard
-- ✅ Multi-algorithm support (Scrypt, RandomX)
-- ✅ Enterprise V30 distributed mining
-- ✅ Real-time monitoring and statistics
-- ✅ MongoDB database with security
-- ✅ RESTful API with full documentation
-- ✅ Modern React frontend interface
+## Architecture
 
----
+The terminal edition simplifies the mining experience by consolidating all functionality into a single application:
 
-## 🚀 **QUICK START**
+- **cryptominer.py** - Main terminal application with integrated web monitoring
+- **backend/** - Core mining engine, AI system, and utility modules
+- **config.example.json** - Example configuration file
 
-### **Installation**
+## Installation
+
+### Prerequisites
 ```bash
-# Install CryptoMiner Pro V30
-./install.sh
+# Ensure Python 3.9+ is installed
+python3 --version
 
-# Check status anytime
-./install.sh --status
-
-# Verify installation
-./install.sh --verify
+# Install required system packages
+sudo apt update
+sudo apt install python3-venv python3-pip
 ```
 
-### **Access Your Mining Dashboard**
-- **Web Interface**: http://localhost:3333
-- **API Documentation**: http://localhost:8001/docs
-- **Health Check**: http://localhost:8001/api/health
-
-### **Service Management**
+### Setup
 ```bash
-# Check service status
-sudo supervisorctl status cryptominer-v30:*
+# Clone or extract the application
+cd cryptominer-pro-v30
 
-# Restart services
-sudo supervisorctl restart cryptominer-v30:*
+# Create and activate virtual environment
+cd backend
+python3 -m venv venv
+source venv/bin/activate
 
-# View logs
-tail -f ~/CryptominerV30/logs/backend.out.log
+# Install Python dependencies
+pip install -r requirements.txt
+cd ..
 ```
 
----
+## Configuration
 
-## 📦 **INSTALLATION GUIDE**
-
-### **System Requirements**
-- **OS**: Ubuntu 20.04+ / Debian 11+
-- **Memory**: 4GB RAM minimum (8GB recommended)
-- **Storage**: 10GB free space
-- **CPU**: 2+ cores (more cores = better mining performance)
-- **Network**: Stable internet connection
-
-### **Dependencies**
-The installer automatically handles all dependencies:
-- Python 3.8+ with development packages
-- Node.js 16+ and Yarn
-- MongoDB 4.4+
-- System build tools and libraries
-- Supervisor for process management
-
-### **Installation Steps**
-
-1. **Check Dependencies**
-   ```bash
-   ./install.sh --check
-   ```
-
-2. **Run Installation**
-   ```bash
-   ./install.sh
-   ```
-
-3. **Follow Progress**
-   - The installer shows 12 progress steps
-   - Comprehensive status report at completion
-   - Real-time service validation
-
-4. **Verify Installation**
-   ```bash
-   ./install.sh --verify
-   ```
-
-### **Post-Installation**
-- Access dashboard at http://localhost:3333
-- Configure mining pools and wallets
-- Review logs for any warnings
-- Enable MongoDB authentication if needed: `./install.sh --auth`
-
----
-
-## 🔐 **SECURITY CONFIGURATION**
-
-### **MongoDB Security**
-- Database users created automatically
-- Credentials stored securely in `~/.mongodb_credentials`
-- Authentication disabled by default for development convenience
-- Enable production authentication: `./install.sh --auth`
-
-### **File Permissions**
-- Configuration files: 600 (owner read/write only)
-- Application files: 644 (standard permissions)
-- Credential files: 600 (secure access)
-
-### **Network Security**
-- Backend binds to localhost only
-- CORS configured for local frontend access
-- No external ports exposed by default
-
----
-
-## 💻 **API REFERENCE**
-
-### **Core Endpoints**
+### Interactive Setup (Recommended)
 ```bash
-# Health check
-GET /api/health
-
-# System information
-GET /api/system/cpu-info
-GET /api/system/memory-info
-
-# Mining operations
-GET /api/mining/status
-POST /api/mining/start
-POST /api/mining/stop
-
-# Pool management
-GET /api/saved-pools
-POST /api/saved-pools
-PUT /api/saved-pools/{id}
-DELETE /api/saved-pools/{id}
-
-# Custom coins
-GET /api/custom-coins
-POST /api/custom-coins
+python3 cryptominer.py --setup
 ```
 
-### **Response Format**
-All API responses follow standard JSON format:
+This will guide you through:
+1. Coin selection (LTC, DOGE, FTC)
+2. Wallet address validation
+3. Mining mode (pool or solo)
+4. Thread configuration
+5. Web monitoring setup
+
+### Configuration Files
+
+Configurations are stored as JSON files for easy management:
+
 ```json
 {
-  "status": "success|error",
-  "data": {...},
-  "message": "Description",
-  "timestamp": "2025-01-01T00:00:00Z"
+  "coin": {
+    "name": "Litecoin",
+    "symbol": "LTC",
+    "algorithm": "Scrypt"
+  },
+  "wallet_address": "ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl",
+  "mode": "pool",
+  "pool_address": "stratum+tcp://litecoinpool.org:3333",
+  "threads": 8,
+  "web_port": 3333
 }
 ```
 
----
+### Command Line Usage
 
-## ⛏️ **MINING CONFIGURATION**
-
-### **Supported Algorithms**
-1. **Scrypt** - Litecoin, Dogecoin, etc.
-2. **RandomX** - Monero (CPU-optimized)
-
-### **Pool Configuration**
-Configure mining pools through the web interface:
-1. Navigate to Pool Settings
-2. Add pool URL, port, username, password
-3. Select algorithm and intensity
-4. Save and start mining
-
-### **Performance Tuning**
-- **CPU Mining**: Automatically uses optimal thread count
-- **Memory**: Reserves memory for system stability
-- **Intensity**: Adjustable (low/medium/high/maximum)
-
----
-
-## 🛠️ **TROUBLESHOOTING**
-
-### **Common Issues**
-
-**Services Not Starting**
+Direct mining without configuration files:
 ```bash
-# Check supervisor status
-sudo supervisorctl status
-
-# View error logs
-tail -f ~/CryptominerV30/logs/backend.err.log
-tail -f ~/CryptominerV30/logs/frontend.err.log
-
-# Restart services
-sudo supervisorctl restart cryptominer-v30:*
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --threads 16
 ```
 
-**Frontend Not Loading**
-- Check if port 3333 is available: `netstat -tlnp | grep 3333`
-- Verify frontend service: `curl http://localhost:3333`
-- Check React build: `cd ~/CryptominerV30/frontend && yarn build`
+## Mining Operations
 
-**API Not Responding**
-- Check backend service: `curl http://localhost:8001/api/health`
-- Verify Python environment: `~/CryptominerV30/backend/venv/bin/python --version`
-- Check MongoDB connection: `mongosh --eval "db.adminCommand('ping')"`
+### Starting Mining
+- **Interactive**: `python3 cryptominer.py --setup`
+- **Saved Config**: `python3 cryptominer.py`
+- **Command Line**: `python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL`
 
-**MongoDB Issues**
-- Check MongoDB status: `ps aux | grep mongod`
-- Start manually: `sudo mongod --fork --logpath /var/log/mongodb.log`
-- Enable authentication: `./install.sh --auth`
+### Stopping Mining
+- Press `Ctrl+C` for graceful shutdown
+- Mining statistics will be displayed upon exit
 
-### **Log Files**
-- **Backend**: `~/CryptominerV30/logs/backend.out.log`
-- **Frontend**: `~/CryptominerV30/logs/frontend.out.log`
-- **MongoDB**: `/var/log/mongodb/mongod.log`
-- **Supervisor**: `/var/log/supervisor/`
+### Monitoring
+- **Terminal**: Real-time statistics updated every 3 seconds
+- **Web Dashboard**: Optional interface at http://localhost:3333
+- **Logs**: Detailed logging to `mining.log`
 
----
+## Supported Cryptocurrencies
 
-## 🔄 **MAINTENANCE**
+### Litecoin (LTC)
+- **Algorithm**: Scrypt
+- **Popular Pools**: 
+  - litecoinpool.org:3333
+  - ltc.luckymonster.pro:4112
 
-### **Updates**
+### Dogecoin (DOGE)
+- **Algorithm**: Scrypt
+- **Popular Pools**:
+  - dogepool.com:3333
+  - doge.luckymonster.pro:4114
+
+### Feathercoin (FTC)
+- **Algorithm**: Scrypt
+- **Popular Pools**:
+  - ftc.luckymonster.pro:4116
+
+## Performance Optimization
+
+### Thread Configuration
+- **Auto-detection**: Recommended for optimal performance
+- **Manual**: Typically CPU cores × 1-2 for best efficiency
+- **Enterprise**: Up to 250,000 threads for data center deployments
+
+### System Monitoring
+The application monitors:
+- CPU usage and temperature
+- Mining hashrate and efficiency
+- Pool connection status
+- Share acceptance/rejection rates
+
+## Troubleshooting
+
+### Common Issues
+
+**Application won't start:**
 ```bash
-# Pull latest code
-git pull origin main
+# Ensure virtual environment is activated
+source backend/venv/bin/activate
 
-# Reinstall with updates
-./install.sh
+# Check for missing dependencies
+pip install -r backend/requirements.txt
+
+# Run with verbose logging
+python3 cryptominer.py --verbose
 ```
 
-### **Backup**
+**Low hashrate:**
+- Check CPU temperature for thermal throttling
+- Reduce thread count if system is overloaded
+- Verify stable network connection to mining pool
+
+**Web monitor not accessible:**
 ```bash
-# Backup configuration
-cp ~/CryptominerV30/.mongodb_credentials ~/backup/
-cp ~/CryptominerV30/backend/.env ~/backup/
-cp ~/CryptominerV30/frontend/.env ~/backup/
+# Check if port is in use
+netstat -tlnp | grep 3333
 
-# Backup database
-mongodump --db crypto_miner_db --out ~/backup/mongodb/
+# Use different port
+python3 cryptominer.py --web-port 8080
+
+# Disable web monitoring
+python3 cryptominer.py --web-port 0
 ```
 
-### **Monitoring**
+### Performance Issues
+
+**High CPU temperature:**
+- Reduce thread count
+- Improve system cooling
+- Monitor with: `python3 cryptominer.py --verbose`
+
+**Pool connection problems:**
+- Test connectivity: `telnet pool.address.com 3333`
+- Try alternative pools
+- Check firewall settings
+
+## Advanced Features
+
+### AI System Integration
+The application includes AI-powered optimization:
+- Automatic thread count adjustment
+- Pool performance analysis
+- Hardware optimization recommendations
+
+### Enterprise Features
+- Support for up to 250,000 mining threads
+- Enterprise-grade system detection
+- Professional logging and monitoring
+
+### Solo Mining
 ```bash
-# System resources
-htop
-
-# Service status
-./install.sh --status
-
-# Mining performance
-curl http://localhost:8001/api/mining/status | jq
+python3 cryptominer.py --coin LTC --wallet ADDRESS --threads 16
+# Note: Solo mining requires full blockchain node
 ```
 
----
+## Security Considerations
 
-## 🗑️ **UNINSTALLATION**
+- Always verify wallet addresses before mining
+- Use reputable mining pools
+- Monitor system resources to prevent overheating
+- Keep software updated for security patches
 
-### **Standard Uninstall**
-```bash
-# Uninstall with backup
-./uninstall.sh
-```
+## Migration from Service Version
 
-### **Complete Removal**
-```bash
-# Remove all data including database
-./uninstall.sh --clean-db
-```
+If upgrading from the complex service-based version:
 
-### **Manual Cleanup**
-If automated uninstall fails:
-```bash
-# Stop services
-sudo supervisorctl stop cryptominer-v30:*
+1. Stop old services: `sudo supervisorctl stop all`
+2. Backup any custom configurations
+3. Use the new terminal application: `python3 cryptominer.py --setup`
+4. Import previous settings manually if needed
 
-# Remove files
-rm -rf ~/CryptominerV30
+## API Reference
 
-# Remove supervisor config
-sudo rm /etc/supervisor/conf.d/cryptominer-v30.conf
+### Web Monitor Endpoints
+- **GET /**: Web dashboard interface
+- **WebSocket /ws**: Real-time mining statistics
 
-# Reload supervisor
-sudo supervisorctl reread && sudo supervisorctl update
-```
+The application provides WebSocket-based real-time updates for web monitoring.
 
----
+## Logging
 
-## 📞 **SUPPORT**
+### Log Locations
+- **Console**: Real-time mining statistics
+- **File**: Detailed logs in `mining.log`
+- **Web**: Browser console for WebSocket connections
 
-### **Getting Help**
-1. Check this documentation first
-2. Review log files for error details
-3. Run diagnostic: `./install.sh --verify`
-4. Check system status: `./install.sh --status`
+### Log Levels
+- **INFO**: Normal operation messages
+- **DEBUG**: Detailed debugging (use `--verbose`)
+- **ERROR**: Error conditions and failures
 
-### **File Structure**
-```
-~/CryptominerV30/
-├── backend/
-│   ├── venv/              # Python virtual environment
-│   ├── server.py          # Main backend application
-│   ├── requirements.txt   # Python dependencies
-│   └── .env              # Backend configuration
-├── frontend/
-│   ├── src/              # React source code
-│   ├── package.json      # Node dependencies
-│   └── .env             # Frontend configuration
-├── logs/                 # Application logs
-└── .mongodb_credentials  # Database credentials
-```
+## Development
 
-### **Key Commands**
-```bash
-./install.sh            # Full installation
-./install.sh --status   # Show status
-./install.sh --verify   # Verify installation
-./install.sh --auth     # Enable MongoDB auth
-./uninstall.sh          # Remove application
-```
+### Code Structure
+- **cryptominer.py**: Main application entry point
+- **backend/mining_engine.py**: Core mining algorithms
+- **backend/ai_system.py**: AI optimization system
+- **backend/utils.py**: Utility functions and coin definitions
 
----
+### Extending Support
+To add new cryptocurrencies, update `backend/utils.py` with coin definitions including algorithm parameters, default pools, and wallet validation rules.
 
-## 📊 **COMPLIANCE & AUDIT**
+## License
 
-### **User Requirements Compliance**
-✅ **Install all required dependencies**: Comprehensive dependency management
-✅ **Install all necessary programs**: Complete program installation with verification
-✅ **Install under /home/USER/CryptominerV30**: User-directory installation implemented
-✅ **Setup proper security for MongoDB**: User accounts created, authentication available
-
-### **Security Standards**
-- Secure file permissions (600/644)
-- User-space installation (no root required)
-- Database authentication ready
-- Network security (localhost binding)
-- Credential protection
-
-### **Quality Assurance**
-- Comprehensive testing suite
-- Real-time verification
-- Error handling and recovery
-- Progress tracking and logging
-- Production-ready configuration
-
----
-
-## 🎯 **SUCCESS METRICS**
-
-Your CryptoMiner Pro V30 installation is successful when:
-- ✅ Backend API responds at http://localhost:8001
-- ✅ Frontend loads at http://localhost:3333
-- ✅ MongoDB is accessible and secure
-- ✅ All installation requirements met
-- ✅ Services managed by supervisor
-- ✅ Logs show no critical errors
-
-**Installation Status: OPERATIONAL** 🎉
+This project is licensed under the MIT License - see the LICENSE file for details.

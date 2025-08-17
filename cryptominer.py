@@ -105,6 +105,10 @@ class CompactMiner:
         try:
             self.mining_engine = EnterpriseScryptMiner()
             self.ai_system = AISystemManager()
+            
+            # Link AI system to mining engine for status reporting
+            self.mining_engine.ai_system = self.ai_system
+            
             logger.info("✅ Components initialized")
         except Exception as e:
             logger.error(f"❌ Initialization failed: {e}")

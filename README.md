@@ -150,8 +150,10 @@ Configuration is stored in JSON format for easy management and sharing.
   },
   "wallet_address": "ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl",
   "mode": "pool",
-  "pool_address": "stratum+tcp://litecoinpool.org:3333", 
+  "pool_address": "stratum+tcp://litecoinpool.org:3333",
+  "pool_password": "x",
   "threads": 16,
+  "mining_intensity": 100,
   "web_port": 3333
 }
 ```

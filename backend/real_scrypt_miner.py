@@ -430,7 +430,7 @@ class RealScryptMiner:
         return None
     
     async def start_mining(self, pool_host: str, pool_port: int, username: str, password: str = "x"):
-        """Start real scrypt mining with pool connection"""
+        """Start real scrypt mining with pool connection using multiple threads"""
         try:
             logger.info(f"🌐 Connecting to pool {pool_host}:{pool_port}")
             
@@ -440,7 +440,7 @@ class RealScryptMiner:
                 return False
             
             self.is_mining = True
-            logger.info(f"✅ Connected to pool, starting scrypt mining...")
+            logger.info(f"✅ Connected to pool, starting scrypt mining with {self.thread_count} threads...")
             
             # Mining loop
             while self.is_mining:
@@ -448,13 +448,52 @@ class RealScryptMiner:
                 work = self.stratum_client.get_work()
                 if not work:
                     logger.warning("⚠️  No work received from pool")
+                    await asyncio.sleep(1)
                     continue
                 
-                # Mine the work
-                result = self.mine_work(work)
+                # Calculate nonce ranges for each thread
+                max_nonce = 0x100000  # 1M nonces per work cycle
+                nonce_range_per_thread = max_nonce // self.thread_count
                 
-                if result:
-                    logger.info(f"📊 Mining stats: {self.shares_found} shares found, {self.shares_accepted} accepted")
+                # Clear previous threads
+                self.mining_threads.clear()
+                
+                # Start mining threads
+                for thread_id in range(self.thread_count):
+                    start_nonce = thread_id * nonce_range_per_thread
+                    if thread_id == self.thread_count - 1:  # Last thread gets remainder
+                        nonce_range = max_nonce - start_nonce
+                    else:
+                        nonce_range = nonce_range_per_thread
+                    
+                    # Start thread
+                    mining_thread = threading.Thread(
+                        target=self._mine_work_wrapper,
+                        args=(work, thread_id, start_nonce, nonce_range),
+                        daemon=True,
+                        name=f"mining_thread_{thread_id}"
+                    )
+                    mining_thread.start()
+                    self.mining_threads.append(mining_thread)
+                
+                # Wait for all threads to complete or find a share
+                start_time = time.time()
+                timeout = 30  # 30 second timeout per work
+                
+                while time.time() - start_time < timeout and self.is_mining:
+                    # Check if any threads are still alive
+                    alive_threads = [t for t in self.mining_threads if t.is_alive()]
+                    if not alive_threads:
+                        break
+                    await asyncio.sleep(0.1)
+                
+                # Stop all threads for next work cycle
+                for thread in self.mining_threads:
+                    if thread.is_alive():
+                        # Threads will stop when work changes or is_mining becomes False
+                        pass
+                
+                logger.info(f"📊 Mining stats: {self.shares_found} shares found, {self.shares_accepted} accepted")
             
             logger.info("🛑 Mining stopped")
             return True
@@ -465,6 +504,15 @@ class RealScryptMiner:
         finally:
             if self.stratum_client.socket:
                 self.stratum_client.socket.close()
+    
+    def _mine_work_wrapper(self, work: Dict, thread_id: int, start_nonce: int, nonce_range: int):
+        """Wrapper for mine_work_threaded to handle threading"""
+        try:
+            result = self.mine_work_threaded(work, thread_id, start_nonce, nonce_range)
+            if result:
+                logger.info(f"🎯 Thread {thread_id} found share!")
+        except Exception as e:
+            logger.error(f"Thread {thread_id} error: {e}")
     
     def stop_mining(self):
         """Stop mining"""

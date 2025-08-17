@@ -405,6 +405,11 @@ body {{ font-family: Arial; background: linear-gradient(135deg, #1e3c72, #2a5298
 <div class="header">
 <h1>🚀 CryptoMiner Pro V30</h1>
 <div><span class="status" id="status-dot"></span><span id="status-text">Terminal Mining Monitor</span></div>
+<div class="header-actions">
+  <button id="stopBtn" class="btn">🛑 Stop mining</button>
+  <label style="margin-left:12px;">Intensity: <span id="intensity-val">100</span>%</label>
+  <input id="intensityRange" class="range" type="range" min="0" max="100" step="5" value="100" />
+</div>
 </div>
 <div class="stats">
 <div class="stat-card"><h3>⚡ Hashrate</h3><div class="stat-value" id="hashrate">0 H/s</div></div>

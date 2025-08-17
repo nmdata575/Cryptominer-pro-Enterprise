@@ -232,6 +232,10 @@ class DatabaseManager:
         if self.client:
             self.client.close()
             logger.info("✅ Database connections closed")
+    
+    def set_mining_status(self, is_mining: bool):
+        """Update mining status for timeout adjustments"""
+        self._mining_active = is_mining
 
 # Global database manager
 db_manager = DatabaseManager()

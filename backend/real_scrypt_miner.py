@@ -44,11 +44,14 @@ class StratumClient:
             
             # Parse difficulty from password if specified (e.g., "d=1024" or just "1024")
             requested_difficulty = None
+            auth_password = password  # Keep original for authorization
+            
             if password and password != "x":
                 # Check for d=NUMBER format
                 if password.startswith("d="):
                     try:
                         requested_difficulty = float(password[2:])
+                        auth_password = "x"  # Use standard password for auth
                         logger.info(f"Difficulty requested in password: {requested_difficulty}")
                     except ValueError:
                         pass
@@ -56,6 +59,7 @@ class StratumClient:
                 elif password.replace(".", "").isdigit():
                     try:
                         requested_difficulty = float(password)
+                        auth_password = "x"  # Use standard password for auth 
                         logger.info(f"Difficulty requested as password: {requested_difficulty}")
                     except ValueError:
                         pass

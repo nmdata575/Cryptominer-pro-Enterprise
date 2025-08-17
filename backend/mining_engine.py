@@ -972,11 +972,21 @@ class EnterpriseScryptMiner:
         if self.current_config and hasattr(self.current_config, 'mining_intensity'):
             mining_intensity = self.current_config.mining_intensity
 
+        # Get AI system status if available
+        ai_learning_progress = 0
+        ai_optimization_score = 0
+        if hasattr(self, 'ai_system') and self.ai_system:
+            ai_status = self.ai_system.status
+            ai_learning_progress = ai_status.learning_progress
+            ai_optimization_score = ai_status.optimization_score
+
         return {
             "is_mining": self.is_mining,
             "stats": stats_dict,
             "config": asdict(self.current_config) if self.current_config else None,
             "mining_intensity": mining_intensity,
+            "ai_learning_progress": ai_learning_progress,
+            "ai_optimization_score": ai_optimization_score,
             "system_info": {
                 "max_safe_threads": self.system_detector.system_capabilities.get('max_safe_threads', 0),
                 "enterprise_mode": self.enterprise_mode,

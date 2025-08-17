@@ -208,6 +208,20 @@ class StratumClient:
                 logger.info(f"✅ Authorized with pool as {username}")
                 logger.info(f"🎯 Final difficulty: {self.difficulty}")
                 logger.info(f"🎯 Final target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
+                
+                # After successful auth, suggest difficulty if requested
+                if post_auth_diff is not None:
+                    try:
+                        self.message_id += 1
+                        suggest_diff_msg = {
+                            "id": self.message_id,
+                            "method": "mining.suggest_difficulty",
+                            "params": [post_auth_diff]
+                        }
+                        self._send_message(suggest_diff_msg)
+                        logger.info(f"Post-auth: sent mining.suggest_difficulty: {post_auth_diff}")
+                    except Exception as e:
+                        logger.debug(f"Post-auth suggest_difficulty failed: {e}")
                 return True
             else:
                 logger.error(f"❌ Authorization timeout after {int(time.time() - start_wait)}s")

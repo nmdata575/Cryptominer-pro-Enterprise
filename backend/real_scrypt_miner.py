@@ -328,6 +328,12 @@ class StratumClient:
                     logger.info(f"New work received: job_id={self.job_id}, nbits={work['nbits']}")
                     return work
                 
+                elif message.get('result') is True and message.get('id') == self.message_id:
+                    # Some pools respond to authorize late; accept and continue to wait for notify
+                    self.connected = True
+                    logger.info("✅ Late authorization result received during get_work")
+                    continue
+                
                 elif message.get('method') == 'mining.set_difficulty':
                     # Handle pool difficulty updates during mining
                     new_difficulty = message['params'][0]

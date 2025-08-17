@@ -145,7 +145,7 @@ class StratumClient:
                     # Method 2: Also try mining.suggest_target (some pools prefer this)
                     self.message_id += 1
                     try:
-                        target_hex = hex(int(0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF / target_difficulty))
+                        target_hex = hex(int(0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF / max(1.0, float(target_difficulty))))
                         suggest_target_msg = {
                             "id": self.message_id, 
                             "method": "mining.suggest_target",

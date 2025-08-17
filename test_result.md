@@ -217,8 +217,46 @@ test_plan:
   test_all: true
   test_priority: "high_first"
 
+  - task: "Password Option Features"
+    implemented: true
+    working: true
+    file: "cryptominer.py, backend/mining_engine.py, config.example.json"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Password option features fully implemented and tested. Command line argument --password parsing works correctly with default value 'x'. Configuration file loading includes pool_password field. Interactive setup includes pool password prompt. Password is properly passed to mining engine and used in pool authentication."
+
+  - task: "Mining Intensity Features"
+    implemented: true
+    working: true
+    file: "cryptominer.py, backend/mining_engine.py, config.example.json"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Mining intensity features fully implemented and tested. Command line argument --intensity accepts values 0-100 with proper validation and clamping. Configuration file loading includes mining_intensity field. Interactive setup includes intensity prompt with validation. Mining worker function implements proper CPU throttling based on intensity level with sleep timing calculations."
+
+  - task: "New Features Integration"
+    implemented: true
+    working: true
+    file: "cryptominer.py, backend/mining_engine.py, config.example.json"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Both password and mining intensity features are properly integrated. Example configuration file includes both new fields (pool_password: 'x', mining_intensity: 100). Command line parsing supports both arguments simultaneously. Interactive setup includes prompts for both features. Mining engine processes both parameters correctly."
+
 agent_communication:
   - agent: "testing"
     message: "Comprehensive backend testing completed successfully. All 9 test cases passed with 100% success rate. CryptoMiner Pro V30 terminal application is fully functional with all core features working correctly including enterprise mining engine (250,000+ thread capability), AI system, utility functions, configuration handling, and command-line interface. Additional verification confirmed: Enterprise features enabled (250,000 max threads), coin presets loaded correctly (LTC, DOGE, FTC with proper Scrypt parameters N=1024, r=1, p=1), wallet validation working for all supported formats, and example configuration file is valid and properly structured."
   - agent: "testing"
     message: "COMPREHENSIVE WEB INTERFACE TESTING COMPLETED: All 7 frontend components tested successfully. Web monitoring dashboard fully functional at http://localhost:8080 with real-time WebSocket updates, responsive design, and proper error handling. Key findings: (1) All expected UI elements present and working - header with animated status indicator, 4 statistics cards with proper data formatting, (2) Real-time updates via WebSocket every 2 seconds confirmed, (3) Visual design matches specifications with blue gradient background and professional styling, (4) Mobile responsiveness verified across desktop/tablet/mobile viewports, (5) Performance metrics acceptable with fast page load times, (6) Error handling works - interface becomes inaccessible when mining stops and reconnects successfully when restarted. No critical issues found. Web monitoring feature is production-ready."
+  - agent: "testing"
+    message: "NEW FEATURES TESTING COMPLETED SUCCESSFULLY: Password option and mining intensity features fully implemented and working correctly. All 12 backend tests passed (100% success rate). Key findings: (1) Password option: --password argument parsing works, configuration file loading includes pool_password field, interactive setup includes password prompt, mining engine uses password for pool authentication. (2) Mining intensity: --intensity argument accepts 0-100 values with validation, configuration includes mining_intensity field, interactive setup includes intensity prompt, mining worker implements proper CPU throttling. (3) Integration: Both features work together, example config includes both fields, help text displays new options correctly. All technical verification requirements met."

@@ -59,6 +59,7 @@ class StratumClient:
             # Store credentials for later use and parse difficulty from password
             self.username = username
             self.password = password
+            self.shutting_down = False
             
             # Parse difficulty from password if specified (e.g., "d=1024" or just "1024")
             requested_difficulty = None

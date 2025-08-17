@@ -542,15 +542,24 @@ class RealScryptMiner:
     
     def stop_mining(self):
         """Stop mining and all threads"""
-        self.is_mining = False
         logger.info("🛑 Stopping scrypt mining...")
+        self.is_mining = False
         
         # Wait for all mining threads to finish
         for thread in self.mining_threads:
             if thread.is_alive():
-                thread.join(timeout=2)
+                logger.info(f"⏳ Waiting for mining thread {thread.name}...")
+                thread.join(timeout=3)
         
         self.mining_threads.clear()
+        
+        # Close socket if still open
+        if hasattr(self.stratum_client, 'socket') and self.stratum_client.socket:
+            try:
+                self.stratum_client.socket.close()
+            except:
+                pass
+                
         logger.info("🏁 All mining threads stopped")
     
     def get_stats(self) -> Dict[str, Any]:

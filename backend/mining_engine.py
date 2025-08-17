@@ -912,7 +912,8 @@ class EnterpriseScryptMiner:
                 "enterprise_mode": self.enterprise_mode,
                 "logical_cores": self.system_detector.cpu_info.get('logical_cores', 0),
                 "total_memory_gb": self.system_detector.system_capabilities.get('total_memory_gb', 0)
-            }
+            },
+            "web": {"connected": self.is_mining}
         }
 
 class PoolManager:

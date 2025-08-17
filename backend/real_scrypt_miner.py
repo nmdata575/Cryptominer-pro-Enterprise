@@ -51,13 +51,15 @@ class StratumClient:
                 if password.startswith("d="):
                     try:
                         requested_difficulty = float(password[2:])
-                        # Validate difficulty range - pools may have limits
-                        if requested_difficulty < 1:
-                            logger.warning(f"Difficulty {requested_difficulty} too low, using minimum 1")
-                            requested_difficulty = 1
-                        elif requested_difficulty > 1000000:
-                            logger.warning(f"Difficulty {requested_difficulty} too high, using maximum 1000000")
-                            requested_difficulty = 1000000
+                        # Validate difficulty range based on pool limits (ltc.millpools.cc observed limits)
+                        if requested_difficulty <= 2400:
+                            logger.warning(f"⚠️ Difficulty {requested_difficulty} is in problematic range (≤2400)")
+                            logger.warning(f"   Pool may revert to difficulty 1. Consider using > 2400")
+                        elif requested_difficulty > 750000:
+                            logger.warning(f"⚠️ Difficulty {requested_difficulty} exceeds pool limits (>750000)")
+                            logger.warning(f"   Pool may reject connection. Consider using ≤ 750000")
+                            requested_difficulty = 750000  # Cap at pool maximum
+                            logger.info(f"   Capped difficulty to pool maximum: {requested_difficulty}")
                             
                         auth_password = "x"  # Use standard password for auth
                         logger.info(f"Difficulty requested in password: {requested_difficulty}")
@@ -68,13 +70,15 @@ class StratumClient:
                 elif password.replace(".", "").isdigit():
                     try:
                         requested_difficulty = float(password)
-                        # Validate difficulty range
-                        if requested_difficulty < 1:
-                            logger.warning(f"Difficulty {requested_difficulty} too low, using minimum 1")
-                            requested_difficulty = 1
-                        elif requested_difficulty > 1000000:
-                            logger.warning(f"Difficulty {requested_difficulty} too high, using maximum 1000000")
-                            requested_difficulty = 1000000
+                        # Validate difficulty range based on pool limits
+                        if requested_difficulty <= 2400:
+                            logger.warning(f"⚠️ Difficulty {requested_difficulty} is in problematic range (≤2400)")
+                            logger.warning(f"   Pool may revert to difficulty 1. Consider using > 2400")
+                        elif requested_difficulty > 750000:
+                            logger.warning(f"⚠️ Difficulty {requested_difficulty} exceeds pool limits (>750000)")
+                            logger.warning(f"   Pool may reject connection. Consider using ≤ 750000")
+                            requested_difficulty = 750000  # Cap at pool maximum
+                            logger.info(f"   Capped difficulty to pool maximum: {requested_difficulty}")
                             
                         auth_password = "x"  # Use standard password for auth 
                         logger.info(f"Difficulty requested as password: {requested_difficulty}")

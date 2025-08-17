@@ -175,6 +175,9 @@ class StratumClient:
                 response = self._receive_message(timeout=5.0)  # 5 second timeout per message
                 if not response:
                     logger.debug(f"Authorization attempt {attempt + 1}/{max_attempts}: No response")
+                    # If shutting down or socket closed, stop waiting
+                    if self.shutting_down or self.socket is None:
+                        break
                     continue
                 
                 # Handle mining.set_difficulty messages that come before auth response

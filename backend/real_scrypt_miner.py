@@ -108,26 +108,33 @@ class StratumClient:
                     # Method 1: Use requested difficulty from password, or default to 16
                     target_difficulty = requested_difficulty if requested_difficulty else 16
                     
+                    # Log the difficulty request attempt
+                    logger.info(f"Attempting to request difficulty: {target_difficulty}")
+                    
                     suggest_diff_msg = {
                         "id": self.message_id,
                         "method": "mining.suggest_difficulty",
                         "params": [target_difficulty]
                     }
                     self._send_message(suggest_diff_msg)
-                    logger.info(f"Requested difficulty {target_difficulty} for CPU mining")
+                    logger.info(f"Sent mining.suggest_difficulty: {target_difficulty}")
                     
                     # Method 2: Also try mining.suggest_target (some pools prefer this)
                     self.message_id += 1
-                    suggest_target_msg = {
-                        "id": self.message_id, 
-                        "method": "mining.suggest_target",
-                        "params": [hex(int(0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF / target_difficulty))]
-                    }
-                    self._send_message(suggest_target_msg)
-                    logger.info(f"Also requested target for difficulty {target_difficulty}")
+                    try:
+                        target_hex = hex(int(0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF / target_difficulty))
+                        suggest_target_msg = {
+                            "id": self.message_id, 
+                            "method": "mining.suggest_target",
+                            "params": [target_hex]
+                        }
+                        self._send_message(suggest_target_msg)
+                        logger.info(f"Sent mining.suggest_target for difficulty {target_difficulty}")
+                    except Exception as target_error:
+                        logger.debug(f"Could not send suggest_target: {target_error}")
                     
                 except Exception as e:
-                    logger.debug(f"Pool may not support difficulty suggestion: {e}")
+                    logger.warning(f"Pool may not support difficulty suggestion: {e}")
             
             # Send mining.authorize
             self.message_id += 1

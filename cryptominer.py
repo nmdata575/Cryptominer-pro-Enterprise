@@ -245,6 +245,15 @@ class CompactMiner:
         if self.mining_engine and self.running:
             success, message = self.mining_engine.stop_mining()
             self.running = False
+            
+            # Stop AI system
+            if self.ai_system:
+                try:
+                    self.ai_system.stop()
+                    logger.info("🤖 AI system stopped")
+                except Exception as e:
+                    logger.warning(f"⚠️ AI system stop error: {e}")
+                    
             print(f"✅ Mining stopped")
             self.show_final_stats()
             

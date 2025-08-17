@@ -37,6 +37,8 @@ class StratumClient:
         self.shutting_down = False  # Graceful shutdown flag
         self._msg_queue = []  # queue of decoded JSON messages
         self._pending_auth_ids = set()  # track authorize request IDs
+        self.authorized = False
+        self.received_notify = False
         
     def close(self):
         """Close socket and mark client disconnected without raising noisy errors"""

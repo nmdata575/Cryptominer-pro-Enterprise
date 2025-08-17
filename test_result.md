@@ -212,6 +212,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Graceful shutdown on Ctrl+C for miner and web monitor"
     - "CryptoMiner Pro V30 Enhanced 6-Card Web Interface"
   stuck_tasks: []
   test_all: false

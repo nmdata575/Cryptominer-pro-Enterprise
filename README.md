@@ -183,6 +183,43 @@ Configuration is stored in JSON format for easy management and sharing.
 
 ## 🔧 Advanced Usage
 
+### Mining Intensity Control
+Control CPU usage to balance mining performance with system responsiveness:
+
+```bash
+# Full intensity (100% CPU usage)
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --intensity 100
+
+# Medium intensity (75% CPU usage) - good for background mining
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --intensity 75
+
+# Low intensity (50% CPU usage) - minimal system impact
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --intensity 50
+
+# Very low intensity (25% CPU usage) - for testing or low-power systems
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --intensity 25
+```
+
+**Intensity Effects:**
+- **100%**: Maximum hashrate, full CPU utilization
+- **75%**: ~75% hashrate, allows other applications to run smoothly  
+- **50%**: ~50% hashrate, balanced mining and system performance
+- **25%**: ~25% hashrate, minimal impact on system responsiveness
+
+### Pool Authentication
+Many pools require worker authentication:
+
+```bash
+# Standard pool mining (password defaults to "x")
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL
+
+# Custom worker password
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --password myworker
+
+# Username.worker format (some pools prefer this)
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --password worker1
+```
+
 ### Solo Mining
 ```bash
 python3 cryptominer.py --coin LTC --wallet ltc1address... --threads 32

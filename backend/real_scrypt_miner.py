@@ -239,7 +239,17 @@ class StratumClient:
         logger.debug(f"Sent: {message}")
     
     def _receive_message(self, timeout: float = 5.0) -> Optional[Dict]:
-        """Receive JSON message from pool with timeout. Quiet when shutting down."""
+        """Receive JSON message from pool with timeout. Quiet when shutting down.
+        This method now stores any extra messages in an internal queue so we don't drop
+        important ones (like mining.notify or mining.set_difficulty) when waiting for auth.
+        """
+        # Return queued messages first
+        if self._msg_queue:
+            try:
+                return self._msg_queue.pop(0)
+            except Exception:
+                self._msg_queue = []
+                return None
         if self.socket is None:
             return None
         try:
@@ -247,13 +257,12 @@ class StratumClient:
             try:
                 ready = select.select([self.socket], [], [], timeout)
             except Exception as e:
-                # Likely a bad FD during shutdown
                 if not self.shutting_down:
                     logger.debug(f"Select error: {e}")
                 return None
             if ready[0]:
                 try:
-                    data = self.socket.recv(4096)
+                    data = self.socket.recv(16384)
                 except Exception as e:
                     if not self.shutting_down:
                         logger.debug(f"Recv error: {e}")
@@ -262,17 +271,24 @@ class StratumClient:
                     return None
                 text = data.decode('utf-8').strip()
                 if text:
-                    # Handle multiple JSON messages in one response (common in Stratum)
                     lines = text.split('\n')
+                    parsed = []
                     for line in lines:
                         line = line.strip()
-                        if line:
-                            try:
-                                message = json.loads(line)
-                                logger.debug(f"Received: {message}")
-                                return message
-                            except json.JSONDecodeError:
-                                continue
+                        if not line:
+                            continue
+                        try:
+                            message = json.loads(line)
+                            parsed.append(message)
+                        except json.JSONDecodeError:
+                            continue
+                    if parsed:
+                        # Queue all extra messages beyond the first
+                        first = parsed[0]
+                        if len(parsed) > 1:
+                            self._msg_queue.extend(parsed[1:])
+                        logger.debug(f"Received: {first}")
+                        return first
             else:
                 logger.debug("No message received within timeout")
         except Exception as e:

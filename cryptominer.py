@@ -448,7 +448,7 @@ def main():
     parser.add_argument('--pool', help='Pool address')
     parser.add_argument('--password', help='Pool password (default: x)', default='x')
     parser.add_argument('--threads', type=int, help='Number of threads')
-    parser.add_argument('--intensity', type=int, help='Mining intensity 0-100% (default: 100)', default=100)
+    parser.add_argument('--intensity', type=int, help='Mining intensity 0-100 percent (default: 100)', default=100)
     parser.add_argument('--web-port', type=int, default=3333, help='Web monitor port (0 to disable)')
     parser.add_argument('--list-coins', action='store_true', help='List available coins')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')

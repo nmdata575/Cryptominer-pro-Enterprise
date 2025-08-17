@@ -375,9 +375,11 @@ async def health_check():
     try:
         if db_manager.is_connected and db_manager.client is not None:
             # Test with a quick ping through the manager
+            # Use longer timeout during mining operations to account for system load
+            timeout_duration = 10.0 if mining_engine.is_mining else 3.0
             await asyncio.wait_for(
                 db_manager.client.admin.command('ping'), 
-                timeout=2.0
+                timeout=timeout_duration
             )
             database_status = "connected"
         else:

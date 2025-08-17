@@ -777,6 +777,13 @@ class EnterpriseScryptMiner:
             worker_name = f"CryptoMiner-V30-{int(time.time())}"
             username = f"{wallet_address}.{worker_name}"
             
+            # Pass initial intensity from current config if available
+            if hasattr(self, 'current_config') and hasattr(self.current_config, 'mining_intensity'):
+                try:
+                    self.real_miner.set_intensity(self.current_config.mining_intensity)
+                except Exception:
+                    pass
+            
             logger.info(f"🚀 Connecting to {coin_config.name} pool: {pool_host}:{pool_port}")
             logger.info(f"👤 Worker: {username}")
             logger.info(f"🧵 Threads: {threads}")

@@ -256,13 +256,16 @@ class StratumClient:
                         'clean_jobs': params[8]
                     }
                     self.job_id = work['job_id']
-                    logger.info(f"New work received: job_id={self.job_id}")
+                    logger.info(f"New work received: job_id={self.job_id}, nbits={work['nbits']}")
                     return work
                 
                 elif message.get('method') == 'mining.set_difficulty':
-                    self.difficulty = message['params'][0]
+                    # Handle pool difficulty updates
+                    new_difficulty = message['params'][0]
+                    self.difficulty = new_difficulty
                     self.target = self._difficulty_to_target(self.difficulty)
-                    logger.info(f"Difficulty set to: {self.difficulty}")
+                    logger.info(f"Pool difficulty updated: {self.difficulty}")
+                    logger.debug(f"New target: {self.target.hex()[:16]}...")
                 
         except Exception as e:
             logger.error(f"Failed to get work: {e}")

@@ -447,9 +447,12 @@ class RealScryptMiner:
             
             try:
                 # Create block header
+                logger.debug(f"Thread {thread_id}: Creating block header for nonce {nonce}")
                 header = self.create_block_header(work, extranonce2, ntime, nonce)
+                logger.debug(f"Thread {thread_id}: Block header created, length: {len(header)} bytes")
                 
                 # Apply scrypt hash - CRITICAL: Use Litecoin parameters N=1024, r=1, p=1
+                logger.debug(f"Thread {thread_id}: Starting scrypt hash computation...")
                 scrypt_hash = ScryptAlgorithm.scrypt_hash(
                     password=header,
                     salt=header,
@@ -458,6 +461,7 @@ class RealScryptMiner:
                     p=1,     # Litecoin scrypt-p parameter
                     dk_len=32
                 )
+                logger.debug(f"Thread {thread_id}: Scrypt hash computed: {scrypt_hash.hex()[:16]}...")
                 
                 # Check if hash meets difficulty - FIXED: Use proper comparison
                 # Convert hash to integer for comparison (little-endian)
@@ -469,6 +473,7 @@ class RealScryptMiner:
                 # Log progress every 10000 hashes
                 if nonce % 10000 == 0:
                     logger.info(f"⛏️  Thread {thread_id} progress: {nonce:,} hashes, difficulty: {self.stratum_client.difficulty}")
+                    logger.debug(f"Thread {thread_id}: Current hash count: {self.hash_count}")
                 
                 # Check if we found a valid share - FIXED: Proper difficulty comparison
                 if hash_int < target_int:
@@ -512,6 +517,9 @@ class RealScryptMiner:
                     
             except Exception as e:
                 logger.error(f"Thread {thread_id} mining error at nonce {nonce}: {e}")
+                logger.error(f"Thread {thread_id} exception details: {type(e).__name__}: {str(e)}")
+                import traceback
+                logger.error(f"Thread {thread_id} traceback: {traceback.format_exc()}")
                 continue
         
         logger.info(f"🏁 Thread {thread_id} completed nonce range {start_nonce:,} to {start_nonce + nonce_range:,}")

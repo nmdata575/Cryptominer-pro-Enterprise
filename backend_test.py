@@ -1194,11 +1194,15 @@ def test_pool_authentication_fixes():
         # Check for actual hardcoded worker1 usage (not in comments)
         lines = submit_share_source.split('\n')
         for line in lines:
-            line_stripped = line.strip()
-            if line_stripped.startswith('#'):  # Skip comment lines
-                continue
-            if '"worker1"' in line_stripped or "'worker1'" in line_stripped:
-                return False, f"submit_share method still contains hardcoded 'worker1' in code: {line_stripped}"
+            # Remove comments from the line
+            if '#' in line:
+                code_part = line.split('#')[0].strip()
+            else:
+                code_part = line.strip()
+            
+            # Check if hardcoded worker1 exists in actual code (not comments)
+            if '"worker1"' in code_part or "'worker1'" in code_part:
+                return False, f"submit_share method still contains hardcoded 'worker1' in code: {code_part}"
         
         print("✅ Share submission uses stored username instead of hardcoded 'worker1'")
         

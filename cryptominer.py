@@ -399,7 +399,7 @@ body {{ font-family: Arial; background: linear-gradient(135deg, #1e3c72, #2a5298
 <div class="container">
 <div class="header">
 <h1>🚀 CryptoMiner Pro V30</h1>
-<div><span class="status"></span>Terminal Mining Monitor</div>
+<div><span class="status" id="status-dot"></span><span id="status-text">Terminal Mining Monitor</span></div>
 </div>
 <div class="stats">
 <div class="stat-card"><h3>⚡ Hashrate</h3><div class="stat-value" id="hashrate">0 H/s</div></div>

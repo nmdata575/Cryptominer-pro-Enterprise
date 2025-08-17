@@ -208,10 +208,11 @@ python3 cryptominer.py --coin LTC --wallet ADDRESS --threads 16
 
 If upgrading from the complex service-based version:
 
-1. Stop old services: `sudo supervisorctl stop all`
-2. Backup any custom configurations
-3. Use the new terminal application: `python3 cryptominer.py --setup`
-4. Import previous settings manually if needed
+1. **Stop Old Services** - No longer needed: `sudo supervisorctl stop all`
+2. **Backup Configurations** - Export any saved pool configurations if needed
+3. **Use New Application** - Run `python3 cryptominer.py --setup`
+4. **Clean Up** - Remove old supervisor configurations and service files
+5. **Enjoy Simplicity** - No more service management needed!
 
 ## API Reference
 

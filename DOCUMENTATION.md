@@ -81,7 +81,14 @@ Configurations are stored as JSON files for easy management:
 
 Direct mining without configuration files:
 ```bash
+# Basic pool mining
 python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --threads 16
+
+# Advanced pool mining with custom settings
+python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --password worker1 --intensity 75 --threads 16 --web-port 8080
+
+# Solo mining with reduced intensity
+python3 cryptominer.py --coin LTC --wallet ADDRESS --intensity 50 --threads 8
 ```
 
 ## Mining Operations

@@ -159,7 +159,14 @@ class StratumClient:
                     old_difficulty = self.difficulty
                     self.difficulty = new_difficulty
                     self.target = self._difficulty_to_target(self.difficulty)
-                    logger.info(f"🎯 Pool difficulty updated: {old_difficulty} → {self.difficulty}")
+                    logger.info(f"🎯 Pool difficulty updated during auth: {old_difficulty} → {self.difficulty}")
+                    
+                    # Check if this matches our requested difficulty
+                    if requested_difficulty and abs(self.difficulty - requested_difficulty) < 0.1:
+                        logger.info(f"✅ Pool accepted requested difficulty: {requested_difficulty}")
+                    elif requested_difficulty:
+                        logger.warning(f"⚠️ Pool set difficulty {self.difficulty} instead of requested {requested_difficulty}")
+                    
                     logger.info(f"🎯 New target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
                     continue
                 

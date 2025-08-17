@@ -386,6 +386,13 @@ ws.onmessage = function(event) {{
         document.getElementById('accepted').textContent = stats.accepted_shares || 0;
         document.getElementById('rejected').textContent = stats.rejected_shares || 0;
         
+        // Update mining intensity
+        const intensity = data.data.mining_intensity || 100;
+        document.getElementById('intensity').textContent = intensity + '%';
+        document.getElementById('intensity-desc').textContent = 
+            intensity === 100 ? 'Full CPU' : intensity >= 75 ? 'High CPU' : 
+            intensity >= 50 ? 'Medium CPU' : intensity >= 25 ? 'Low CPU' : 'Very Low CPU';
+        
         const runtime = Math.floor((new Date() - startTime) / 1000);
         const hours = Math.floor(runtime / 3600);
         const minutes = Math.floor((runtime % 3600) / 60);

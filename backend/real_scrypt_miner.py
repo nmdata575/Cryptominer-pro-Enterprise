@@ -198,7 +198,10 @@ class StratumClient:
             
             if response and response.get('result') == True:
                 self.connected = True
+                # Initialize target from default difficulty
+                self.target = self._difficulty_to_target(self.difficulty)
                 logger.info(f"Authorized with pool as {username}")
+                logger.info(f"Initial difficulty: {self.difficulty}, Target: {self.target.hex()[:16]}...")
                 return True
             else:
                 logger.error(f"Authorization failed: {response}")

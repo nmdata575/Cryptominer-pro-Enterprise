@@ -111,6 +111,7 @@ class TerminalMiner:
             
             # Initialize V30 enterprise features if available
             try:
+                from enterprise_v30 import CentralControlSystem
                 self.v30_system = CentralControlSystem()
                 logger.info("✅ V30 Enterprise system initialized")
             except Exception as e:

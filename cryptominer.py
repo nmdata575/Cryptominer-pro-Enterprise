@@ -420,9 +420,39 @@ body {{ font-family: Arial; background: linear-gradient(135deg, #1e3c72, #2a5298
 <div class="stat-card"><h3>⏱️ Runtime</h3><div class="stat-value" id="runtime">00:00:00</div></div>
 </div></div>
 <script>
-const ws = new WebSocket('ws://localhost:{self.config.get("web_port", 3333)}/ws');
+let ws = new WebSocket('ws://localhost:{self.config.get("web_port", 3333)}/ws');
 let startTime = new Date();
-ws.onmessage = function(event) {{
+let miningConnected = true;
+
+function setConnected(connected) {{
+  miningConnected = connected;
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  if (connected) {{
+    dot.classList.remove('disconnected');
+    txt.textContent = 'Terminal Mining Monitor';
+  }} else {{
+    dot.classList.add('disconnected');
+    txt.textContent = 'Disconnected';
+  }}
+}}
+
+function bindControls() {{
+  const stopBtn = document.getElementById('stopBtn');
+  const range = document.getElementById('intensityRange');
+  const val = document.getElementById('intensity-val');
+  stopBtn.onclick = () => {{ window.location.reload(); }};
+  range.oninput = (e) => {{ val.textContent = e.target.value; }};
+}}
+
+bindControls();
+
+function connectWS() {{
+  ws = new WebSocket('ws://localhost:{self.config.get("web_port", 3333)}/ws');
+  ws.onopen = () => setConnected(true);
+  ws.onclose = () => setConnected(false);
+  ws.onerror = () => setConnected(false);
+  ws.onmessage = function(event) {{
     const data = JSON.parse(event.data);
     if (data.type === 'stats') {{
         const stats = data.data.stats || {{}};
@@ -442,6 +472,8 @@ ws.onmessage = function(event) {{
         document.getElementById('intensity-desc').textContent = 
             intensity === 100 ? 'Full CPU' : intensity >= 75 ? 'High CPU' : 
             intensity >= 50 ? 'Medium CPU' : intensity >= 25 ? 'Low CPU' : 'Very Low CPU';
+        document.getElementById('intensityRange').value = intensity;
+        document.getElementById('intensity-val').textContent = intensity;
         
         // Update AI learning progress
         const aiLearning = data.data.ai_learning_progress || 0;
@@ -460,7 +492,11 @@ ws.onmessage = function(event) {{
             minutes.toString().padStart(2,'0') + ':' +
             seconds.toString().padStart(2,'0');
     }}
-}};
+  }};
+}}
+
+connectWS();
+
 setInterval(() => {{
     const runtime = Math.floor((new Date() - startTime) / 1000);
     const hours = Math.floor(runtime / 3600);

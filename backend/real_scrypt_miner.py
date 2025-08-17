@@ -123,41 +123,7 @@ class StratumClient:
                 self.extranonce1 = result[1]
                 self.extranonce2_size = result[2]
                 logger.info(f"Subscribed to pool: extranonce1={self.extranonce1}")
-                
-                # Request lower difficulty for CPU mining (try multiple methods)
-                try:
-                    self.message_id += 1
-                    
-                    # Method 1: Use requested difficulty from password, or default to 16
-                    target_difficulty = requested_difficulty if requested_difficulty else 16
-                    
-                    # Log the difficulty request attempt
-                    logger.info(f"Attempting to request difficulty: {target_difficulty}")
-                    
-                    suggest_diff_msg = {
-                        "id": self.message_id,
-                        "method": "mining.suggest_difficulty",
-                        "params": [target_difficulty]
-                    }
-                    self._send_message(suggest_diff_msg)
-                    logger.info(f"Sent mining.suggest_difficulty: {target_difficulty}")
-                    
-                    # Method 2: Also try mining.suggest_target (some pools prefer this)
-                    self.message_id += 1
-                    try:
-                        target_hex = hex(int(0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF / max(1.0, float(target_difficulty))))
-                        suggest_target_msg = {
-                            "id": self.message_id, 
-                            "method": "mining.suggest_target",
-                            "params": [target_hex]
-                        }
-                        self._send_message(suggest_target_msg)
-                        logger.info(f"Sent mining.suggest_target for difficulty {target_difficulty}")
-                    except Exception as target_error:
-                        logger.debug(f"Could not send suggest_target: {target_error}")
-                    
-                except Exception as e:
-                    logger.warning(f"Pool may not support difficulty suggestion: {e}")
+                # Defer any difficulty suggestion until after successful authorization
             
             # Send mining.authorize
             self.message_id += 1

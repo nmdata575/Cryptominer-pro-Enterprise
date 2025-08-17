@@ -217,22 +217,27 @@ class StratumClient:
         self.socket.send(msg_json.encode('utf-8'))
         logger.debug(f"Sent: {message}")
     
-    def _receive_message(self) -> Optional[Dict]:
-        """Receive JSON message from pool"""
+    def _receive_message(self, timeout: float = 5.0) -> Optional[Dict]:
+        """Receive JSON message from pool with timeout"""
         try:
-            data = self.socket.recv(4096).decode('utf-8').strip()
-            if data:
-                # Handle multiple JSON messages in one response (common in Stratum)
-                lines = data.split('\n')
-                for line in lines:
-                    line = line.strip()
-                    if line:
-                        try:
-                            message = json.loads(line)
-                            logger.debug(f"Received: {message}")
-                            return message
-                        except json.JSONDecodeError:
-                            continue
+            import select
+            ready = select.select([self.socket], [], [], timeout)
+            if ready[0]:
+                data = self.socket.recv(4096).decode('utf-8').strip()
+                if data:
+                    # Handle multiple JSON messages in one response (common in Stratum)
+                    lines = data.split('\n')
+                    for line in lines:
+                        line = line.strip()
+                        if line:
+                            try:
+                                message = json.loads(line)
+                                logger.debug(f"Received: {message}")
+                                return message
+                            except json.JSONDecodeError:
+                                continue
+            else:
+                logger.debug("No message received within timeout")
         except Exception as e:
             logger.error(f"Failed to receive message: {e}")
         return None

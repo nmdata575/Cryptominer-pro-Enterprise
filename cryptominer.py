@@ -279,6 +279,11 @@ class CompactMiner:
             eff = (accepted/(accepted+rejected))*100 if (accepted+rejected) > 0 else 0
             print(f"║  ✅ Accepted: {accepted} | ❌ Rejected: {rejected} | 📊 Efficiency: {eff:.1f}%{'':<8} ║")
             
+            # Mining intensity
+            intensity = self.config.get('mining_intensity', 100)
+            if intensity < 100:
+                print(f"║  ⚡ Intensity: {intensity}%{'':<44} ║")
+            
             print("╠══════════════════════════════════════════════════════════╣")
             
             # Web monitor info

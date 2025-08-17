@@ -213,8 +213,7 @@ metadata:
 test_plan:
   current_focus:
     - "Mining Intensity Web Interface Display"
-  stuck_tasks:
-    - "Mining Intensity Web Interface Display"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 

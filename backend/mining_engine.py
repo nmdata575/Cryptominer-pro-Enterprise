@@ -961,10 +961,16 @@ class EnterpriseScryptMiner:
             except Exception as e:
                 logger.debug(f"Could not get real miner stats: {e}")
 
+        # Get mining intensity from current config
+        mining_intensity = 100  # default
+        if self.current_config and hasattr(self.current_config, 'mining_intensity'):
+            mining_intensity = self.current_config.mining_intensity
+
         return {
             "is_mining": self.is_mining,
             "stats": stats_dict,
             "config": asdict(self.current_config) if self.current_config else None,
+            "mining_intensity": mining_intensity,
             "system_info": {
                 "max_safe_threads": self.system_detector.system_capabilities.get('max_safe_threads', 0),
                 "enterprise_mode": self.enterprise_mode,

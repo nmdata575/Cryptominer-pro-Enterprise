@@ -21,10 +21,11 @@ A powerful, reliable terminal-based cryptocurrency miner with enterprise feature
 **Important**: Install dependencies before running the application.
 
 ```bash
-# Ensure Python 3.9+ is installed
-python3 --version
+# Quick Installation (Recommended)
+chmod +x install_dependencies.sh
+./install_dependencies.sh
 
-# Install dependencies (recommended: use virtual environment)
+# Manual Installation
 cd backend
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -35,9 +36,9 @@ cd ..
 python3 cryptominer.py --help
 ```
 
-**Quick Install (Alternative)**:
+**System-wide Install (Alternative)**:
 ```bash
-# Install system-wide (if virtual environment not preferred)
+# Install without virtual environment
 pip3 install -r backend/requirements.txt
 ```
 

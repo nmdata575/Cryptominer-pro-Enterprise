@@ -356,18 +356,20 @@ class RealScryptMiner:
         
         return current_hash
     
-    def mine_work(self, work: Dict, max_nonce: int = 0xFFFFFFFF) -> Optional[Dict]:
-        """Mine the work using proper scrypt algorithm"""
-        logger.info(f"🚀 Starting scrypt mining on job: {work['job_id']}")
+    def mine_work_threaded(self, work: Dict, thread_id: int, start_nonce: int, nonce_range: int) -> Optional[Dict]:
+        """Mine work in a specific thread with nonce range"""
+        logger.info(f"🧵 Thread {thread_id} starting: nonces {start_nonce:,} to {start_nonce + nonce_range:,}")
         
-        # Generate extranonce2
-        extranonce2 = "00" * self.stratum_client.extranonce2_size
+        # Generate extranonce2 for this thread
+        extranonce2 = f"{thread_id:0{self.stratum_client.extranonce2_size * 2}x}"[-self.stratum_client.extranonce2_size * 2:]
         ntime = work['ntime']
         
-        for nonce in range(max_nonce):
+        for nonce_offset in range(nonce_range):
             if not self.is_mining:
                 break
                 
+            nonce = start_nonce + nonce_offset
+            
             try:
                 # Create block header
                 header = self.create_block_header(work, extranonce2, ntime, nonce)
@@ -390,11 +392,11 @@ class RealScryptMiner:
                 
                 # Log progress every 10000 hashes
                 if nonce % 10000 == 0:
-                    logger.info(f"⛏️  Mining progress: {nonce:,} hashes, current hash: {scrypt_hash.hex()[:16]}...")
+                    logger.info(f"⛏️  Thread {thread_id} progress: {nonce:,} hashes, hash: {scrypt_hash.hex()[:16]}...")
                 
                 # Check if we found a valid share
                 if hash_int <= target_int:
-                    logger.info(f"🎯 SHARE FOUND! Nonce: {nonce}, Hash: {scrypt_hash.hex()}")
+                    logger.info(f"🎯 SHARE FOUND by Thread {thread_id}! Nonce: {nonce}, Hash: {scrypt_hash.hex()}")
                     
                     # Submit share to pool
                     nonce_hex = f"{nonce:08x}"
@@ -408,23 +410,23 @@ class RealScryptMiner:
                     self.shares_found += 1
                     if success:
                         self.shares_accepted += 1
+                        logger.info(f"✅ Share accepted by pool!")
+                    else:
+                        logger.warning(f"❌ Share rejected by pool")
                     
                     return {
                         'job_id': work['job_id'],
                         'nonce': nonce_hex,
                         'hash': scrypt_hash.hex(),
-                        'accepted': success
+                        'accepted': success,
+                        'thread_id': thread_id
                     }
-                
-                # Update extranonce2 occasionally to avoid duplicate work
-                if nonce % 100000 == 0:
-                    extranonce2 = f"{nonce:0{self.stratum_client.extranonce2_size * 2}x}"[-self.stratum_client.extranonce2_size * 2:]
                     
             except Exception as e:
-                logger.error(f"Mining error at nonce {nonce}: {e}")
+                logger.error(f"Thread {thread_id} mining error at nonce {nonce}: {e}")
                 continue
         
-        logger.info(f"⏹️  Completed mining job {work['job_id']} - No shares found")
+        logger.info(f"🏁 Thread {thread_id} completed nonce range {start_nonce:,} to {start_nonce + nonce_range:,}")
         return None
     
     async def start_mining(self, pool_host: str, pool_port: int, username: str, password: str = "x"):

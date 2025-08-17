@@ -163,6 +163,10 @@ class StratumClient:
     async def connect_to_pool(self, host: str, port: int, username: str, password: str = "x") -> bool:
         """Connect to mining pool using Stratum protocol"""
         try:
+            # Store credentials for later use
+            self.username = username
+            self.password = password
+            
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.settimeout(30)
             self.socket.connect((host, port))

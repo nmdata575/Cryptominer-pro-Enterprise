@@ -526,6 +526,10 @@ async def stop_mining():
     """Stop mining"""
     success, message = mining_engine.stop_mining()
     
+    # Notify database manager about mining status for timeout adjustments
+    if success:
+        db_manager.set_mining_status(False)
+    
     return {
         "success": success,
         "message": message

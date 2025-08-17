@@ -238,15 +238,31 @@ class StratumClient:
         logger.debug(f"Sent: {message}")
     
     def _receive_message(self, timeout: float = 5.0) -> Optional[Dict]:
-        """Receive JSON message from pool with timeout"""
+        """Receive JSON message from pool with timeout. Quiet when shutting down."""
+        if self.socket is None:
+            return None
         try:
             import select
-            ready = select.select([self.socket], [], [], timeout)
+            try:
+                ready = select.select([self.socket], [], [], timeout)
+            except Exception as e:
+                # Likely a bad FD during shutdown
+                if not self.shutting_down:
+                    logger.debug(f"Select error: {e}")
+                return None
             if ready[0]:
-                data = self.socket.recv(4096).decode('utf-8').strip()
-                if data:
+                try:
+                    data = self.socket.recv(4096)
+                except Exception as e:
+                    if not self.shutting_down:
+                        logger.debug(f"Recv error: {e}")
+                    return None
+                if not data:
+                    return None
+                text = data.decode('utf-8').strip()
+                if text:
                     # Handle multiple JSON messages in one response (common in Stratum)
-                    lines = data.split('\n')
+                    lines = text.split('\n')
                     for line in lines:
                         line = line.strip()
                         if line:
@@ -259,7 +275,8 @@ class StratumClient:
             else:
                 logger.debug("No message received within timeout")
         except Exception as e:
-            logger.error(f"Failed to receive message: {e}")
+            if not self.shutting_down:
+                logger.error(f"Failed to receive message: {e}")
         return None
     
     def get_work(self) -> Optional[Dict]:

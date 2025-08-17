@@ -104,8 +104,10 @@ Options:
   --config FILE        Use specific configuration file  
   --coin SYMBOL        Coin to mine (LTC, DOGE, FTC)
   --wallet ADDRESS     Your wallet address
-  --pool URL           Pool address (stratum+tcp://pool:port)  
+  --pool URL           Pool address (stratum+tcp://pool:port)
+  --password TEXT      Pool password (default: x)
   --threads COUNT      Number of mining threads
+  --intensity PERCENT  Mining intensity 0-100% (default: 100) 
   --web-port PORT      Web monitor port (default: 3333, 0 to disable)
   --list-coins         Show available cryptocurrencies
   --verbose, -v        Enable verbose logging
@@ -115,6 +117,7 @@ Examples:
   python3 cryptominer.py --setup
   python3 cryptominer.py --list-coins  
   python3 cryptominer.py --coin LTC --wallet ltc1xxx... --pool stratum+tcp://pool.com:3333
+  python3 cryptominer.py --coin DOGE --wallet DH5xxx... --pool stratum+tcp://pool.com:3333 --password worker1 --intensity 80
   python3 cryptominer.py --config my-ltc-config.json --web-port 8080
 ```
 

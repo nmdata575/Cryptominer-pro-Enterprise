@@ -157,6 +157,8 @@ class StratumClient:
         self.difficulty = 1
         self.target = None
         self.message_id = 1
+        self.username = None  # Store username for share submission
+        self.password = None  # Store password for share submission
         
     async def connect_to_pool(self, host: str, port: int, username: str, password: str = "x") -> bool:
         """Connect to mining pool using Stratum protocol"""

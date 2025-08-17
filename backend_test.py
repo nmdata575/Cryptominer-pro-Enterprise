@@ -1879,6 +1879,9 @@ def run_all_tests():
         ("Improved Target Calculation Fixes", test_improved_target_calculation_fixes),
         ("Thread Mining with Correct Difficulty", test_thread_mining_with_correct_difficulty),
         ("Comprehensive Pool Authentication and Difficulty", test_comprehensive_pool_authentication_and_difficulty),
+        # NEW WEB UI BEHAVIOR TESTS
+        ("Web UI Status Dot Disconnected State", test_web_ui_status_dot_disconnected_state),
+        ("Web UI Intensity Control Plumbing", test_web_ui_intensity_control_plumbing),
     ]
     
     results = []

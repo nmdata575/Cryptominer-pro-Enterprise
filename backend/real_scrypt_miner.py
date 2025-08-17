@@ -319,6 +319,7 @@ class StratumClient:
                     continue
                 
                 if message.get('method') == 'mining.notify':
+                    self.received_notify = True
                     params = message['params']
                     work = {
                         'job_id': params[0],

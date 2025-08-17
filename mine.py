@@ -234,7 +234,6 @@ class TerminalMiner:
             print(f"   Mode: {self.config['mode']}")
             
             # Create coin config from existing coin data
-            from mining_engine import CoinConfig
             coin_config = CoinConfig(**self.config['coin'])
             
             # Start mining

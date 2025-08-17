@@ -242,9 +242,29 @@ python3 cryptominer.py --web-port 0 --coin LTC --wallet ADDRESS --pool POOL
 
 ## 🏗️ Architecture
 
-The application is built on proven enterprise components:
+The application is built on proven enterprise components in a simplified structure:
 
-- **Mining Engine:** High-performance Scrypt implementation
+### Core Files
+```
+/app/
+├── cryptominer.py          # Main terminal application
+├── config.example.json     # Configuration example
+├── README.md              # This documentation
+├── DOCUMENTATION.md       # Technical documentation
+├── LICENSE                # MIT License
+└── backend/               # Core mining modules
+    ├── mining_engine.py   # High-performance mining engine
+    ├── ai_system.py       # Intelligent optimization
+    ├── utils.py           # Coin definitions and utilities
+    ├── enterprise_v30.py  # Enterprise mining features
+    ├── real_scrypt_miner.py # Scrypt implementation
+    ├── randomx_miner.py   # RandomX implementation
+    ├── requirements.txt   # Python dependencies
+    └── venv/             # Virtual environment
+```
+
+### Key Components
+- **Mining Engine:** High-performance Scrypt and RandomX implementation
 - **AI System:** Intelligent optimization and monitoring
 - **System Detection:** Hardware capability analysis
 - **Pool Communication:** Full Stratum protocol support

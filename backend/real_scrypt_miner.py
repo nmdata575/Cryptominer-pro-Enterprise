@@ -452,15 +452,15 @@ class RealScryptMiner:
                 header = self.create_block_header(work, extranonce2, ntime, nonce)
                 logger.debug(f"Thread {thread_id}: Block header created, length: {len(header)} bytes")
                 
-                # Apply scrypt hash - CRITICAL: Use Litecoin parameters N=1024, r=1, p=1
+                # Apply scrypt hash - OPTIMIZED: Use high-performance scrypt library 
                 logger.debug(f"Thread {thread_id}: Starting scrypt hash computation...")
-                scrypt_hash = ScryptAlgorithm.scrypt_hash(
+                scrypt_hash = scrypt.hash(
                     password=header,
                     salt=header,
                     N=1024,  # Litecoin scrypt-N parameter
                     r=1,     # Litecoin scrypt-r parameter  
                     p=1,     # Litecoin scrypt-p parameter
-                    dk_len=32
+                    buflen=32
                 )
                 logger.debug(f"Thread {thread_id}: Scrypt hash computed: {scrypt_hash.hex()[:16]}...")
                 

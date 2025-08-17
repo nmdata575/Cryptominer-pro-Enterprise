@@ -823,7 +823,7 @@ class EnterpriseScryptMiner:
     
     def stop_mining(self):
         """Stop enterprise mining"""
-        if not self.is_mining:
+        if not self.is_mining and not (hasattr(self, 'real_miner') and self.real_miner and self.real_miner.is_mining):
             return False, "Mining is not active"
         
         logger.info("Stopping enterprise mining...")
@@ -832,7 +832,10 @@ class EnterpriseScryptMiner:
         # Stop real miner if it exists
         if hasattr(self, 'real_miner') and self.real_miner:
             logger.info("Stopping real pool miner...")
-            self.real_miner.stop_mining()
+            try:
+                self.real_miner.stop_mining()
+            except Exception as e:
+                logger.debug(f"Real miner stop error (ignored): {e}")
         
         # Cleanup pools
         self.cleanup_pools()

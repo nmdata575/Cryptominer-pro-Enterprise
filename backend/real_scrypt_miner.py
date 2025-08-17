@@ -366,7 +366,8 @@ class RealScryptMiner:
         ntime = work['ntime']
         
         for nonce_offset in range(nonce_range):
-            if not self.is_mining:
+            if not self.is_mining:  # Check if mining should continue
+                logger.info(f"🛑 Thread {thread_id} stopping due to mining halt")
                 break
                 
             nonce = start_nonce + nonce_offset
@@ -399,27 +400,35 @@ class RealScryptMiner:
                 if hash_int <= target_int:
                     logger.info(f"🎯 SHARE FOUND by Thread {thread_id}! Nonce: {nonce}, Hash: {scrypt_hash.hex()}")
                     
-                    # Submit share to pool
-                    nonce_hex = f"{nonce:08x}"
-                    success = self.stratum_client.submit_share(
-                        work['job_id'],
-                        extranonce2,
-                        ntime,
-                        nonce_hex
-                    )
-                    
-                    self.shares_found += 1
-                    if success:
-                        self.shares_accepted += 1
-                        logger.info(f"✅ Share accepted by pool!")
+                    # Submit share to pool - only if connection is still active
+                    if self.is_mining and self.stratum_client.socket:
+                        nonce_hex = f"{nonce:08x}"
+                        try:
+                            success = self.stratum_client.submit_share(
+                                work['job_id'],
+                                extranonce2,
+                                ntime,
+                                nonce_hex
+                            )
+                            
+                            self.shares_found += 1
+                            if success:
+                                self.shares_accepted += 1
+                                logger.info(f"✅ Share accepted by pool!")
+                            else:
+                                logger.warning(f"❌ Share rejected by pool")
+                        except Exception as submit_error:
+                            logger.error(f"Share submission failed: {submit_error}")
+                            # Don't break, just log and continue
                     else:
-                        logger.warning(f"❌ Share rejected by pool")
+                        logger.warning(f"⚠️ Share found but pool connection lost - Thread {thread_id}")
+                        self.shares_found += 1
                     
                     return {
                         'job_id': work['job_id'],
-                        'nonce': nonce_hex,
+                        'nonce': nonce_hex if 'nonce_hex' in locals() else f"{nonce:08x}",
                         'hash': scrypt_hash.hex(),
-                        'accepted': success,
+                        'accepted': False,  # Will be updated by share submission
                         'thread_id': thread_id
                     }
                     

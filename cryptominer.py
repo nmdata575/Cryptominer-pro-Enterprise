@@ -189,6 +189,23 @@ class CompactMiner:
             
         try:
             coin_config = CoinConfig(**self.config['coin'])
+            
+            # Add pool configuration if specified
+            if self.config.get('pool_address'):
+                pool_parts = self.config['pool_address'].replace('stratum+tcp://', '').split(':')
+                if len(pool_parts) == 2:
+                    coin_config.custom_pool_address = pool_parts[0]
+                    coin_config.custom_pool_port = int(pool_parts[1])
+                    coin_config.pool_password = self.config.get('pool_password', 'x')
+            
+            # Set mining intensity
+            mining_intensity = self.config.get('mining_intensity', 100)
+            if hasattr(coin_config, 'mining_intensity'):
+                coin_config.mining_intensity = mining_intensity
+            else:
+                # Add intensity as a custom attribute
+                coin_config.mining_intensity = mining_intensity
+            
             success, message = self.mining_engine.start_mining(
                 coin_config,
                 self.config['wallet_address'],
@@ -199,6 +216,8 @@ class CompactMiner:
                 self.running = True
                 self.stats['start_time'] = datetime.now()
                 print(f"✅ {message}")
+                if mining_intensity < 100:
+                    print(f"⚡ Mining intensity: {mining_intensity}% (CPU throttled)")
                 return True
             else:
                 print(f"❌ {message}")

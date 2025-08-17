@@ -34,7 +34,7 @@ sudo apt install python3-venv python3-pip
 # Clone or extract the application
 cd cryptominer-pro-v30
 
-# Create and activate virtual environment
+# Create and activate virtual environment  
 cd backend
 python3 -m venv venv
 source venv/bin/activate

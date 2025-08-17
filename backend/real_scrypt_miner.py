@@ -147,10 +147,11 @@ class StratumClient:
             
             # Wait for authorization response (may receive difficulty updates first)
             auth_success = False
-            max_attempts = 20  # Increased from 10 to 20 for higher difficulties
+            max_attempts = 15  # Balanced approach for higher difficulties
             for attempt in range(max_attempts):
-                response = self._receive_message(timeout=10.0)  # Increased timeout per message
+                response = self._receive_message(timeout=5.0)  # 5 second timeout per message
                 if not response:
+                    logger.debug(f"Authorization attempt {attempt + 1}/{max_attempts}: No response")
                     continue
                 
                 # Handle mining.set_difficulty messages that come before auth response

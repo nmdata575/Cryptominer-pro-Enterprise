@@ -185,6 +185,19 @@ class StratumClient:
                 self.extranonce1 = result[1]
                 self.extranonce2_size = result[2]
                 logger.info(f"Subscribed to pool: extranonce1={self.extranonce1}")
+                
+                # Request lower difficulty for CPU mining (optional, some pools support this)
+                try:
+                    self.message_id += 1
+                    suggest_diff_msg = {
+                        "id": self.message_id,
+                        "method": "mining.suggest_difficulty",
+                        "params": [16]  # Request difficulty 16 for CPU mining
+                    }
+                    self._send_message(suggest_diff_msg)
+                    logger.info("Requested difficulty 16 for CPU mining")
+                except Exception as e:
+                    logger.debug(f"Pool may not support difficulty suggestion: {e}")
             
             # Send mining.authorize
             self.message_id += 1

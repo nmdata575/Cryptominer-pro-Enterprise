@@ -375,6 +375,10 @@ class CompactMiner:
             except WebSocketDisconnect:
                 if websocket in self.web_connections:
                     self.web_connections.remove(websocket)
+            except Exception:
+                # On shutdown, ignore
+                if websocket in self.web_connections:
+                    self.web_connections.remove(websocket)
                     
     def get_web_dashboard(self):
         """Generate web dashboard HTML"""

@@ -591,6 +591,9 @@ class RealScryptMiner:
                 timeout = 30  # 30 second timeout per work
                 
                 while time.time() - start_time < timeout and self.is_mining:
+                    # Check shutdown conditions
+                    if self.stratum_client.shutting_down or not self.stratum_client.socket:
+                        break
                     # Check if any threads are still alive
                     alive_threads = [t for t in self.mining_threads if t.is_alive()]
                     if not alive_threads:

@@ -683,7 +683,15 @@ class EnterpriseScryptMiner:
         
         finally:
             # Cleanup
-            self.cleanup_pools()
+            try:
+                self.cleanup_pools()
+            finally:
+                # Also ensure stratum client is closed to interrupt any blocking calls
+                if hasattr(self, 'real_miner') and self.real_miner:
+                    try:
+                        self.real_miner.stop_mining()
+                    except Exception:
+                        pass
 
     def cleanup_pools(self):
         """Clean up all thread pools"""

@@ -36,6 +36,23 @@ class StratumClient:
         self.password = None  # Store password for share submission
         self.shutting_down = False  # Graceful shutdown flag
         
+    def close(self):
+        """Close socket and mark client disconnected without raising noisy errors"""
+        self.shutting_down = True
+        try:
+            if self.socket:
+                try:
+                    self.socket.shutdown(socket.SHUT_RDWR)
+                except Exception:
+                    pass
+                try:
+                    self.socket.close()
+                except Exception:
+                    pass
+        finally:
+            self.socket = None
+            self.connected = False
+        
     async def connect_to_pool(self, host: str, port: int, username: str, password: str = "x") -> bool:
         """Connect to mining pool using Stratum protocol"""
         try:

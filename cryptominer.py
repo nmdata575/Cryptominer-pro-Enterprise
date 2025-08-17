@@ -370,6 +370,7 @@ body {{ font-family: Arial; background: linear-gradient(135deg, #1e3c72, #2a5298
 <div class="stat-card"><h3>⚡ Hashrate</h3><div class="stat-value" id="hashrate">0 H/s</div></div>
 <div class="stat-card"><h3>🖥️ System</h3><div class="stat-value" id="cpu">0%</div><div id="temp">0°C</div></div>
 <div class="stat-card"><h3>⚙️ Intensity</h3><div class="stat-value" id="intensity">100%</div><div id="intensity-desc">CPU Usage</div></div>
+<div class="stat-card"><h3>🤖 AI Learning</h3><div class="stat-value" id="ai-learning">0%</div><div id="ai-desc">Learning Progress</div></div>
 <div class="stat-card"><h3>📊 Stats</h3><div>✅ <span id="accepted">0</span> | ❌ <span id="rejected">0</span></div></div>
 <div class="stat-card"><h3>⏱️ Runtime</h3><div class="stat-value" id="runtime">00:00:00</div></div>
 </div></div>

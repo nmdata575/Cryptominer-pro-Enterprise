@@ -122,9 +122,9 @@ class StratumClient:
             
             # Wait for authorization response (may receive difficulty updates first)
             auth_success = False
-            max_attempts = 10
+            max_attempts = 20  # Increased from 10 to 20 for higher difficulties
             for attempt in range(max_attempts):
-                response = self._receive_message(timeout=3.0)
+                response = self._receive_message(timeout=10.0)  # Increased timeout per message
                 if not response:
                     continue
                 

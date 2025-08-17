@@ -301,10 +301,18 @@ class StratumClient:
     
     def _difficulty_to_target(self, difficulty: float) -> bytes:
         """Convert pool difficulty to target hash"""
-        # Standard Litecoin max target
+        if difficulty <= 0:
+            difficulty = 1  # Fallback to minimum difficulty
+        
+        # Standard Litecoin max target (difficulty 1)
         max_target = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
-        target = int(max_target / difficulty)
-        return struct.pack('>I', target)[:4]  # First 4 bytes for comparison
+        target_int = int(max_target / difficulty)
+        
+        # Convert to 32-byte target in little-endian format
+        target_bytes = target_int.to_bytes(32, byteorder='little')
+        logger.debug(f"Difficulty: {difficulty}, Target: {target_bytes.hex()[:16]}...")
+        
+        return target_bytes
 
 class RealScryptMiner:
     """Real scrypt miner compatible with cgminer and mining pools"""

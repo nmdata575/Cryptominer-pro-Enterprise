@@ -555,6 +555,9 @@ class RealScryptMiner:
                 work = self.stratum_client.get_work()
                 if not work:
                     logger.warning("⚠️  No work received from pool")
+                    # If shutting down, exit promptly
+                    if self.stratum_client.shutting_down or not self.stratum_client.socket:
+                        break
                     await asyncio.sleep(1)
                     continue
                 

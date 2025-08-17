@@ -21,7 +21,7 @@ from threading import Lock
 import logging
 
 # Import the real scrypt implementation
-from real_scrypt_miner import RealScryptMiner, ScryptAlgorithm, StratumClient
+from real_scrypt_miner import RealScryptMiner, StratumClient
 
 logger = logging.getLogger(__name__)
 

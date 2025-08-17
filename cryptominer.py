@@ -60,12 +60,29 @@ class CompactMiner:
         self.web_connections = []
         
     def setup_signal_handlers(self):
-        """Setup graceful shutdown"""
+        """Setup graceful shutdown with double-press safety"""
+        self._sigint_count = 0
+        self._shutdown_lock = threading.Lock()
+        
         def signal_handler(sig, frame):
-            print(f"\n🛑 Stopping mining...")
-            self.stop_mining()
-            sys.exit(0)
-            
+            with self._shutdown_lock:
+                self._sigint_count += 1
+                if self._sigint_count == 1:
+                    print("\n🛑 Stopping mining (press Ctrl+C again to force exit)...")
+                    try:
+                        # Stop web monitor first to close sockets and WS
+                        self.stop_web_monitor()
+                    except Exception:
+                        pass
+                    try:
+                        self.stop_mining()
+                    except Exception:
+                        pass
+                    # Do not sys.exit here; allow cleanup to proceed
+                else:
+                    print("\n⛔ Force exiting now")
+                    os._exit(130)  # Immediate exit
+        
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
         

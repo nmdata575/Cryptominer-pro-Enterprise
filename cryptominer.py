@@ -483,6 +483,14 @@ setInterval(() => {{
         threading.Thread(target=run_server, daemon=True).start()
         time.sleep(1)  # Give server time to start
         
+    def stop_web_monitor(self):
+        """Attempt to stop web monitoring server and close websockets"""
+        try:
+            # Clear websocket list; uvicorn thread is daemon and will exit
+            self.web_connections.clear()
+        except Exception:
+            pass
+
     def run(self):
         """Main mining loop"""
         while self.running:

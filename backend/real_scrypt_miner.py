@@ -335,17 +335,28 @@ class StratumClient:
             return False
     
     def _difficulty_to_target(self, difficulty: float) -> bytes:
-        """Convert pool difficulty to target hash"""
+        """Convert pool difficulty to target hash using proper pool difficulty calculation
+        
+        Based on Bitcoin Wiki: https://en.bitcoin.it/wiki/Difficulty
+        Pool mining uses pdiff (pool difficulty) with full target, not bdiff (Bitcoin difficulty)
+        """
         if difficulty <= 0:
             difficulty = 1  # Fallback to minimum difficulty
         
-        # Standard Litecoin max target (difficulty 1)
-        max_target = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
-        target_int = int(max_target / difficulty)
+        # Pool difficulty 1 target (pdiff) - used by mining pools
+        # This is the full 256-bit target with all 1's after the leading zeros
+        pool_max_target = 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
         
-        # Convert to 32-byte target in little-endian format
+        # Calculate target: target = max_target / difficulty  
+        target_int = int(pool_max_target / difficulty)
+        
+        # Convert to 32-byte target in little-endian format for hash comparison
         target_bytes = target_int.to_bytes(32, byteorder='little')
-        logger.debug(f"Difficulty: {difficulty}, Target: {target_bytes.hex()[:16]}...")
+        
+        logger.info(f"Difficulty: {difficulty}")
+        logger.info(f"Pool max target: {hex(pool_max_target)}")
+        logger.info(f"Calculated target: {hex(target_int)}")
+        logger.debug(f"Target bytes (LE): {target_bytes.hex()[:32]}...")
         
         return target_bytes
 

@@ -167,6 +167,7 @@ class StratumClient:
                 "params": [username, auth_password]
             }
             self._send_message(authorize_msg)
+            self._pending_auth_ids.add(self.message_id)
             
             # Wait for authorization response (may receive difficulty updates or notify first)
             auth_success = False
@@ -184,6 +185,7 @@ class StratumClient:
                             "params": [username, auth_password]
                         }
                         self._send_message(authorize_msg)
+                        self._pending_auth_ids.add(self.message_id)
                         last_auth_send = time.time()
                         logger.info("🔁 Resent mining.authorize")
                     except Exception as e:
@@ -208,8 +210,8 @@ class StratumClient:
                     logger.info(f"🎯 New target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
                     continue
                 
-                # Some pools send notify before sending a success result; accept that as auth success once any result true arrives
-                if response.get('id') == self.message_id:
+                # Accept success if any pending authorize id returns true
+                if response.get('id') in self._pending_auth_ids:
                     if response.get('result') is True:
                         auth_success = True
                         logger.info("✅ Authorization successful")
@@ -218,7 +220,6 @@ class StratumClient:
                         logger.error(f"❌ Authorization failed: {response}")
                         break
                     else:
-                        # It might be a non-boolean result; continue reading
                         logger.debug(f"Auth response non-boolean: {response}")
                         continue
                 

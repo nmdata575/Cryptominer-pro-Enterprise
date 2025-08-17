@@ -227,8 +227,14 @@ class StratumClient:
     
     def _send_message(self, message: Dict):
         """Send JSON message to pool"""
+        if not self.socket:
+            return
         msg_json = json.dumps(message) + '\n'
-        self.socket.send(msg_json.encode('utf-8'))
+        try:
+            self.socket.send(msg_json.encode('utf-8'))
+        except Exception as e:
+            if not self.shutting_down:
+                logger.debug(f"Send message during shutdown or error: {e}")
         logger.debug(f"Sent: {message}")
     
     def _receive_message(self, timeout: float = 5.0) -> Optional[Dict]:

@@ -773,9 +773,14 @@ class EnterpriseScryptMiner:
                 logger.error(f"❌ RealScryptMiner missing set_thread_count method: {dir(self.real_miner)}")
                 return False
             
-            # Prepare username format: wallet_address.worker_name
+            # Prepare username format: wallet_address.worker_name (can be overridden by explicit username)
             worker_name = f"CryptoMiner-V30-{int(time.time())}"
             username = f"{wallet_address}.{worker_name}"
+            # Override if explicit username provided in current_config
+            explicit_user = getattr(self.current_config, 'explicit_username', None)
+            if explicit_user:
+                username = explicit_user
+                logger.info(f"Using explicit stratum username: {username}")
             
             # Pass initial intensity from current config if available
             if hasattr(self, 'current_config') and hasattr(self.current_config, 'mining_intensity'):

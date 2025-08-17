@@ -280,11 +280,17 @@ class StratumClient:
         return None
     
     def get_work(self) -> Optional[Dict]:
-        """Wait for and parse mining.notify work from pool"""
+        """Wait for and parse mining.notify work from pool. Returns None promptly when disconnected/shutting down."""
         try:
+            attempts = 0
             while True:
+                if self.shutting_down or not self.socket or not self.connected:
+                    return None
                 message = self._receive_message()
                 if not message:
+                    attempts += 1
+                    if self.shutting_down or not self.socket or attempts >= 5:
+                        return None
                     continue
                 
                 if message.get('method') == 'mining.notify':
@@ -317,7 +323,8 @@ class StratumClient:
                     continue
                 
         except Exception as e:
-            logger.error(f"Failed to get work: {e}")
+            if not self.shutting_down:
+                logger.error(f"Failed to get work: {e}")
             return None
     
     def submit_share(self, job_id: str, extranonce2: str, ntime: str, nonce: str) -> bool:

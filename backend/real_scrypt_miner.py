@@ -529,13 +529,16 @@ class RealScryptMiner:
     
     def get_stats(self) -> Dict[str, Any]:
         """Get mining statistics"""
+        active_threads = len([t for t in self.mining_threads if t.is_alive()])
         return {
             "is_mining": self.is_mining,
             "hash_count": self.hash_count,
             "shares_found": self.shares_found,
             "shares_accepted": self.shares_accepted,
             "acceptance_rate": (self.shares_accepted / self.shares_found * 100) if self.shares_found > 0 else 0,
-            "hashrate": self.hash_count / 60 if self.hash_count > 0 else 0  # Rough estimate
+            "hashrate": self.hash_count / 60 if self.hash_count > 0 else 0,  # Rough estimate
+            "active_threads": active_threads,
+            "total_threads": self.thread_count
         }
 
 # Test the real scrypt miner

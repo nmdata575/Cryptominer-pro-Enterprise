@@ -589,11 +589,19 @@ class EnterpriseScryptMiner:
 
     def mining_worker(self, thread_id: int, coin_config: CoinConfig, wallet_address: str, 
                      start_nonce: int, nonce_range: int) -> Tuple[int, int]:
-        """Individual mining worker thread"""
+        """Individual mining worker thread with intensity control"""
         scrypt_params = coin_config.scrypt_params
         n = scrypt_params.get('n', 1024)
         r = scrypt_params.get('r', 1) 
         p = scrypt_params.get('p', 1)
+        
+        # Get mining intensity from config (default 100%)
+        mining_intensity = getattr(coin_config, 'mining_intensity', 100)
+        
+        # Calculate work/sleep timing based on intensity
+        # 100% = continuous work, 50% = work 1ms, sleep 1ms pattern
+        base_sleep = 0.0001  # Base micro-sleep (0.1ms)
+        intensity_sleep = base_sleep * (100 - mining_intensity) / 100.0
         
         hash_count = 0
         blocks_found = 0
@@ -614,9 +622,14 @@ class EnterpriseScryptMiner:
                 blocks_found += 1
                 logger.info(f"Block found by thread {thread_id}! Hash: {hash_result.hex()}")
             
-            # Yield CPU occasionally for better system responsiveness
-            if nonce_offset % 1000 == 0:
-                time.sleep(0.0001)  # Micro-sleep
+            # CPU intensity control - more frequent sleeps for lower intensity
+            if mining_intensity < 100:
+                if nonce_offset % max(1, int(1000 * mining_intensity / 100)) == 0:
+                    time.sleep(intensity_sleep)
+            else:
+                # Standard responsiveness sleep for 100% intensity
+                if nonce_offset % 1000 == 0:
+                    time.sleep(base_sleep)
         
         return hash_count, blocks_found
 

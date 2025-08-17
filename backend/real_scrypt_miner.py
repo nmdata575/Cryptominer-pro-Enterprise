@@ -621,11 +621,11 @@ class RealScryptMiner:
                     thread.join(timeout=5)
             
             # Close socket connection
-            if self.stratum_client.socket:
+            if hasattr(self, 'stratum_client') and self.stratum_client:
                 try:
-                    self.stratum_client.socket.close()
+                    self.stratum_client.close()
                     logger.info("🔌 Pool connection closed")
-                except:
+                except Exception:
                     pass
     
     def _mine_work_wrapper(self, work: Dict, thread_id: int, start_nonce: int, nonce_range: int):

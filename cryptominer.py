@@ -618,6 +618,7 @@ def main():
             miner.config = {
                 'coin': coin_data,
                 'wallet_address': args.wallet,
+                'explicit_username': args.user if args.user else None,
                 'mode': 'pool' if args.pool else 'solo',
                 'threads': args.threads or coin_data.get('default_threads', 8),
                 'mining_intensity': max(0, min(100, args.intensity)),

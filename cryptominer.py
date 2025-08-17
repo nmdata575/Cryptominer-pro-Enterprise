@@ -159,10 +159,18 @@ class CompactMiner:
                 pool = f"stratum+tcp://{coin_data['symbol'].lower()}pool.org:3333"
             self.config['pool_address'] = pool
             
+            # Pool password
+            password = input("🔐 Pool password (default: x): ").strip()
+            self.config['pool_password'] = password if password else "x"
+            
         # Threads
         max_threads = self.mining_engine.system_detector.system_capabilities.get('max_safe_threads', 8)
         threads = input(f"🧵 Threads (1-{max_threads}, default: auto): ").strip()
         self.config['threads'] = int(threads) if threads else max_threads // 2
+        
+        # Mining intensity
+        intensity = input("⚡ Mining intensity 0-100% (default: 100): ").strip()
+        self.config['mining_intensity'] = int(intensity) if intensity and intensity.isdigit() and 0 <= int(intensity) <= 100 else 100
         
         # Web monitoring
         web_port = input("📊 Web port (default: 3333, 0 to disable): ").strip()

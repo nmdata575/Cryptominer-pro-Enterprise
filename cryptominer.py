@@ -352,7 +352,7 @@ body {{ font-family: Arial; background: linear-gradient(135deg, #1e3c72, #2a5298
 .header {{ text-align: center; margin-bottom: 30px; padding: 20px; 
            background: rgba(255,255,255,0.1); border-radius: 15px; }}
 .header h1 {{ font-size: 2.5rem; margin-bottom: 10px; }}
-.stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+.stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
           gap: 20px; }}
 .stat-card {{ background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; }}
 .stat-value {{ font-size: 2rem; font-weight: bold; color: #4CAF50; }}

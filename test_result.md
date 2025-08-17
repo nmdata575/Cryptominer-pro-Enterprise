@@ -236,7 +236,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "CryptoMiner Pro V30 Web Monitor Automated UI Testing - COMPLETED"
+    - "Web UI Status Dot Disconnected State - COMPLETED"
+    - "Web UI Intensity Control Plumbing - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

@@ -510,10 +510,26 @@ class RealScryptMiner:
             
         except Exception as e:
             logger.error(f"❌ Mining failed: {e}")
+            # Make sure to stop all mining threads
+            self.is_mining = False
             return False
         finally:
+            # Ensure clean shutdown
+            self.is_mining = False
+            
+            # Wait for all threads to finish
+            for thread in self.mining_threads:
+                if thread.is_alive():
+                    logger.info(f"⏳ Waiting for thread {thread.name} to finish...")
+                    thread.join(timeout=5)
+            
+            # Close socket connection
             if self.stratum_client.socket:
-                self.stratum_client.socket.close()
+                try:
+                    self.stratum_client.socket.close()
+                    logger.info("🔌 Pool connection closed")
+                except:
+                    pass
     
     def _mine_work_wrapper(self, work: Dict, thread_id: int, start_nonce: int, nonce_range: int):
         """Wrapper for mine_work_threaded to handle threading"""

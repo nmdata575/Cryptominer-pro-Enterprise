@@ -116,7 +116,7 @@ class StratumClient:
             authorize_msg = {
                 "id": self.message_id,
                 "method": "mining.authorize",
-                "params": [username, password]
+                "params": [username, auth_password]
             }
             self._send_message(authorize_msg)
             

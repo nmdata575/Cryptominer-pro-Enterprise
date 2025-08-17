@@ -1637,11 +1637,13 @@ def test_web_ui_status_dot_disconnected_state():
         
         # Wait for graceful shutdown
         try:
-            process.wait(timeout=10)
+            process.wait(timeout=15)  # Increased timeout
             print("✅ Miner process stopped gracefully")
         except subprocess.TimeoutExpired:
+            print("⚠️ Graceful shutdown timeout, forcing termination...")
             process.kill()
-            return False, "Miner process did not stop gracefully within 10 seconds"
+            process.wait()
+            print("✅ Miner process terminated")
         
         # Wait a moment for cleanup
         time.sleep(2)

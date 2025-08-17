@@ -24,7 +24,7 @@ from utils import get_coin_presets, validate_wallet_address
 
 # Web monitoring imports (optional)
 try:
-    from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+    from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
     from fastapi.responses import HTMLResponse
     import uvicorn
     WEB_AVAILABLE = True

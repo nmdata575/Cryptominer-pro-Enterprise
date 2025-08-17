@@ -97,11 +97,8 @@ class TerminalMiner:
     def initialize_components(self):
         """Initialize mining engine and AI system"""
         try:
-            # Initialize system detector
-            system_detector = SystemDetector()
-            
-            # Initialize mining engine
-            self.mining_engine = MiningEngine(system_detector)
+            # Initialize mining engine (has its own system detector)
+            self.mining_engine = MiningEngine()
             logger.info("✅ Mining engine initialized")
             
             # Initialize AI system

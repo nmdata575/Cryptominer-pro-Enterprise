@@ -173,7 +173,22 @@ class StratumClient:
             auth_success = False
             max_seconds = 120  # allow up to 2 minutes for auth on some pools
             start_wait = time.time()
+            last_auth_send = start_wait
             while time.time() - start_wait < max_seconds:
+                # Periodically resend authorize (some pools drop the first)
+                if time.time() - last_auth_send > 20:
+                    try:
+                        self.message_id += 1
+                        authorize_msg = {
+                            "id": self.message_id,
+                            "method": "mining.authorize",
+                            "params": [username, auth_password]
+                        }
+                        self._send_message(authorize_msg)
+                        last_auth_send = time.time()
+                        logger.info("🔁 Resent mining.authorize")
+                    except Exception as e:
+                        logger.debug(f"Authorize resend failed: {e}")
                 response = self._receive_message(timeout=5.0)
                 if not response:
                     if self.shutting_down or self.socket is None:

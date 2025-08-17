@@ -858,10 +858,18 @@ class EnterpriseScryptMiner:
             asyncio.set_event_loop(loop)
             
             # Create real miner instance and store reference
+            logger.info("🔧 Creating RealScryptMiner instance...")
             self.real_miner = RealScryptMiner()
+            logger.info(f"✅ RealScryptMiner created: {type(self.real_miner)}")
             
             # Set thread count for the real miner
-            self.real_miner.set_thread_count(threads)
+            logger.info(f"🧵 Setting thread count to {threads}...")
+            if hasattr(self.real_miner, 'set_thread_count'):
+                self.real_miner.set_thread_count(threads)
+                logger.info(f"✅ Thread count set to: {self.real_miner.thread_count}")
+            else:
+                logger.error(f"❌ RealScryptMiner missing set_thread_count method: {dir(self.real_miner)}")
+                return False
             
             # Prepare username format: wallet_address.worker_name
             worker_name = f"CryptoMiner-V30-{int(time.time())}"

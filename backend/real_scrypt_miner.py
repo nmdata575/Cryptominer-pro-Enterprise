@@ -308,6 +308,13 @@ class RealScryptMiner:
         self.shares_found = 0
         self.shares_accepted = 0
         self.hash_count = 0
+        self.thread_count = 1
+        self.mining_threads = []
+        
+    def set_thread_count(self, threads: int):
+        """Set the number of mining threads"""
+        self.thread_count = max(1, threads)
+        logger.info(f"🧵 Set thread count to: {self.thread_count}")
         
     def create_block_header(self, work: Dict, extranonce2: str, ntime: str, nonce: int) -> bytes:
         """Create proper block header for scrypt hashing"""

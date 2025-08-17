@@ -204,6 +204,7 @@ class StratumClient:
                 self._msg_queue.append(response)
             
             if auth_success:
+                self.authorized = True
                 self.connected = True
                 if not self.target:
                     self.target = self._difficulty_to_target(self.difficulty)

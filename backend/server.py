@@ -167,9 +167,11 @@ class DatabaseManager:
                 
                 if self.client and self.is_connected:
                     # Ping database to check connection
+                    # Use longer timeout during mining operations to account for system load
+                    timeout_duration = 15.0 if hasattr(self, '_mining_active') and self._mining_active else 5.0
                     await asyncio.wait_for(
                         self.client.admin.command('ping'), 
-                        timeout=5.0
+                        timeout=timeout_duration
                     )
                     logger.debug("💗 Database heartbeat OK")
                 else:

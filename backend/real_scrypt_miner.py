@@ -395,11 +395,17 @@ class RealScryptMiner:
         self.hash_count = 0
         self.thread_count = 1
         self.mining_threads = []
+        self.intensity_percent = 100
         
     def set_thread_count(self, threads: int):
         """Set the number of mining threads"""
         self.thread_count = max(1, threads)
         logger.info(f"🧵 Set thread count to: {self.thread_count}")
+    
+    def set_intensity(self, percent: int):
+        """Set mining intensity (0-100) for throttling CPU usage"""
+        self.intensity_percent = max(0, min(100, int(percent)))
+        logger.info(f"⚙️ Real miner intensity set to {self.intensity_percent}%")
         
     def create_block_header(self, work: Dict, extranonce2: str, ntime: str, nonce: int) -> bytes:
         """Create proper block header for scrypt hashing"""

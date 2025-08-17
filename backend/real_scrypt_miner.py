@@ -12,6 +12,7 @@ import threading
 import asyncio
 import base64
 import binascii
+import scrypt  # High-performance scrypt library
 from typing import Dict, List, Optional, Any, Tuple
 import logging
 

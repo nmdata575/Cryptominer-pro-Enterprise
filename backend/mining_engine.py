@@ -958,9 +958,11 @@ class EnterpriseScryptMiner:
                 stats_dict.update({
                     'hashrate': real_stats.get('hashrate', 0),
                     'accepted_shares': real_stats.get('shares_accepted', 0),
+                    'rejected_shares': real_stats.get('shares_found', 0) - real_stats.get('shares_accepted', 0),
                     'blocks_found': real_stats.get('shares_found', 0),
                     'uptime': time.time() - (getattr(self, 'start_time', time.time())),
-                    'active_threads': 4 if self.is_mining else 0
+                    'active_threads': real_stats.get('active_threads', 0),
+                    'total_threads': real_stats.get('total_threads', 1)
                 })
             except Exception as e:
                 logger.debug(f"Could not get real miner stats: {e}")

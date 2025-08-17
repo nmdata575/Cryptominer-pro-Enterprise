@@ -199,16 +199,28 @@ python3 cryptominer.py --config doge-office.json
 
 ## 🚨 Troubleshooting
 
-### Mining Won't Start
+### Common Issues
+
+**"ModuleNotFoundError: No module named 'psutil'"**
 ```bash
-# Check available coins
-python3 cryptominer.py --list-coins
+# Install required dependencies
+cd backend
+pip install -r requirements.txt
 
-# Validate configuration
-python3 cryptominer.py --setup
+# Or install specific missing module
+pip install psutil fastapi uvicorn numpy scikit-learn
+```
 
-# Enable verbose logging
-python3 cryptominer.py --verbose --coin LTC --wallet ADDRESS --pool POOL
+**Application won't start:**
+```bash
+# Ensure virtual environment is activated
+cd backend && source venv/bin/activate && cd ..
+
+# Check for missing dependencies
+pip install -r backend/requirements.txt
+
+# Run with verbose logging
+python3 cryptominer.py --verbose
 ```
 
 ### Low Hashrate

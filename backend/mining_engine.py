@@ -845,7 +845,7 @@ class EnterpriseScryptMiner:
         mining_type = "pool" if pool_address else "solo"
         return True, f"Enterprise {mining_type} mining started with {threads:,} threads"
     
-    def _start_real_pool_mining(self, pool_host: str, pool_port: int, wallet_address: str, coin_config: CoinConfig):
+    def _start_real_pool_mining(self, pool_host: str, pool_port: int, wallet_address: str, coin_config: CoinConfig, threads: int = 1):
         """Start real Stratum pool mining - cgminer compatible"""
         try:
             import asyncio
@@ -860,12 +860,16 @@ class EnterpriseScryptMiner:
             # Create real miner instance and store reference
             self.real_miner = RealScryptMiner()
             
+            # Set thread count for the real miner
+            self.real_miner.set_thread_count(threads)
+            
             # Prepare username format: wallet_address.worker_name
             worker_name = f"CryptoMiner-V30-{int(time.time())}"
             username = f"{wallet_address}.{worker_name}"
             
             logger.info(f"🚀 Connecting to {coin_config.name} pool: {pool_host}:{pool_port}")
             logger.info(f"👤 Worker: {username}")
+            logger.info(f"🧵 Threads: {threads}")
             logger.info(f"🔧 Algorithm: {coin_config.algorithm} (N={coin_config.scrypt_params.get('n', 1024)})")
             
             # Update our mining status

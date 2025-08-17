@@ -685,13 +685,13 @@ if __name__ == "__main__":
         print("\n🔍 Testing Scrypt Algorithm with Litecoin parameters:")
         
         test_data = b"test block header data for scrypt mining"
-        scrypt_result = ScryptAlgorithm.scrypt_hash(
+        scrypt_result = scrypt.hash(
             password=test_data,
             salt=test_data,
             N=1024,  # Litecoin parameters
             r=1,
             p=1,
-            dk_len=32
+            buflen=32
         )
         
         print(f"✅ Scrypt hash: {scrypt_result.hex()}")

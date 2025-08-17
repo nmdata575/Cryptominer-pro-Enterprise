@@ -255,6 +255,18 @@ test_plan:
         agent: "testing"
         comment: "Both password and mining intensity features are properly integrated. Example configuration file includes both new fields (pool_password: 'x', mining_intensity: 100). Command line parsing supports both arguments simultaneously. Interactive setup includes prompts for both features. Mining engine processes both parameters correctly."
 
+  - task: "Mining Intensity Web Interface Display"
+    implemented: false
+    working: false
+    file: "cryptominer.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL MISSING FEATURE: Mining intensity is not displayed in the web interface. Testing with --intensity 75 confirmed that while the terminal shows '⚡ Intensity: 75%', the web interface at http://localhost:8080 has no intensity information. Root cause: (1) Mining engine's get_mining_status() method doesn't include intensity in returned data, (2) Web interface HTML template lacks intensity display elements, (3) JavaScript code doesn't process intensity data. The web interface only shows 4 cards (Hashrate, System, Stats, Runtime) but needs a 5th card or integration of intensity info into existing cards."
+
 agent_communication:
   - agent: "testing"
     message: "Comprehensive backend testing completed successfully. All 9 test cases passed with 100% success rate. CryptoMiner Pro V30 terminal application is fully functional with all core features working correctly including enterprise mining engine (250,000+ thread capability), AI system, utility functions, configuration handling, and command-line interface. Additional verification confirmed: Enterprise features enabled (250,000 max threads), coin presets loaded correctly (LTC, DOGE, FTC with proper Scrypt parameters N=1024, r=1, p=1), wallet validation working for all supported formats, and example configuration file is valid and properly structured."

@@ -398,6 +398,14 @@ ws.onmessage = function(event) {{
             intensity === 100 ? 'Full CPU' : intensity >= 75 ? 'High CPU' : 
             intensity >= 50 ? 'Medium CPU' : intensity >= 25 ? 'Low CPU' : 'Very Low CPU';
         
+        // Update AI learning progress
+        const aiLearning = data.data.ai_learning_progress || 0;
+        const aiOptimization = data.data.ai_optimization_score || 0;
+        document.getElementById('ai-learning').textContent = aiLearning.toFixed(1) + '%';
+        document.getElementById('ai-desc').textContent = 
+            aiOptimization > 80 ? 'Highly Optimized' : aiOptimization > 60 ? 'Well Optimized' : 
+            aiOptimization > 40 ? 'Optimizing' : aiOptimization > 20 ? 'Learning' : 'Starting';
+        
         const runtime = Math.floor((new Date() - startTime) / 1000);
         const hours = Math.floor(runtime / 3600);
         const minutes = Math.floor((runtime % 3600) / 60);

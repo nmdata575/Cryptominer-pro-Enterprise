@@ -64,8 +64,16 @@ enterprise_licenses.json
 *.crt
 *.p12
 
+# Legacy service files (no longer used)
+install.sh
+uninstall.sh
+mine.py
+web_monitor.py
+start_mining.sh
+TERMINAL_README.md
+CONVERSION_SUMMARY.md
+
 # Testing
-test_result.md
 backend_diagnostic_test.py
 *_test_*.log
 

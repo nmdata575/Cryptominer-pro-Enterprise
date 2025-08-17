@@ -174,10 +174,13 @@ class StratumClient:
                 # Handle authorization response
                 if response.get('id') == self.message_id and response.get('result') == True:
                     auth_success = True
+                    logger.info(f"✅ Authorization successful on attempt {attempt + 1}")
                     break
                 elif response.get('id') == self.message_id:
-                    logger.error(f"Authorization failed: {response}")
+                    logger.error(f"❌ Authorization failed on attempt {attempt + 1}: {response}")
                     break
+                else:
+                    logger.debug(f"Received other message during auth: {response.get('method', 'unknown')}")
             
             if auth_success:
                 self.connected = True
@@ -185,11 +188,11 @@ class StratumClient:
                 if not self.target:
                     self.target = self._difficulty_to_target(self.difficulty)
                 logger.info(f"✅ Authorized with pool as {username}")
-                logger.info(f"🎯 Current difficulty: {self.difficulty}")
-                logger.info(f"🎯 Current target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
+                logger.info(f"🎯 Final difficulty: {self.difficulty}")
+                logger.info(f"🎯 Final target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
                 return True
             else:
-                logger.error(f"❌ Authorization timeout or failed")
+                logger.error(f"❌ Authorization timeout after {max_attempts} attempts ({max_attempts * 5}s)")
                 return False
                 
         except Exception as e:

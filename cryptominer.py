@@ -387,12 +387,17 @@ body {{ font-family: Arial; background: linear-gradient(135deg, #1e3c72, #2a5298
 .header {{ text-align: center; margin-bottom: 30px; padding: 20px; 
            background: rgba(255,255,255,0.1); border-radius: 15px; }}
 .header h1 {{ font-size: 2.5rem; margin-bottom: 10px; }}
+.header-actions {{ margin-top: 10px; }}
 .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
           gap: 20px; }}
 .stat-card {{ background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; }}
 .stat-value {{ font-size: 2rem; font-weight: bold; color: #4CAF50; }}
 .status {{ display: inline-block; width: 10px; height: 10px; border-radius: 50%; 
            margin-right: 8px; background: #4CAF50; animation: pulse 2s infinite; }}
+.status.disconnected {{ background: #ff5252; animation: none; }}
+.btn {{ background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer; }}
+.btn:hover {{ background: rgba(255,255,255,0.25); }}
+.range {{ width: 200px; }}
 @keyframes pulse {{ 0%{{opacity:1}} 50%{{opacity:0.5}} 100%{{opacity:1}} }}
 </style></head>
 <body>

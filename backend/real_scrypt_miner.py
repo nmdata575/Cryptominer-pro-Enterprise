@@ -125,18 +125,27 @@ class StratumClient:
                 logger.info(f"Subscribed to pool: extranonce1={self.extranonce1}")
                 # Defer any difficulty suggestion until after successful authorization
             
+            # If password looks like difficulty, use 'x' to authorize and remember requested difficulty
+            post_auth_diff = None
+            auth_pw = auth_password
+            if password and (password.startswith('d=') or password.replace('.', '').isdigit()):
+                post_auth_diff = requested_difficulty if requested_difficulty else 16
+                auth_pw = 'x'
+                logger.info(f"Using 'x' for authorization; will request difficulty {post_auth_diff} after auth")
+            
             # Send mining.authorize
             self.message_id += 1
             authorize_msg = {
                 "id": self.message_id,
                 "method": "mining.authorize",
-                "params": [username, auth_password]
+                "params": [username, auth_pw]
             }
             self._send_message(authorize_msg)
             self._pending_auth_ids.add(self.message_id)
             
             # Wait for authorization response (may receive difficulty updates or notify first)
             auth_success = False
+            
             max_seconds = 120  # allow up to 2 minutes for auth on some pools
             start_wait = time.time()
             last_auth_send = start_wait

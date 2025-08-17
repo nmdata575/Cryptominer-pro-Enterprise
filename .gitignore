@@ -26,16 +26,12 @@ yarn-error.log*
 .yarn/install-state.gz
 .pnp.*
 
-# React Build
-/frontend/build/
-.DS_Store
-
 # Logs
 *.log
 logs/
-/var/log/supervisor/
-backend.*.log
-frontend.*.log
+
+# Mining logs (can be regenerated)
+mining.log
 
 # Database
 *.db

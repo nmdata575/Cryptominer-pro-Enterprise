@@ -218,6 +218,18 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+  - task: "Graceful Shutdown on Ctrl+C for Miner and Web Monitor"
+    implemented: true
+    working: true
+    file: "cryptominer.py, backend/real_scrypt_miner.py, backend/mining_engine.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ GRACEFUL SHUTDOWN TESTING COMPLETED: Comprehensive verification of shutdown behavior successfully completed. Key findings: (1) Signal Handling: SIGINT (Ctrl+C) properly handled with graceful shutdown message 'Stopping mining (press Ctrl+C again to force exit)', (2) Process Termination: Application exits gracefully within 2-3 seconds after first SIGINT, second SIGINT provides force exit as designed, (3) Socket Cleanup: StratumClient.close() method properly sets shutting_down=True flag and closes sockets without raising exceptions, (4) Thread Management: Mining threads stop cleanly, real_scrypt_miner.stop_mining() waits for thread completion with timeout, (5) Web Monitor: Web monitoring server stops without raising exceptions, WebSocket connections cleared properly, (6) Error Suppression: Socket errors during shutdown are properly suppressed when shutting_down flag is set, _receive_message() method checks flag before logging errors, (7) Historical Issues: Previous logs showed 'Bad file descriptor' and 'file descriptor cannot be a negative integer (-1)' errors, but current implementation handles these gracefully, (8) Resource Cleanup: All mining threads stopped, pool connections closed, thread pools cleaned up properly. Testing confirmed that while historical logs contained socket errors during shutdown, the current implementation with the shutting_down flag properly suppresses these errors and provides clean shutdown behavior. The graceful shutdown mechanism is working correctly with proper signal handling, resource cleanup, and error suppression."
+
   - task: "Password Option Features"
     implemented: true
     working: true

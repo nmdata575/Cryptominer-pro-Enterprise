@@ -194,17 +194,41 @@ class StratumClient:
                 "params": [username, password]
             }
             self._send_message(authorize_msg)
-            response = self._receive_message()
             
-            if response and response.get('result') == True:
+            # Wait for authorization response (may receive difficulty updates first)
+            auth_success = False
+            max_attempts = 10
+            for attempt in range(max_attempts):
+                response = self._receive_message(timeout=3.0)
+                if not response:
+                    continue
+                
+                # Handle mining.set_difficulty messages that come before auth response
+                if response.get('method') == 'mining.set_difficulty':
+                    new_difficulty = response['params'][0]
+                    self.difficulty = new_difficulty
+                    self.target = self._difficulty_to_target(self.difficulty)
+                    logger.info(f"Pool difficulty set to: {self.difficulty}")
+                    continue
+                
+                # Handle authorization response
+                if response.get('id') == self.message_id and response.get('result') == True:
+                    auth_success = True
+                    break
+                elif response.get('id') == self.message_id:
+                    logger.error(f"Authorization failed: {response}")
+                    break
+            
+            if auth_success:
                 self.connected = True
-                # Initialize target from default difficulty
-                self.target = self._difficulty_to_target(self.difficulty)
-                logger.info(f"Authorized with pool as {username}")
-                logger.info(f"Initial difficulty: {self.difficulty}, Target: {self.target.hex()[:16]}...")
+                # Initialize target if not already set by difficulty message
+                if not self.target:
+                    self.target = self._difficulty_to_target(self.difficulty)
+                logger.info(f"✅ Authorized with pool as {username}")
+                logger.info(f"Pool difficulty: {self.difficulty}")
                 return True
             else:
-                logger.error(f"Authorization failed: {response}")
+                logger.error(f"❌ Authorization timeout or failed")
                 return False
                 
         except Exception as e:

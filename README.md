@@ -223,7 +223,17 @@ pip install -r backend/requirements.txt
 python3 cryptominer.py --verbose
 ```
 
-### Low Hashrate
+### Mining Won't Start
+```bash
+# Check available coins
+python3 cryptominer.py --list-coins
+
+# Validate configuration
+python3 cryptominer.py --setup
+
+# Enable verbose logging
+python3 cryptominer.py --verbose --coin LTC --wallet ADDRESS --pool POOL
+```
 - Check CPU temperature and thermal throttling
 - Reduce thread count if system is overloaded
 - Ensure pool connectivity is stable

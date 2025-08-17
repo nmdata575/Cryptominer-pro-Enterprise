@@ -272,12 +272,19 @@ The application is built on proven enterprise components in a simplified structu
 
 ## 🔄 Migration from Service-Based Version
 
-If you're upgrading from the complex service-based version:
+If you're upgrading from the previous complex service-based version:
 
 1. **Backup Configurations** - Export any saved pool configurations
-2. **Stop Old Services** - `sudo supervisorctl stop all`
-3. **Use New Application** - Run `python3 cryptominer.py --setup`
-4. **Enjoy Simplicity** - No more service management!
+2. **Stop Old Services** (if still running) - `sudo supervisorctl stop all`
+3. **Clean Setup** - The new version has already removed old service files
+4. **Use New Application** - Run `python3 cryptominer.py --setup`
+5. **Enjoy Simplicity** - No more service management needed!
+
+### What Changed
+- ✅ **Single executable** - No more separate backend/frontend services
+- ✅ **Simplified setup** - No supervisor, MongoDB, or service management
+- ✅ **Same features** - All original mining capabilities preserved
+- ✅ **Better reliability** - Fewer components mean fewer failure points
 
 ## 📜 License
 

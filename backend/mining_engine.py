@@ -823,7 +823,7 @@ class EnterpriseScryptMiner:
             logger.info(f"🌐 Starting REAL Stratum pool mining: {pool_address}:{pool_port}")
             self.mining_thread = threading.Thread(
                 target=self._start_real_pool_mining,
-                args=(pool_address, pool_port, wallet_address, coin_config),
+                args=(pool_address, pool_port, wallet_address, coin_config, threads),
                 daemon=False,
                 name="real_stratum_mining"
             )

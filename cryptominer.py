@@ -169,7 +169,7 @@ class CompactMiner:
         self.config['threads'] = int(threads) if threads else max_threads // 2
         
         # Mining intensity
-        intensity = input("⚡ Mining intensity 0-100% (default: 100): ").strip()
+        intensity = input("⚡ Mining intensity 0-100 percent (default: 100): ").strip()
         self.config['mining_intensity'] = int(intensity) if intensity and intensity.isdigit() and 0 <= int(intensity) <= 100 else 100
         
         # Web monitoring

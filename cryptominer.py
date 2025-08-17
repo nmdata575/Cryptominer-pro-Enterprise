@@ -505,11 +505,13 @@ def main():
                 'wallet_address': args.wallet,
                 'mode': 'pool' if args.pool else 'solo',
                 'threads': args.threads or coin_data.get('default_threads', 8),
+                'mining_intensity': max(0, min(100, args.intensity)),
                 'web_port': args.web_port
             }
             
             if args.pool:
                 miner.config['pool_address'] = args.pool
+                miner.config['pool_password'] = args.password
                 
         # Check config
         if not miner.config:

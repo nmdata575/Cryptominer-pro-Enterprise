@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test CryptoMiner Web Interface</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>CryptoMiner Pro V30 Web Interface Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testWebInterface() {
+            const results = document.getElementById('results');
+            
+            // Test 1: Check if page loads
+            try {
+                const response = await fetch('http://localhost:8080');
+                const html = await response.text();
+                
+                if (html.includes('CryptoMiner Pro V30')) {
+                    results.innerHTML += '<div class="test-result pass">✅ Page loads with correct title</div>';
+                } else {
+                    results.innerHTML += '<div class="test-result fail">❌ Page title incorrect</div>';
+                }
+                
+                // Test 2: Check for 5 cards
+                const cardMatches = html.match(/<div class="stat-card">/g);
+                if (cardMatches && cardMatches.length === 5) {
+                    results.innerHTML += '<div class="test-result pass">✅ All 5 statistics cards present</div>';
+                } else {
+                    results.innerHTML += '<div class="test-result fail">❌ Expected 5 cards, found ' + (cardMatches ? cardMatches.length : 0) + '</div>';
+                }
+                
+                // Test 3: Check for Intensity card
+                if (html.includes('⚙️ Intensity')) {
+                    results.innerHTML += '<div class="test-result pass">✅ Intensity card present</div>';
+                } else {
+                    results.innerHTML += '<div class="test-result fail">❌ Intensity card missing</div>';
+                }
+                
+                // Test 4: Check for intensity JavaScript logic
+                if (html.includes('High CPU') && html.includes('mining_intensity')) {
+                    results.innerHTML += '<div class="test-result pass">✅ Intensity JavaScript logic present</div>';
+                } else {
+                    results.innerHTML += '<div class="test-result fail">❌ Intensity JavaScript logic missing</div>';
+                }
+                
+                // Test 5: Test WebSocket endpoint
+                try {
+                    const ws = new WebSocket('ws://localhost:8080/ws');
+                    ws.onopen = function() {
+                        results.innerHTML += '<div class="test-result pass">✅ WebSocket connection successful</div>';
+                    };
+                    ws.onmessage = function(event) {
+                        const data = JSON.parse(event.data);
+                        if (data.data && data.data.mining_intensity !== undefined) {
+                            results.innerHTML += '<div class="test-result pass">✅ WebSocket sends mining_intensity: ' + data.data.mining_intensity + '%</div>';
+                            
+                            // Check if it's 75% as expected
+                            if (data.data.mining_intensity === 75) {
+                                results.innerHTML += '<div class="test-result pass">✅ Mining intensity is correctly set to 75%</div>';
+                            } else {
+                                results.innerHTML += '<div class="test-result fail">❌ Expected 75% intensity, got ' + data.data.mining_intensity + '%</div>';
+                            }
+                        } else {
+                            results.innerHTML += '<div class="test-result fail">❌ WebSocket does not send mining_intensity</div>';
+                        }
+                        ws.close();
+                    };
+                    ws.onerror = function() {
+                        results.innerHTML += '<div class="test-result fail">❌ WebSocket connection failed</div>';
+                    };
+                } catch (e) {
+                    results.innerHTML += '<div class="test-result fail">❌ WebSocket test error: ' + e.message + '</div>';
+                }
+                
+            } catch (error) {
+                results.innerHTML += '<div class="test-result fail">❌ Failed to load page: ' + error.message + '</div>';
+            }
+        }
+        
+        // Run tests when page loads
+        window.onload = testWebInterface;
+    </script>
+</body>
+</html>

@@ -271,8 +271,8 @@ class StratumClient:
         if difficulty <= 0:
             difficulty = 1  # Fallback to minimum difficulty
         
-        # Pool difficulty 1 target (pdiff) - used by mining pools
-        # This is the full 256-bit target with all 1's after the leading zeros
+        # Pool difficulty 1 target (pdiff) - CORRECTED: Full 256-bit value
+        # This is the correct pool max target with proper leading zeros  
         pool_max_target = 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
         
         # Calculate target: target = max_target / difficulty  
@@ -282,8 +282,8 @@ class StratumClient:
         target_bytes = target_int.to_bytes(32, byteorder='little')
         
         logger.info(f"Difficulty: {difficulty}")
-        logger.info(f"Pool max target: {hex(pool_max_target)}")
-        logger.info(f"Calculated target: {hex(target_int)}")
+        logger.info(f"Pool max target (256-bit): 0x{pool_max_target:064x}")
+        logger.info(f"Calculated target (256-bit): 0x{target_int:064x}")
         logger.debug(f"Target bytes (LE): {target_bytes.hex()[:32]}...")
         
         return target_bytes

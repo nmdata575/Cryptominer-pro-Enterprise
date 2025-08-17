@@ -16,14 +16,29 @@ A powerful, reliable terminal-based cryptocurrency miner with enterprise feature
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Prerequisites & Installation
+
+**Important**: Install dependencies before running the application.
+
 ```bash
-# Python 3.9+ and virtual environment
+# Ensure Python 3.9+ is installed
+python3 --version
+
+# Install dependencies (recommended: use virtual environment)
 cd backend
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cd ..
+
+# Test installation
+python3 cryptominer.py --help
+```
+
+**Quick Install (Alternative)**:
+```bash
+# Install system-wide (if virtual environment not preferred)
+pip3 install -r backend/requirements.txt
 ```
 
 ### Interactive Setup (Recommended)

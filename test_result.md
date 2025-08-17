@@ -212,11 +212,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Password Option Features"
-    - "Mining Intensity Features" 
-    - "New Features Integration"
-  stuck_tasks: []
-  test_all: true
+    - "Mining Intensity Web Interface Display"
+  stuck_tasks:
+    - "Mining Intensity Web Interface Display"
+  test_all: false
   test_priority: "high_first"
 
   - task: "Password Option Features"

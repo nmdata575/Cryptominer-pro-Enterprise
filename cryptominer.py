@@ -223,7 +223,7 @@ class CompactMiner:
                 # Start AI system for learning and optimization
                 if self.ai_system:
                     try:
-                        self.ai_system.start()
+                        self.ai_system.start_ai_system()
                         logger.info("🤖 AI system started for optimization")
                     except Exception as e:
                         logger.warning(f"⚠️ AI system failed to start: {e}")

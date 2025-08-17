@@ -177,9 +177,10 @@ Configuration is stored in JSON format for easy management and sharing.
 
 ### Optimization Tips
 1. **Use Interactive Setup** - Automatically detects optimal settings
-2. **Monitor System Temperature** - Ensure adequate cooling
-3. **Choose Low-Latency Pools** - Better for share submission efficiency
-4. **Regular Monitoring** - Use web dashboard for real-time stats
+2. **Adjust Mining Intensity** - Balance performance vs system responsiveness
+3. **Monitor System Temperature** - Ensure adequate cooling
+4. **Choose Low-Latency Pools** - Better for share submission efficiency
+5. **Regular Monitoring** - Use web dashboard for real-time stats
 
 ## 🔧 Advanced Usage
 

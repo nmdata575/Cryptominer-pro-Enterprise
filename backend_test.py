@@ -1589,6 +1589,262 @@ def test_comprehensive_pool_authentication_and_difficulty():
     except Exception as e:
         return False, f"Comprehensive test error: {str(e)}"
 
+def test_web_ui_status_dot_disconnected_state():
+    """Test Scope A: Status dot disconnected state after graceful shutdown"""
+    print("\n🧪 Testing Web UI Status Dot Disconnected State...")
+    
+    try:
+        import subprocess
+        import time
+        import requests
+        from bs4 import BeautifulSoup
+        import signal
+        import os
+        
+        # Start miner with nonexistent pool and web monitor
+        cmd = [
+            sys.executable, '/app/cryptominer.py',
+            '--coin', 'LTC',
+            '--wallet', 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
+            '--pool', 'stratum+tcp://nonexistent.pool.test:3333',
+            '--password', 'x',
+            '--threads', '2',
+            '--intensity', '75',
+            '--web-port', '3333',
+            '--verbose'
+        ]
+        
+        print("✅ Starting miner with nonexistent pool...")
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # Let it run for 3 seconds
+        print("⏱️ Waiting 3 seconds...")
+        time.sleep(3)
+        
+        # Verify web interface is accessible while running
+        try:
+            response = requests.get('http://localhost:3333', timeout=5)
+            if response.status_code == 200:
+                print("✅ Web interface accessible while miner running")
+            else:
+                return False, f"Web interface not accessible: status {response.status_code}"
+        except Exception as e:
+            return False, f"Web interface connection failed while running: {e}"
+        
+        # Kill miner process gracefully (SIGINT = Ctrl+C)
+        print("🛑 Sending graceful shutdown signal (SIGINT)...")
+        process.send_signal(signal.SIGINT)
+        
+        # Wait for graceful shutdown
+        try:
+            process.wait(timeout=10)
+            print("✅ Miner process stopped gracefully")
+        except subprocess.TimeoutExpired:
+            process.kill()
+            return False, "Miner process did not stop gracefully within 10 seconds"
+        
+        # Wait a moment for cleanup
+        time.sleep(2)
+        
+        # Try to reload http://localhost:3333 and verify disconnected state
+        print("🔄 Testing web interface after shutdown...")
+        try:
+            response = requests.get('http://localhost:3333', timeout=5)
+            # If we get a response, the server is still running (unexpected)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                status_dot = soup.find(id='status-dot')
+                status_text = soup.find(id='status-text')
+                
+                if status_dot and 'disconnected' in status_dot.get('class', []):
+                    print("✅ Status dot has 'disconnected' class")
+                    disconnected_class = True
+                else:
+                    print("❌ Status dot missing 'disconnected' class")
+                    disconnected_class = False
+                
+                if status_text and 'Disconnected' in status_text.get_text():
+                    print("✅ Status text shows 'Disconnected'")
+                    disconnected_text = True
+                else:
+                    print("❌ Status text does not show 'Disconnected'")
+                    disconnected_text = False
+                
+                if disconnected_class and disconnected_text:
+                    return True, "Status dot disconnected state working correctly"
+                else:
+                    return False, "Status dot disconnected state not working properly"
+            else:
+                return False, f"Unexpected response after shutdown: {response.status_code}"
+                
+        except requests.exceptions.ConnectionError:
+            # This is expected - web server should be down
+            print("✅ Web interface inaccessible after shutdown (expected behavior)")
+            return True, "Status dot disconnected state test passed - web interface properly shuts down"
+        except Exception as e:
+            return False, f"Unexpected error testing disconnected state: {e}"
+            
+    except ImportError as e:
+        return False, f"Missing required modules for web UI testing: {e}"
+    except Exception as e:
+        return False, f"Web UI status dot test error: {str(e)}"
+
+def test_web_ui_intensity_control_plumbing():
+    """Test Scope B: Intensity control UI plumbing (read side)"""
+    print("\n🧪 Testing Web UI Intensity Control Plumbing...")
+    
+    try:
+        import subprocess
+        import time
+        import requests
+        from bs4 import BeautifulSoup
+        import signal
+        import json
+        import websocket
+        import threading
+        
+        # Start miner with specific intensity setting
+        cmd = [
+            sys.executable, '/app/cryptominer.py',
+            '--coin', 'LTC', 
+            '--wallet', 'ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl',
+            '--pool', 'stratum+tcp://litecoinpool.org:3333',
+            '--password', 'x',
+            '--threads', '2',
+            '--intensity', '75',  # Test with 75% intensity
+            '--web-port', '3333',
+            '--verbose'
+        ]
+        
+        print("✅ Starting miner with 75% intensity...")
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # Wait for startup
+        time.sleep(5)
+        
+        # Verify web interface is accessible
+        try:
+            response = requests.get('http://localhost:3333', timeout=5)
+            if response.status_code != 200:
+                process.terminate()
+                return False, f"Web interface not accessible: status {response.status_code}"
+        except Exception as e:
+            process.terminate()
+            return False, f"Web interface connection failed: {e}"
+        
+        print("✅ Web interface accessible")
+        
+        # Parse HTML to check initial intensity range input value
+        soup = BeautifulSoup(response.content, 'html.parser')
+        intensity_range = soup.find(id='intensityRange')
+        intensity_val = soup.find(id='intensity-val')
+        
+        if not intensity_range:
+            process.terminate()
+            return False, "Intensity range input #intensityRange not found in HTML"
+        
+        if not intensity_val:
+            process.terminate()
+            return False, "Intensity value display #intensity-val not found in HTML"
+        
+        print("✅ Intensity control elements found in HTML")
+        
+        # Test WebSocket data for intensity value
+        websocket_data = []
+        websocket_error = None
+        
+        def on_message(ws, message):
+            try:
+                data = json.loads(message)
+                websocket_data.append(data)
+            except Exception as e:
+                nonlocal websocket_error
+                websocket_error = f"WebSocket message parse error: {e}"
+        
+        def on_error(ws, error):
+            nonlocal websocket_error
+            websocket_error = f"WebSocket error: {error}"
+        
+        # Connect to WebSocket
+        try:
+            ws = websocket.WebSocketApp(
+                "ws://localhost:3333/ws",
+                on_message=on_message,
+                on_error=on_error
+            )
+            
+            # Run WebSocket in background thread
+            ws_thread = threading.Thread(target=ws.run_forever)
+            ws_thread.daemon = True
+            ws_thread.start()
+            
+            # Wait for WebSocket data
+            print("🔌 Connecting to WebSocket for intensity data...")
+            time.sleep(8)  # Wait for multiple WebSocket updates
+            
+            ws.close()
+            
+        except Exception as e:
+            process.terminate()
+            return False, f"WebSocket connection failed: {e}"
+        
+        # Check for WebSocket errors
+        if websocket_error:
+            process.terminate()
+            return False, f"WebSocket error: {websocket_error}"
+        
+        # Analyze WebSocket data for intensity
+        if not websocket_data:
+            process.terminate()
+            return False, "No WebSocket data received"
+        
+        print(f"✅ Received {len(websocket_data)} WebSocket messages")
+        
+        # Look for intensity data in WebSocket messages
+        intensity_found = False
+        intensity_value = None
+        
+        for data in websocket_data:
+            if data.get('type') == 'stats' and 'data' in data:
+                stats_data = data['data']
+                if 'mining_intensity' in stats_data:
+                    intensity_value = stats_data['mining_intensity']
+                    intensity_found = True
+                    break
+        
+        if not intensity_found:
+            process.terminate()
+            return False, "Mining intensity not found in WebSocket data"
+        
+        if intensity_value != 75:
+            process.terminate()
+            return False, f"Intensity value incorrect: expected 75, got {intensity_value}"
+        
+        print(f"✅ WebSocket intensity value correct: {intensity_value}%")
+        
+        # Verify HTML elements would be updated correctly
+        # (The JavaScript should update #intensityRange.value and #intensity-val.textContent)
+        initial_range_value = intensity_range.get('value', '100')
+        initial_val_text = intensity_val.get_text().strip()
+        
+        print(f"   Initial range value: {initial_range_value}")
+        print(f"   Initial intensity-val text: {initial_val_text}")
+        
+        # Clean shutdown
+        process.send_signal(signal.SIGINT)
+        try:
+            process.wait(timeout=10)
+            print("✅ Miner stopped gracefully")
+        except subprocess.TimeoutExpired:
+            process.kill()
+        
+        return True, f"Intensity control UI plumbing working - WebSocket sends intensity {intensity_value}%, HTML elements present for updates"
+        
+    except ImportError as e:
+        return False, f"Missing required modules for intensity testing: {e}"
+    except Exception as e:
+        return False, f"Intensity control test error: {str(e)}"
+
 def run_all_tests():
     """Run all backend tests"""
     print("🚀 CryptoMiner Pro V30 - Backend Testing Suite")

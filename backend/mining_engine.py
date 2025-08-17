@@ -874,8 +874,11 @@ class EnterpriseScryptMiner:
             
             # Start real pool mining with proper error handling
             try:
+                # Get password from coin config (default to "x")
+                pool_password = getattr(coin_config, 'pool_password', 'x')
+                
                 success = loop.run_until_complete(
-                    self.real_miner.start_mining(pool_host, pool_port, username, "x")
+                    self.real_miner.start_mining(pool_host, pool_port, username, pool_password)
                 )
                 
                 if success:

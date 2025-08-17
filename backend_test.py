@@ -1191,8 +1191,14 @@ def test_pool_authentication_fixes():
         if "self.username" not in submit_share_source:
             return False, "submit_share method not using self.username - authentication fix not applied"
         
-        if '"worker1"' in submit_share_source or "'worker1'" in submit_share_source:
-            return False, "submit_share method still contains hardcoded 'worker1' - authentication fix incomplete"
+        # Check for actual hardcoded worker1 usage (not in comments)
+        lines = submit_share_source.split('\n')
+        for line in lines:
+            line_stripped = line.strip()
+            if line_stripped.startswith('#'):  # Skip comment lines
+                continue
+            if '"worker1"' in line_stripped or "'worker1'" in line_stripped:
+                return False, f"submit_share method still contains hardcoded 'worker1' in code: {line_stripped}"
         
         print("✅ Share submission uses stored username instead of hardcoded 'worker1'")
         

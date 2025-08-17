@@ -1,31 +1,32 @@
 <analysis>
-The AI engineer's work on CryptoMiner Pro V30 progressed through distinct phases: initially, stabilizing and refining the existing full-stack application. This involved extensive debugging of installation/uninstallation scripts, resolving MongoDB security, supervisor configuration conflicts, path inconsistencies, and optimizing frontend performance by fixing a 5-minute data lag. The focus then shifted to addressing specific runtime errors, including a  undefined issue in saved pools, webpack build failures, and missing  arguments during mining startup. Resource contention and intermittent MongoDB disconnections under load were also tackled with caching and robust database handling. Crucially, the final phase involved a significant architectural pivot from the complex supervisor-managed full-stack app to a simplified, terminal-based mining application with optional web monitoring, streamlining operations and resolving persistent environmental issues. The current work is centered on consolidating and cleaning the codebase after this conversion.
+The previous AI engineer successfully transformed the CryptoMiner Pro V30 from a complex, supervisor-managed full-stack application into a streamlined, terminal-based mining program with optional web monitoring. Key initial efforts focused on stabilizing the original architecture, resolving installation/uninstallation script issues, MongoDB security, supervisor conflicts, and frontend data lag. The core achievement was the architectural refactor, consolidating  and  into a unified , removing old frontend/backend structures. Subsequent work involved implementing user-requested features like password and mining intensity controls, resolving persistent issues with thread management, share submission failures (Bad file descriptor), and pool authorization. Significant performance gains were achieved by replacing the custom Scrypt implementation with a much faster  library. The engineer also debugged and corrected difficulty adjustment mechanisms and connection timeouts. The current outstanding issue, observed after extensive feature integration and testing, is related to the application's graceful shutdown upon , suggesting unhandled processes or resource cleanup.
 </analysis>
 
 <product_requirements>
-The CryptoMiner Pro V30 application aims to be an enterprise-scale distributed mining platform supporting 250,000+ CPU cores, centralized database support, and remote mining rate aggregation. Initial core requirements included full GPU utilization (AMD/NVIDIA), substantial hardware, a mandatory license key system, and custom central server-to-node communication. A critical protocol fix transitioned from Scrypt to Monero (RandomX) for CPU friendliness.
+The CryptoMiner Pro V30 is designed as an enterprise-scale distributed mining platform, targeting 250,000+ CPU cores, with centralized database support and remote mining rate aggregation. Core requirements included full GPU utilization (later pivoted to CPU-friendly Monero/RandomX via Scrypt for initial implementation), substantial hardware support, a mandatory license key system, and custom server-to-node communication.
 
-Recent iterations focused on deployability and user experience, encompassing:
-*   Storing pool information and adding custom coin functionality.
-*   Developing a comprehensive, robust uninstall script.
-*   Condensing existing files and verifying all dependencies.
-*   Preparing for executable packaging.
-*   Ensuring  and  properly install all dependencies and programs, deploy to , and correctly set up MongoDB security and user accounts.
-*   Speeding up the control page's update interval from 5 minutes to 1 second.
-*   The most recent major shift involved moving to a terminal-based mining application with web monitoring for simplified operation and debugging.
+Recent development phases focused on improving deployability and user experience:
+*   Storing pool information and custom coin functionality.
+*   Developing robust installation () and uninstallation () scripts, ensuring proper dependency installation, deployment to , and secure MongoDB setup.
+*   Improving the control page's update interval from 5 minutes to 1 second.
+*   The most significant recent change was the architectural shift to a simplified, terminal-based mining application with optional web monitoring for streamlined operation and debugging.
+*   Recent feature additions include:
+    *   Adding a  option for mining pools.
+    *   Implementing a  (0-100%) control to manage CPU usage.
+    *   Displaying AI learning and optimization percentages on the web interface.
+*   Ongoing issues to address include:
+    *   Ensuring the number of threads changes correctly.
+    *   Resolving issues where shares are submitted but not accepted by pools.
+    *   Fixing authorization errors related to the password field.
+    *   Correcting pool difficulty adjustment, especially when manually set outside specific ranges.
+    *   Increasing connection timeouts for pools.
+    *   Addressing application termination behavior upon .
 </product_requirements>
 
 <key_technical_concepts>
--   **Full-stack Architecture**: React (frontend), FastAPI (backend), MongoDB.
--   **Cryptocurrency Mining**: RandomX, Scrypt, Stratum Protocol.
--   **Linux System Administration**: Bash scripting, , , yarn install v1.22.22
-info No lockfile found.
-[1/4] Resolving packages...
-[2/4] Fetching packages...
-[3/4] Linking dependencies...
-[4/4] Building fresh packages...
-success Saved lockfile.
-Done in 0.12s., 
+- **Full-stack Architecture**: React (initially), FastAPI (initially), MongoDB (initially)
+- **Cryptocurrency Mining**: Scrypt, Stratum Protocol, Hashing Algorithms, Difficulty Calculation
+- **Linux System Administration**: Bash scripting,  (initially), 
 Usage:   
   pip <command> [options]
 
@@ -101,52 +102,26 @@ General Options:
                               removed in the future.
   --resume-retries <resume_retries>
                               Maximum attempts to resume or restart an
-                              incomplete download. (default: 5).
--   **Database Management**: MongoDB (authentication, connection pooling).
--   **Web Development**: HTTP Polling, React Hooks, WebSockets (identified as missing backend support).
--   **Performance Optimization**: Caching, resource management.
+                              incomplete download. (default: 5), yarn install v1.22.22
+info No lockfile found.
+[1/4] Resolving packages...
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+[4/4] Building fresh packages...
+success Saved lockfile.
+Done in 0.05s.
+- **Python Development**: Threading, AsyncIO, Command-line parsing, Logging
+- **Web Development**: Flask/FastAPI (for web monitoring), WebSockets (planned/implied for real-time updates)
+- **Performance Optimization**: Scrypt algorithm optimization (pycryptodome, scrypt library)
 </key_technical_concepts>
 
 <code_architecture>
-The application initially followed a full-stack architecture within the  directory, managed by supervisor processes. Post-conversion, the architecture has been streamlined to a terminal-based application with optional web monitoring.
-
-**Initial (Full-Stack) Directory Structure (prior to final cleanup):**
-
+The application underwent a significant architectural transformation from a full-stack, supervisor-managed system to a consolidated, terminal-based Python application.
 
 **Post-Conversion (Simplified Terminal-based) Architecture:**
-The codebase is now being condensed, removing the separate  and  directories and the old supervisor/installation scripts in favor of a unified terminal application.
 
-*   :
-    *   **Summary**: Main FastAPI application orchestrating backend.
-    *   **Changes**: Debugged  connection, updated CORS, fixed  return for saved pools, fixed  initialization, added caching for system detection, implemented  for database resilience. *This file is slated for removal/integration into .*
-*   :
-    *   **Summary**: Core mining logic, thread management, and status retrieval.
-    *   **Changes**: Audited for performance. Confirmed efficient . Used for  initialization.
-*   :
-    *   **Summary**: Main React component managing state, API calls.
-    *   **Changes**: Overhauled polling logic (1s intervals), added visual indicators, fixed  dependencies. Added fallback for  in . *This file is slated for removal as the frontend is being replaced.*
-*   :
-    *   **Summary**: Contains advanced controls including saved pools and system capabilities.
-    *   **Changes**: Fixed  dependency loop in  which caused performance issues and Analyzing system capabilities... stuck state.
-*   :
-    *   **Summary**: Unified installation script.
-    *   **Changes**: Consolidated multiple scripts. Enhanced MongoDB setup. Fixed supervisor paths ( to ) and service names. Improved  and  for robustness. Updated virtual environment paths (). *This file is slated for removal.*
-*   :
-    *   **Summary**: Unified uninstallation script.
-    *   **Changes**: Consolidated logic, handling different paths and service names. *This file is slated for removal.*
-*    (formerly ):
-    *   **Summary**: Supervisor configuration for backend and frontend services.
-    *   **Changes**: Unified group name to , adjusted paths to , changed user to . Corrected virtual environment paths from  to . *This file is slated for removal.*
-*   :
-    *   **Summary**: Documents user problems, testing protocols, and communication.
-    *   **Changes**: Continuously updated to reflect all fixes (naming, installation script, saved pools, webpack, mining start, infinite loop, database disconnections).
-*    (New - intermediate, to be merged):
-    *   **Summary**: Main terminal application for mining, replacing the  and  supervisor services.
-    *   **Changes**: Initial creation, importing  and , parsing command-line arguments, handling mining start/stop, integrating web monitor logic.
-*    (New - intermediate, to be merged):
-    *   **Summary**: Lightweight Flask/FastAPI server for web monitoring, used by .
-    *   **Changes**: Initial creation to provide basic web interface for terminal miner.
-*   
+
+-   
 ╔══════════════════════════════════════════════════════════╗
 ║              🚀 CryptoMiner Pro V30 🚀                  ║
 ║           Compact Terminal Mining Application            ║
@@ -155,43 +130,130 @@ The codebase is now being condensed, removing the separate  and  directories and
 ║  🔗 Pool & Solo Support         📊 Web Monitoring      ║
 ╚══════════════════════════════════════════════════════════╝
         
-2025-08-17 03:48:50,803 - INFO - Max safe threads calculated: 64 (cores: 8, memory: 1.0GB)
-2025-08-17 03:48:50,803 - INFO - System detected: 8 cores, 31.3GB RAM
-2025-08-17 03:48:50,803 - INFO - Enterprise miner initialized - max threads: 250000
-2025-08-17 03:48:50,803 - INFO - ✅ Components initialized
+2025-08-17 20:29:44,573 - INFO - Max safe threads calculated: 64 (cores: 16, memory: 1.0GB)
+2025-08-17 20:29:44,573 - INFO - System detected: 16 cores, 62.7GB RAM
+2025-08-17 20:29:44,574 - INFO - Enterprise miner initialized - max threads: 250000
+2025-08-17 20:29:44,574 - INFO - ✅ Components initialized
 ⚠️  No configuration found!
 Options:
   python3 mine.py --setup           # Interactive setup
   python3 mine.py --list-coins      # Show available coins
-  python3 mine.py --coin LTC --wallet ADDRESS --pool POOL (New - current focus):
-    *   **Summary**: The consolidated main application, combining mining logic and web monitoring into a single, simpler executable.
-    *   **Changes**: Created as part of the condensation process, replacing  and .
-*    (New):
-    *   **Summary**: A simple JSON file for configuring the new  application, replacing environment variables and database for configuration.
-    *   **Changes**: Created to provide a clear, file-based configuration method.
+  python3 mine.py --coin LTC --wallet ADDRESS --pool POOL:
+    *   **Summary**: This is the new consolidated main application. It replaced  and  to create a single, directly executable mining application with integrated web monitoring. It parses command-line arguments for coin, wallet, pool, password, intensity, and threads.
+    *   **Changes**: Initial creation as part of condensation. Modified to accept  and  arguments, handle their parsing, and pass them to the mining engine. Debugged  for logging. Corrected wallet address validation. Updated to display AI learning and optimization percentages. Adjusted how 's thread count is set.
+-   :
+    *   **Summary**: Contains core mining orchestration logic, thread management, and high-level control of the mining process. It interacts with  and .
+    *   **Changes**: Modified  to accept  and  parameters. Updated  to pass  correctly to the . Incorporated logic to set 's thread count. Added  method to retrieve AI metrics.
+-   :
+    *   **Summary**: Implements the low-level Scrypt mining logic, including Stratum protocol communication, work processing, and share submission.
+    *   **Changes**: Added  and  parameters to  and . Implemented  for dynamic thread adjustment. Corrected  import and share submission () logic to fix Bad file descriptor and share rejection issues, initially using a basic  call that was then replaced with proper asynchronous share submission. Implemented the Bitcoin Wiki difficulty calculation for  and  handling. Added  to  request. Increased socket timeout from 10s to 120s. Implemented  and  Stratum messages. Refactored the core Scrypt hashing to use the  library for massive performance improvement.
+-   :
+    *   **Summary**: Manages AI-driven optimization and learning for mining performance.
+    *   **Changes**: Added  and  methods to expose AI metrics for the web interface.
+-   :
+    *   **Summary**: Lists all Python dependencies for the backend.
+    *   **Changes**: Added  and  library.
+-   :
+    *   **Summary**: Provides a template for command-line configuration, replacing previous environment variables and database-based configuration for the simplified app.
+    *   **Changes**: Initial creation.
+-   :
+    *   **Summary**: Main documentation for the project.
+    *   **Changes**: Updated to reflect the new terminal application architecture, including the  and  arguments.
+-   🚀 CryptoMiner Pro V30 - Installing Dependencies
+=================================================
+🔍 Checking Python version...
+   Python 3.11.13
+📦 Installing Python dependencies...
+🔧 Setting up virtual environment...
+🔄 Activating virtual environment...
+   Virtual environment activated
+📥 Installing requirements...
+Looking in indexes: https://pypi.org/simple, https://d33sy5i8bnduwe.cloudfront.net/simple/
+Requirement already satisfied: fastapi==0.110.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 3)) (0.110.0)
+Requirement already satisfied: uvicorn==0.27.0 in ./venv/lib/python3.11/site-packages (from uvicorn[standard]==0.27.0->-r requirements.txt (line 4)) (0.27.0)
+Requirement already satisfied: websockets==12.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 5)) (12.0)
+Requirement already satisfied: python-multipart==0.0.7 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 6)) (0.0.7)
+Requirement already satisfied: aiofiles==23.2.1 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 7)) (23.2.1)
+Requirement already satisfied: cryptography==42.0.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 10)) (42.0.0)
+Requirement already satisfied: scrypt==0.8.20 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 11)) (0.8.20)
+Requirement already satisfied: base58==2.1.1 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 12)) (2.1.1)
+Requirement already satisfied: numpy==1.26.4 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 15)) (1.26.4)
+Requirement already satisfied: scikit-learn==1.4.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 16)) (1.4.0)
+Requirement already satisfied: pandas==2.2.1 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 17)) (2.2.1)
+Requirement already satisfied: pymongo==4.6.1 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 20)) (4.6.1)
+Requirement already satisfied: motor==3.3.2 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 21)) (3.3.2)
+Requirement already satisfied: psutil==5.9.8 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 24)) (5.9.8)
+Requirement already satisfied: requests==2.31.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 25)) (2.31.0)
+Requirement already satisfied: python-dotenv==1.0.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 26)) (1.0.0)
+Requirement already satisfied: pydantic==2.6.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 27)) (2.6.0)
+Requirement already satisfied: pytest==8.0.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 30)) (8.0.0)
+Requirement already satisfied: pytest-asyncio==0.23.0 in ./venv/lib/python3.11/site-packages (from -r requirements.txt (line 31)) (0.23.0)
+Requirement already satisfied: starlette<0.37.0,>=0.36.3 in ./venv/lib/python3.11/site-packages (from fastapi==0.110.0->-r requirements.txt (line 3)) (0.36.3)
+Requirement already satisfied: typing-extensions>=4.8.0 in ./venv/lib/python3.11/site-packages (from fastapi==0.110.0->-r requirements.txt (line 3)) (4.14.1)
+Requirement already satisfied: annotated-types>=0.4.0 in ./venv/lib/python3.11/site-packages (from pydantic==2.6.0->-r requirements.txt (line 27)) (0.7.0)
+Requirement already satisfied: pydantic-core==2.16.1 in ./venv/lib/python3.11/site-packages (from pydantic==2.6.0->-r requirements.txt (line 27)) (2.16.1)
+Requirement already satisfied: click>=7.0 in ./venv/lib/python3.11/site-packages (from uvicorn==0.27.0->uvicorn[standard]==0.27.0->-r requirements.txt (line 4)) (8.2.1)
+Requirement already satisfied: h11>=0.8 in ./venv/lib/python3.11/site-packages (from uvicorn==0.27.0->uvicorn[standard]==0.27.0->-r requirements.txt (line 4)) (0.16.0)
+Requirement already satisfied: cffi>=1.12 in ./venv/lib/python3.11/site-packages (from cryptography==42.0.0->-r requirements.txt (line 10)) (1.17.1)
+Requirement already satisfied: scipy>=1.6.0 in ./venv/lib/python3.11/site-packages (from scikit-learn==1.4.0->-r requirements.txt (line 16)) (1.15.3)
+Requirement already satisfied: joblib>=1.2.0 in ./venv/lib/python3.11/site-packages (from scikit-learn==1.4.0->-r requirements.txt (line 16)) (1.5.1)
+Requirement already satisfied: threadpoolctl>=2.0.0 in ./venv/lib/python3.11/site-packages (from scikit-learn==1.4.0->-r requirements.txt (line 16)) (3.6.0)
+Requirement already satisfied: python-dateutil>=2.8.2 in ./venv/lib/python3.11/site-packages (from pandas==2.2.1->-r requirements.txt (line 17)) (2.9.0.post0)
+Requirement already satisfied: pytz>=2020.1 in ./venv/lib/python3.11/site-packages (from pandas==2.2.1->-r requirements.txt (line 17)) (2025.2)
+Requirement already satisfied: tzdata>=2022.7 in ./venv/lib/python3.11/site-packages (from pandas==2.2.1->-r requirements.txt (line 17)) (2025.2)
+Requirement already satisfied: dnspython<3.0.0,>=1.16.0 in ./venv/lib/python3.11/site-packages (from pymongo==4.6.1->-r requirements.txt (line 20)) (2.7.0)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./venv/lib/python3.11/site-packages (from requests==2.31.0->-r requirements.txt (line 25)) (3.4.2)
+Requirement already satisfied: idna<4,>=2.5 in ./venv/lib/python3.11/site-packages (from requests==2.31.0->-r requirements.txt (line 25)) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./venv/lib/python3.11/site-packages (from requests==2.31.0->-r requirements.txt (line 25)) (2.5.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./venv/lib/python3.11/site-packages (from requests==2.31.0->-r requirements.txt (line 25)) (2025.8.3)
+Requirement already satisfied: iniconfig in ./venv/lib/python3.11/site-packages (from pytest==8.0.0->-r requirements.txt (line 30)) (2.1.0)
+Requirement already satisfied: packaging in ./venv/lib/python3.11/site-packages (from pytest==8.0.0->-r requirements.txt (line 30)) (25.0)
+Requirement already satisfied: pluggy<2.0,>=1.3.0 in ./venv/lib/python3.11/site-packages (from pytest==8.0.0->-r requirements.txt (line 30)) (1.6.0)
+Requirement already satisfied: httptools>=0.5.0 in ./venv/lib/python3.11/site-packages (from uvicorn[standard]==0.27.0->-r requirements.txt (line 4)) (0.6.4)
+Requirement already satisfied: pyyaml>=5.1 in ./venv/lib/python3.11/site-packages (from uvicorn[standard]==0.27.0->-r requirements.txt (line 4)) (6.0.2)
+Requirement already satisfied: uvloop!=0.15.0,!=0.15.1,>=0.14.0 in ./venv/lib/python3.11/site-packages (from uvicorn[standard]==0.27.0->-r requirements.txt (line 4)) (0.21.0)
+Requirement already satisfied: watchfiles>=0.13 in ./venv/lib/python3.11/site-packages (from uvicorn[standard]==0.27.0->-r requirements.txt (line 4)) (1.1.0)
+Requirement already satisfied: anyio<5,>=3.4.0 in ./venv/lib/python3.11/site-packages (from starlette<0.37.0,>=0.36.3->fastapi==0.110.0->-r requirements.txt (line 3)) (3.7.1)
+Requirement already satisfied: sniffio>=1.1 in ./venv/lib/python3.11/site-packages (from anyio<5,>=3.4.0->starlette<0.37.0,>=0.36.3->fastapi==0.110.0->-r requirements.txt (line 3)) (1.3.1)
+Requirement already satisfied: pycparser in ./venv/lib/python3.11/site-packages (from cffi>=1.12->cryptography==42.0.0->-r requirements.txt (line 10)) (2.22)
+Requirement already satisfied: six>=1.5 in ./venv/lib/python3.11/site-packages (from python-dateutil>=2.8.2->pandas==2.2.1->-r requirements.txt (line 17)) (1.17.0)
+✅ Dependencies installed successfully!
 
-The shift removes the complexity of supervisor and separate frontend/backend services, moving towards a more straightforward, directly executable mining application.
+🎉 Installation complete!
+
+💡 To run the application:
+   python3 cryptominer.py --help
+   python3 cryptominer.py --setup
+
+🔧 If using virtual environment, activate it first:
+   cd backend && source venv/bin/activate && cd ..:
+    *   **Summary**: A helper script to install required Python dependencies.
+    *   **Changes**: Created to simplify dependency installation and address missing module errors.
+-   :
+    *   **Summary**: Documents the cleanup process and final state after the architectural refactor.
+    *   **Changes**: Created.
 </code_architecture>
 
 <pending_tasks>
--   Update  and other documentation to reflect the new simplified terminal application architecture.
--   Further condense the terminal program if necessary, ensuring all original features are preserved in the new .
+- Further condense the terminal program if necessary, ensuring all original features are preserved in the new . (Addressed by the current work, not explicitly pending anymore as condensation to  is largely done).
+- Address the application's behavior when  is pressed, as it seems to not close cleanly after running for a while. This implies a need for proper signal handling and resource cleanup during shutdown.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was engaged in a significant architectural refactor. The previous full-stack, supervisor-managed application was successfully converted into a simpler, more robust terminal-based mining program with optional web monitoring. This conversion involved:
-1.  **Creating **: A new main Python script () that acts as the core terminal mining application, leveraging existing backend logic (, , etc.). It supports command-line arguments for configuration (coin, wallet, pool, threads) and includes an interactive setup mode.
-2.  **Developing **: A lightweight web server () designed to provide a minimal monitoring dashboard, intended to run alongside  via WebSockets for real-time updates without requiring a full React frontend or a database.
-3.  **Refining Imports and Initialization**: Debugged and corrected various import statements and class initializations within  to correctly integrate the existing backend modules (e.g.,  vs ,  vs ).
-4.  **Creating Helper Scripts and Documentation**: Introduced  for easy startup,  for sample configurations, , and  to document the new architecture.
+Immediately before this summary request, the AI engineer was focused on resolving critical operational issues reported by the user regarding the CryptoMiner Pro V30 application. The application had undergone a major refactor from a full-stack, supervisor-managed system to a single, consolidated  terminal application with a web monitoring interface.
 
-The current activity is the subsequent **cleanup and condensation** of this newly converted system, as per the user's explicit request (cleanup the unnecessary files and condense the terminal program, update the readme.md and any other documentation). Specifically, the engineer has:
-*   Removed old service-based files and directories (, , , , supervisor configs).
-*   Consolidated  and  into a single, unified  executable.
-*   Created  for the new streamlined configuration.
-*   Started updating the main  and  files to reflect the new, simplified architecture.
+The specific issues being addressed were:
+1.  **Password Field Authorization Errors**: The user reported that using the  field resulted in authorization errors with mining pools. The engineer identified that the  in  needed to correctly pass the password during the  call. This was fixed by modifying the 's  and  to correctly send and process authentication details, specifically ensuring the username and password are part of the  request.
+2.  **Pool Difficulty Not Adjusting / Rejected Shares**: The user noted that the program wasn't reading the pool difficulty correctly, leading to hundreds of rejected shares due to low difficulty, and the difficulty would revert to 1 for certain ranges (e.g., 2400 or less, 750000 or more).
+    *   The engineer implemented a more accurate difficulty calculation based on the Bitcoin Wiki in  to ensure proper target derivation.
+    *   Further debugging revealed that pools might have hardcoded difficulty limits. The engineer added logging to show the requested difficulty versus the pool's accepted difficulty.
+    *   To improve the chance of connecting with higher starting difficulties, the connection timeout in  was increased from 10 seconds to 120 seconds.
+    *   The Stratum protocol's  method was properly utilized to communicate the desired difficulty to the pool, ensuring the miner respects the pool's acceptable range.
+    *   The  was updated with testing scenarios for different difficulty ranges, confirming the pool's limitations.
+
+The last message from the user indicates a new problem: when pressing ctrl+c to close the application, this comes up after running for a while, suggesting a graceful shutdown issue. The previous engineer had just finished fixing the difficulty adjustment and connection timeout issues and the user confirmed it's working (Chat Message 741).
 </current_work>
 
 <optional_next_step>
-Complete the update of  to fully reflect the new, condensed terminal-based application architecture and usage.
+Investigate and fix the  termination issue to ensure the application exits gracefully.
 </optional_next_step>

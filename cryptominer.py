@@ -249,7 +249,7 @@ class CompactMiner:
             # Stop AI system
             if self.ai_system:
                 try:
-                    self.ai_system.stop()
+                    self.ai_system.stop_ai_system()
                     logger.info("🤖 AI system stopped")
                 except Exception as e:
                     logger.warning(f"⚠️ AI system stop error: {e}")

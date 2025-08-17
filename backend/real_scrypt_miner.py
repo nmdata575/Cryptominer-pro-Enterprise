@@ -35,6 +35,7 @@ class StratumClient:
         self.username = None  # Store username for share submission
         self.password = None  # Store password for share submission
         self.shutting_down = False  # Graceful shutdown flag
+        self._msg_queue = []  # queue of decoded JSON messages
         
     def close(self):
         """Close socket and mark client disconnected without raising noisy errors"""

@@ -234,7 +234,7 @@ python3 cryptominer.py --setup
 # Enable verbose logging
 python3 cryptominer.py --verbose --coin LTC --wallet ADDRESS --pool POOL
 ```
-- Check CPU temperature and thermal throttling
+### Low Hashrate
 - Reduce thread count if system is overloaded
 - Ensure pool connectivity is stable
 - Use `--verbose` to check for errors

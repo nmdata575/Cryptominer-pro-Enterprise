@@ -169,49 +169,50 @@ class StratumClient:
             }
             self._send_message(authorize_msg)
             
-            # Wait for authorization response (may receive difficulty updates first)
+            # Wait for authorization response (may receive difficulty updates or notify first)
             auth_success = False
-            max_attempts = 15  # Balanced approach for higher difficulties
-            for attempt in range(max_attempts):
-                response = self._receive_message(timeout=5.0)  # 5 second timeout per message
+            max_seconds = 120  # allow up to 2 minutes for auth on some pools
+            start_wait = time.time()
+            while time.time() - start_wait < max_seconds:
+                response = self._receive_message(timeout=5.0)
                 if not response:
-                    logger.debug(f"Authorization attempt {attempt + 1}/{max_attempts}: No response")
-                    # If shutting down or socket closed, stop waiting
                     if self.shutting_down or self.socket is None:
                         break
                     continue
                 
-                # Handle mining.set_difficulty messages that come before auth response
+                # Difficulty updates
                 if response.get('method') == 'mining.set_difficulty':
                     new_difficulty = response['params'][0]
                     old_difficulty = self.difficulty
                     self.difficulty = new_difficulty
                     self.target = self._difficulty_to_target(self.difficulty)
                     logger.info(f"🎯 Pool difficulty updated during auth: {old_difficulty} → {self.difficulty}")
-                    
-                    # Check if this matches our requested difficulty
                     if requested_difficulty and abs(self.difficulty - requested_difficulty) < 0.1:
                         logger.info(f"✅ Pool accepted requested difficulty: {requested_difficulty}")
                     elif requested_difficulty:
                         logger.warning(f"⚠️ Pool set difficulty {self.difficulty} instead of requested {requested_difficulty}")
-                    
                     logger.info(f"🎯 New target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
                     continue
                 
-                # Handle authorization response
-                if response.get('id') == self.message_id and response.get('result') == True:
-                    auth_success = True
-                    logger.info(f"✅ Authorization successful on attempt {attempt + 1}")
-                    break
-                elif response.get('id') == self.message_id:
-                    logger.error(f"❌ Authorization failed on attempt {attempt + 1}: {response}")
-                    break
-                else:
-                    logger.debug(f"Received other message during auth: {response.get('method', 'unknown')}")
+                # Some pools send notify before sending a success result; accept that as auth success once any result true arrives
+                if response.get('id') == self.message_id:
+                    if response.get('result') is True:
+                        auth_success = True
+                        logger.info("✅ Authorization successful")
+                        break
+                    elif response.get('result') is False:
+                        logger.error(f"❌ Authorization failed: {response}")
+                        break
+                    else:
+                        # It might be a non-boolean result; continue reading
+                        logger.debug(f"Auth response non-boolean: {response}")
+                        continue
+                
+                # Queue unrelated messages to avoid losing them
+                self._msg_queue.append(response)
             
             if auth_success:
                 self.connected = True
-                # Initialize target if not already set by difficulty message
                 if not self.target:
                     self.target = self._difficulty_to_target(self.difficulty)
                 logger.info(f"✅ Authorized with pool as {username}")
@@ -219,7 +220,7 @@ class StratumClient:
                 logger.info(f"🎯 Final target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
                 return True
             else:
-                logger.error(f"❌ Authorization timeout after {max_attempts} attempts ({max_attempts * 5}s)")
+                logger.error(f"❌ Authorization timeout after {int(time.time() - start_wait)}s")
                 return False
                 
         except Exception as e:

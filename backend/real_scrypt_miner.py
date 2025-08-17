@@ -276,7 +276,7 @@ class StratumClient:
                 "id": self.message_id,
                 "method": "mining.submit",
                 "params": [
-                    "worker1",  # worker name
+                    self.username,  # Use stored username instead of hardcoded "worker1"
                     job_id,
                     extranonce2,
                     ntime, 

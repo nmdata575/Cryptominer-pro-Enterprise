@@ -38,9 +38,27 @@ class StratumClient:
     async def connect_to_pool(self, host: str, port: int, username: str, password: str = "x") -> bool:
         """Connect to mining pool using Stratum protocol"""
         try:
-            # Store credentials for later use
+            # Store credentials for later use and parse difficulty from password
             self.username = username
             self.password = password
+            
+            # Parse difficulty from password if specified (e.g., "d=1024" or just "1024")
+            requested_difficulty = None
+            if password and password != "x":
+                # Check for d=NUMBER format
+                if password.startswith("d="):
+                    try:
+                        requested_difficulty = float(password[2:])
+                        logger.info(f"Difficulty requested in password: {requested_difficulty}")
+                    except ValueError:
+                        pass
+                # Check if password is just a number
+                elif password.replace(".", "").isdigit():
+                    try:
+                        requested_difficulty = float(password)
+                        logger.info(f"Difficulty requested as password: {requested_difficulty}")
+                    except ValueError:
+                        pass
             
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.settimeout(30)
@@ -61,16 +79,31 @@ class StratumClient:
                 self.extranonce2_size = result[2]
                 logger.info(f"Subscribed to pool: extranonce1={self.extranonce1}")
                 
-                # Request lower difficulty for CPU mining (optional, some pools support this)
+                # Request lower difficulty for CPU mining (try multiple methods)
                 try:
                     self.message_id += 1
+                    
+                    # Method 1: Use requested difficulty from password, or default to 16
+                    target_difficulty = requested_difficulty if requested_difficulty else 16
+                    
                     suggest_diff_msg = {
                         "id": self.message_id,
                         "method": "mining.suggest_difficulty",
-                        "params": [16]  # Request difficulty 16 for CPU mining
+                        "params": [target_difficulty]
                     }
                     self._send_message(suggest_diff_msg)
-                    logger.info("Requested difficulty 16 for CPU mining")
+                    logger.info(f"Requested difficulty {target_difficulty} for CPU mining")
+                    
+                    # Method 2: Also try mining.suggest_target (some pools prefer this)
+                    self.message_id += 1
+                    suggest_target_msg = {
+                        "id": self.message_id, 
+                        "method": "mining.suggest_target",
+                        "params": [hex(int(0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF / target_difficulty))]
+                    }
+                    self._send_message(suggest_target_msg)
+                    logger.info(f"Also requested target for difficulty {target_difficulty}")
+                    
                 except Exception as e:
                     logger.debug(f"Pool may not support difficulty suggestion: {e}")
             
@@ -94,9 +127,11 @@ class StratumClient:
                 # Handle mining.set_difficulty messages that come before auth response
                 if response.get('method') == 'mining.set_difficulty':
                     new_difficulty = response['params'][0]
+                    old_difficulty = self.difficulty
                     self.difficulty = new_difficulty
                     self.target = self._difficulty_to_target(self.difficulty)
-                    logger.info(f"Pool difficulty set to: {self.difficulty}")
+                    logger.info(f"🎯 Pool difficulty updated: {old_difficulty} → {self.difficulty}")
+                    logger.info(f"🎯 New target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
                     continue
                 
                 # Handle authorization response
@@ -113,7 +148,8 @@ class StratumClient:
                 if not self.target:
                     self.target = self._difficulty_to_target(self.difficulty)
                 logger.info(f"✅ Authorized with pool as {username}")
-                logger.info(f"Pool difficulty: {self.difficulty}")
+                logger.info(f"🎯 Current difficulty: {self.difficulty}")
+                logger.info(f"🎯 Current target: {hex(int.from_bytes(self.target[:8], 'little'))[:18]}...")
                 return True
             else:
                 logger.error(f"❌ Authorization timeout or failed")

@@ -498,6 +498,10 @@ async def start_mining(config: MiningConfig):
             config.threads
         )
         
+        # Notify database manager about mining status for timeout adjustments
+        if success:
+            db_manager.set_mining_status(True)
+        
         if not success:
             raise HTTPException(status_code=500, detail=message)
         

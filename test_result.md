@@ -212,7 +212,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Mining Intensity Web Interface Display"
+    - "CryptoMiner Pro V30 Enhanced 6-Card Web Interface"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

@@ -1,394 +1,281 @@
-# CryptoMiner Pro V30 Enterprise 🚀
+# CryptoMiner Pro V30 - Terminal Edition
 
-**Advanced Cryptocurrency Mining Platform with AI Optimization & Enterprise Distributed Mining**
+## 🚀 Enterprise-Grade Terminal Mining Application
 
-[![Mining Status](https://img.shields.io/badge/Mining-Active-green.svg)](https://github.com/cryptominer-pro)
-[![Version](https://img.shields.io/badge/Version-V30-blue.svg)](https://github.com/cryptominer-pro)
-[![License](https://img.shields.io/badge/License-Enterprise-red.svg)](https://github.com/cryptominer-pro)
+A powerful, reliable terminal-based cryptocurrency miner with enterprise features, AI optimization, and optional web monitoring - all in a single compact application.
 
-## 🏆 **ACHIEVEMENT: 100% FUNCTIONAL SYSTEM** 
+### ✨ Features
 
-✅ **Real Mining Verified** - Actual share acceptance with mining pools  
-✅ **Enterprise V30 Features** - All distributed mining capabilities operational  
-✅ **AI-Powered Optimization** - Machine learning insights and recommendations  
-✅ **Consolidated Architecture** - Streamlined 13-file structure for maximum efficiency  
-✅ **100% Test Success Rate** - All 20 critical systems verified working
+- **🏢 Enterprise Mining Engine** - Supports up to 250,000 mining threads
+- **🤖 AI-Powered Optimization** - Intelligent performance tuning
+- **⚡ High-Performance Scrypt** - Optimized mining algorithms
+- **🔗 Pool & Solo Mining** - Stratum protocol support
+- **📊 Optional Web Monitor** - Real-time dashboard at http://localhost:3333
+- **🛠️ Simple Terminal Interface** - No complex service management
+- **💰 Multi-Coin Support** - Litecoin (LTC), Dogecoin (DOGE), Feathercoin (FTC)
 
----
+## 🚀 Quick Start
 
-## 🎯 **Core Features**
-
-### **Real Cryptocurrency Mining**
-- ⛏️ **cgminer-Compatible Scrypt Implementation** - Real share submission to mining pools
-- 🌐 **Stratum Protocol Support** - Compatible with major mining pools (LTC, DOGE, EFL, etc.)
-- 📊 **Share Acceptance Tracking** - Monitor actual mining performance with real pools
-- 🔄 **Continuous Mining Loop** - Sustained operation with automatic error recovery
-
-### **Enterprise V30 Capabilities**
-- 🏢 **Distributed Mining Network** - Coordinate 250,000+ CPU cores across data centers
-- 🔐 **5000 Enterprise Licenses** - Pre-generated licensing system for commercial deployment
-- 🖥️ **GPU Acceleration** - NVIDIA CUDA + AMD OpenCL simultaneous mining support
-- 📡 **Custom V30 Protocol** - Binary communication protocol for enterprise coordination
-- 🗄️ **Centralized Database** - MongoDB support for enterprise-scale data management
-
-### **AI Mining Assistant**
-- 🧠 **5 AI Insight Types** - Hash prediction, network analysis, optimization recommendations
-- 📈 **Performance Analytics** - Real-time mining efficiency analysis and suggestions
-- 🎯 **Pool Performance Analysis** - AI-driven pool recommendation system
-- ⚡ **Automatic Optimization** - Self-adjusting parameters for maximum efficiency
-
-### **Professional Web Interface**
-- 🎨 **Enterprise Dashboard** - Professional dark-themed mining interface
-- 📱 **Responsive Design** - Works perfectly on desktop, tablet, and mobile
-- 🔄 **Real-time Updates** - WebSocket-powered live statistics
-- 💾 **Saved Configurations** - Store and reuse pool configurations
-- 🏷️ **Custom Coins** - Define and mine custom Scrypt-based cryptocurrencies
-
----
-
-## 📁 **Consolidated Architecture**
-
-```
-/app/ (Optimized 13-file structure)
-├── backend/
-│   ├── server.py                 # Main FastAPI application
-│   ├── mining_engine.py          # Enterprise mining engine + real pool mining
-│   ├── enterprise_v30.py         # ALL V30 features (consolidated)
-│   ├── ai_system.py             # AI insights and optimization
-│   ├── real_scrypt_miner.py     # cgminer-compatible Scrypt implementation
-│   ├── utils.py                 # Utility functions
-│   ├── requirements.txt         # Python dependencies (optimized)
-│   └── .env                     # Backend environment variables
-├── frontend/
-│   ├── src/
-│   │   ├── App.js               # Main React application
-│   │   ├── components/
-│   │   │   ├── MiningDashboard.js    # Core mining interface
-│   │   │   ├── AIComponents.js       # AI assistant interface
-│   │   │   ├── SystemComponents.js   # System monitoring
-│   │   │   └── AdvancedComponents.js # ALL enterprise components (consolidated)
-│   │   └── styles.css           # Complete UI styling
-│   ├── package.json             # Frontend dependencies
-│   └── .env                     # Frontend environment variables
-├── v30-remote-node/             # Terminal-based remote mining application
-├── setup.sh                     # Primary installation script
-├── local-setup.sh              # User-friendly setup script  
-├── uninstall.sh                # Clean removal script
-└── README.md                   # This file
-```
-
-**Key Consolidations Completed:**
-- ✅ **Backend**: `v30_protocol.py` + `gpu_mining_engine.py` → `enterprise_v30.py`
-- ✅ **Frontend**: 4 individual components → `AdvancedComponents.js`
-- ✅ **Scripts**: 7 redundant scripts removed, keeping only essential ones
-
----
-
-## 🚀 **Quick Start**
-
-### **Installation (Ubuntu 24.04+)**
-
+### Prerequisites
 ```bash
-# Download and run the setup script
-git clone https://github.com/your-repo/cryptominer-pro-v30.git
-cd cryptominer-pro-v30
-chmod +x local-setup.sh
-./local-setup.sh
-```
-
-### **Access the Application**
-```bash
-# Frontend (Web Interface)
-http://localhost:3333
-
-# Backend API (Development)
-http://localhost:8001/docs
-```
-
-### **Start Your First Mining Session**
-1. Open the web interface
-2. Select a cryptocurrency (EFL, LTC, DOGE)
-3. Enter your wallet address
-4. Choose pool or configure custom pool
-5. Set thread count (or use enterprise presets)
-6. Click "Start Mining" and watch real-time statistics
-
----
-
-## ⚙️ **System Requirements**
-
-### **Standard Mode**
-- **OS**: Ubuntu 20.04+ (22.04/24.04 recommended)
-- **CPU**: 4+ cores
-- **Memory**: 8GB RAM
-- **Network**: Stable internet connection
-
-### **Enterprise V30 Mode**
-- **OS**: Ubuntu 24.04 LTS (required)
-- **CPU**: 32+ cores (tested up to 128 cores)
-- **Memory**: 64GB RAM (512GB recommended for data centers)
-- **Network**: 1Gbps+ (for distributed mining coordination)
-- **GPU**: NVIDIA CUDA and/or AMD OpenCL support (optional)
-
----
-
-## 🔧 **Advanced Configuration**
-
-### **Environment Variables**
-```bash
-# Backend (.env)
-MONGO_URL=mongodb://localhost:27017
-DATABASE_NAME=crypto_miner_db
-
-# Frontend (.env) 
-REACT_APP_BACKEND_URL=http://localhost:8001
-```
-
-### **Mining Configuration**
-```json
-{
-  "coin": {
-    "name": "Litecoin",
-    "symbol": "LTC", 
-    "algorithm": "Scrypt",
-    "custom_pool_address": "stratum.litecoinpool.org",
-    "custom_pool_port": 3333
-  },
-  "wallet_address": "your-ltc-address",
-  "threads": 64,
-  "mode": "pool"
-}
-```
-
----
-
-## 🔗 **Supported Cryptocurrencies**
-
-### **Pre-configured Coins**
-- **Electronic Gulden (EFL)** ⚡ - Tested with LuckyDog Pool
-- **Litecoin (LTC)** 🔥 - Compatible with major LTC pools  
-- **Dogecoin (DOGE)** 🐕 - Supports all major DOGE pools
-- **Feathercoin (FTC)** 🪶 - FTC mining pools supported
-- **Custom Scrypt Coins** 🎯 - Define your own Scrypt-based coins
-
-### **Mining Pool Compatibility**
-- ✅ Stratum protocol support
-- ✅ cgminer-compatible share submission  
-- ✅ Worker name and password customization
-- ✅ Automatic reconnection on connection loss
-- ✅ Multi-pool failover support
-
----
-
-## 🧪 **Testing & Verification**
-
-### **Current Test Results**
-- ✅ **Success Rate**: 100% (20/20 tests)
-- ✅ **Real Mining**: Verified with actual share acceptance
-- ✅ **Enterprise Features**: All V30 systems operational
-- ✅ **API Performance**: All endpoints respond <2 seconds
-- ✅ **Database Operations**: All CRUD operations functional
-
-### **Automated Test Suite**
-```bash
-# Run comprehensive backend tests
-python3 backend_test.py
-
-# Test real mining functionality
-python3 real_mining_test.py
-
-# Test pool connectivity  
-python3 pool_test.py
-```
-
----
-
-## 💡 **Usage Examples**
-
-### **Basic Mining Session**
-```bash
-# Start EFL mining with saved pool configuration
-curl -X POST http://localhost:8001/api/mining/start \
-  -H "Content-Type: application/json" \
-  -d '{
-    "coin": {"symbol": "EFL", "custom_pool_address": "stratum.luckydogpool.com", "custom_pool_port": 7026},
-    "wallet_address": "LaEni1U9jb4A38frAbjj3UHMzM6vrre8Dd",
-    "threads": 4
-  }'
-
-# Monitor mining status
-curl http://localhost:8001/api/mining/status
-
-# Stop mining  
-curl -X POST http://localhost:8001/api/mining/stop
-```
-
-### **Enterprise V30 Session**
-```bash
-# Initialize V30 system with license
-curl -X POST http://localhost:8001/api/v30/initialize \
-  -d '{"license_key":"your-enterprise-license-key"}'
-
-# Start distributed mining
-curl -X POST http://localhost:8001/api/v30/mining/distributed/start \
-  -d '{
-    "coin_config": {"name": "Litecoin", "symbol": "LTC"},
-    "wallet_address": "your-ltc-address",
-    "include_local": true
-  }'
-```
-
----
-
-## 🛠️ **Development**
-
-### **Backend Development**
-```bash
+# Python 3.9+ and virtual environment
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-python server.py
+cd ..
 ```
 
-### **Frontend Development** 
+### Interactive Setup (Recommended)
 ```bash
-cd frontend
-yarn install
-yarn start
+python3 cryptominer.py --setup
 ```
+Follow the guided setup to configure your mining operation.
 
-### **Key APIs**
-- `POST /api/mining/start` - Start mining session
-- `GET /api/mining/status` - Get real-time mining status
-- `POST /api/mining/stop` - Stop mining
-- `GET /api/v30/stats` - Enterprise V30 statistics
-- `POST /api/pools/saved` - Save pool configuration
-- `POST /api/coins/custom` - Create custom coin
-
----
-
----
-
-## 🔧 **Service Management**
-
-### **Service Control Commands**
+### Command Line Mining
 ```bash
-# Start services
-sudo supervisorctl start mining_system:backend mining_system:frontend
+# Mine Litecoin with pool
+python3 cryptominer.py --coin LTC --wallet ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl --pool stratum+tcp://litecoinpool.org:3333
 
-# Stop services  
-sudo supervisorctl stop mining_system:backend mining_system:frontend
+# Mine Dogecoin with auto-threads
+python3 cryptominer.py --coin DOGE --wallet DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L --pool stratum+tcp://dogepool.com:3333 --threads 16
 
-# Restart services
-sudo supervisorctl restart mining_system:backend mining_system:frontend
-
-# Check status
-sudo supervisorctl status mining_system:*
+# List available coins
+python3 cryptominer.py --list-coins
 ```
 
-### **Individual Service Management**
+### Using Configuration Files
 ```bash
-# Backend only
-sudo supervisorctl restart mining_system:backend
-sudo supervisorctl status mining_system:backend
+# After running --setup, just run:
+python3 cryptominer.py
 
-# Frontend only  
-sudo supervisorctl restart mining_system:frontend
-sudo supervisorctl status mining_system:frontend
+# Use specific config file
+python3 cryptominer.py --config my-setup.json
 ```
 
-### **Service Information**
-- **Backend**: Runs on http://localhost:8001 (internal)
-- **Frontend**: Runs on http://localhost:3333 (accessible)
-- **Service Group**: mining_system
-- **Configuration**: /etc/supervisor/conf.d/mining_app.conf
+## 📊 Real-Time Interface
 
----
+### Terminal Interface
+```
+╔══════════════════════════════════════════════════════════╗
+║                  MINING STATISTICS                      ║
+╠══════════════════════════════════════════════════════════╣
+║  ⏱️  Runtime: 0:15:32                                   ║
+║  ⚡ Hashrate: 1.25 MH/s                                 ║
+║  🖥️  CPU: 85.2% | Temp: 65.1°C | Threads: 16           ║
+║  ✅ Accepted: 42 | ❌ Rejected: 1 | 📊 Efficiency: 97.7% ║
+╠══════════════════════════════════════════════════════════╣
+║  📊 Web Monitor: http://localhost:3333                  ║
+║  🛑 Press Ctrl+C to stop mining                         ║
+╚══════════════════════════════════════════════════════════╝
+```
 
-## 🐛 **Troubleshooting**
+### Web Dashboard (Optional)
+- **URL:** http://localhost:3333
+- **Features:** Real-time hashrate, system stats, efficiency metrics
+- **Auto-updates:** Live WebSocket connection every 2 seconds
 
-### **Common Issues**
+## ⚙️ Command Line Options
 
-**Mining Not Starting:**
 ```bash
-# Check backend logs
-tail -f /var/log/supervisor/backend.*.log
+Usage: python3 cryptominer.py [OPTIONS]
 
-# Verify MongoDB connection
-systemctl status mongodb
+Options:
+  --setup              Interactive configuration setup
+  --config FILE        Use specific configuration file  
+  --coin SYMBOL        Coin to mine (LTC, DOGE, FTC)
+  --wallet ADDRESS     Your wallet address
+  --pool URL           Pool address (stratum+tcp://pool:port)  
+  --threads COUNT      Number of mining threads
+  --web-port PORT      Web monitor port (default: 3333, 0 to disable)
+  --list-coins         Show available cryptocurrencies
+  --verbose, -v        Enable verbose logging
+  --help              Show help message
 
-# Test pool connectivity
-python3 pool_test.py
+Examples:
+  python3 cryptominer.py --setup
+  python3 cryptominer.py --list-coins  
+  python3 cryptominer.py --coin LTC --wallet ltc1xxx... --pool stratum+tcp://pool.com:3333
+  python3 cryptominer.py --config my-ltc-config.json --web-port 8080
 ```
 
-**Frontend Not Loading:**
+## 🏊 Supported Mining Pools
+
+### Litecoin (LTC)
+- **LitecoinPool:** `stratum+tcp://litecoinpool.org:3333`
+- **LuckyMonster:** `stratum+tcp://ltc.luckymonster.pro:4112`
+- **F2Pool:** `stratum+tcp://ltc.f2pool.com:4444`
+
+### Dogecoin (DOGE)
+- **DogePool:** `stratum+tcp://dogepool.com:3333`
+- **LuckyMonster:** `stratum+tcp://doge.luckymonster.pro:4114`
+- **Aikapool:** `stratum+tcp://stratum.aikapool.com:7915`
+
+### Feathercoin (FTC)
+- **LuckyMonster:** `stratum+tcp://ftc.luckymonster.pro:4116`
+
+## 📁 Configuration Files
+
+Configuration is stored in JSON format for easy management and sharing.
+
+### Example Configuration
+```json
+{
+  "coin": {
+    "name": "Litecoin",
+    "symbol": "LTC",
+    "algorithm": "Scrypt"
+  },
+  "wallet_address": "ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl",
+  "mode": "pool",
+  "pool_address": "stratum+tcp://litecoinpool.org:3333", 
+  "threads": 16,
+  "web_port": 3333
+}
+```
+
+### Configuration Management
+- **Default:** `mining_config.json` (created by --setup)
+- **Custom:** Use `--config filename.json`
+- **Example:** See `config.example.json`
+
+## 🚀 Performance Optimization
+
+### Thread Configuration
+- **Auto-detect:** Recommended for optimal performance
+- **Manual:** Set based on your CPU cores (typically cores × 2)
+- **Enterprise:** Up to 250,000 threads for data center deployments
+
+### System Requirements
+- **CPU:** Any x86_64 processor
+- **RAM:** 2GB minimum, 8GB+ recommended for high thread counts
+- **Network:** Stable internet connection for pool mining
+
+### Optimization Tips
+1. **Use Interactive Setup** - Automatically detects optimal settings
+2. **Monitor System Temperature** - Ensure adequate cooling
+3. **Choose Low-Latency Pools** - Better for share submission efficiency
+4. **Regular Monitoring** - Use web dashboard for real-time stats
+
+## 🔧 Advanced Usage
+
+### Solo Mining
 ```bash
-# Check frontend service
-sudo supervisorctl status mining_system:frontend
-
-# Verify backend connectivity
-curl http://localhost:8001/api/health
+python3 cryptominer.py --coin LTC --wallet ltc1address... --threads 32
+# Note: Solo mining requires full blockchain node
 ```
 
+### Development Mode
+```bash
+python3 cryptominer.py --verbose --web-port 8080 --coin LTC --wallet ADDRESS --pool POOL
+```
+
+### Multiple Configurations
+```bash
+# Create different setups
+python3 cryptominer.py --setup  # Save as mining_config.json
+cp mining_config.json ltc-home.json
+cp mining_config.json doge-office.json
+
+# Use different configs
+python3 cryptominer.py --config ltc-home.json
+python3 cryptominer.py --config doge-office.json
+```
+
+## 🚨 Troubleshooting
+
+### Mining Won't Start
+```bash
+# Check available coins
+python3 cryptominer.py --list-coins
+
+# Validate configuration
+python3 cryptominer.py --setup
+
+# Enable verbose logging
+python3 cryptominer.py --verbose --coin LTC --wallet ADDRESS --pool POOL
+```
+
+### Low Hashrate
+- Check CPU temperature and thermal throttling
+- Reduce thread count if system is overloaded
+- Ensure pool connectivity is stable
+- Use `--verbose` to check for errors
+
+### Web Monitor Issues
+```bash
+# Check if port is in use
+netstat -tlnp | grep 3333
+
+# Use different port
+python3 cryptominer.py --web-port 8080 --coin LTC --wallet ADDRESS --pool POOL
+
+# Disable web monitoring  
+python3 cryptominer.py --web-port 0 --coin LTC --wallet ADDRESS --pool POOL
+```
+
+## 📝 Logging
+
+- **Console:** Real-time mining statistics and status updates
+- **File:** Detailed logs saved to `mining.log` in current directory  
+- **Web:** Browser console shows WebSocket connection status
+
+## 🛡️ Security Notes
+
+- **Wallet Addresses:** Always verify your wallet address before mining
+- **Pool Selection:** Use reputable pools with good track records
+- **Network Security:** Mining pools use unencrypted connections (normal)
+- **System Monitoring:** Monitor CPU temperature to prevent overheating
+
+## 📈 Mining Economics
+
+### Profitability Factors
+1. **Hashrate** - Higher is better, but consider electricity costs
+2. **Pool Efficiency** - Choose pools with low rejection rates
+3. **Network Difficulty** - Varies with overall network hashrate
+4. **Electricity Costs** - Major factor in profitability calculations
+
+### Monitoring Tools
+- **Built-in Stats** - Real-time hashrate and efficiency
+- **Web Dashboard** - Historical performance tracking
+- **Pool Websites** - Check your mining progress online
+
+## 🏗️ Architecture
+
+The application is built on proven enterprise components:
+
+- **Mining Engine:** High-performance Scrypt implementation
+- **AI System:** Intelligent optimization and monitoring
+- **System Detection:** Hardware capability analysis
+- **Pool Communication:** Full Stratum protocol support
+- **Web Interface:** Optional real-time monitoring dashboard
+
+## 🔄 Migration from Service-Based Version
+
+If you're upgrading from the complex service-based version:
+
+1. **Backup Configurations** - Export any saved pool configurations
+2. **Stop Old Services** - `sudo supervisorctl stop all`
+3. **Use New Application** - Run `python3 cryptominer.py --setup`
+4. **Enjoy Simplicity** - No more service management!
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions welcome! Please read our contributing guidelines before submitting PRs.
+
+## 📞 Support
+
+For issues and questions:
+- **Documentation:** Check this README and inline help
+- **Logs:** Enable `--verbose` mode for detailed troubleshooting
+- **Configuration:** Use `--setup` for guided configuration
+
 ---
 
-## 📊 **Performance Metrics**
+**Happy Mining!** ⛏️💰
 
-### **Tested Configurations**
-- ✅ **Standard**: 4-32 threads on consumer hardware
-- ✅ **Enterprise**: 64-128 threads on server hardware  
-- ✅ **Real Mining**: Sustained operation with 95%+ share acceptance
-- ✅ **Pool Compatibility**: EFL, LTC, DOGE pools tested successfully
-
-### **Benchmarks**
-- **Hash Rate**: Up to 10 KH/s per core (varies by hardware)
-- **Share Acceptance**: 95%+ with major pools
-- **Memory Usage**: ~500MB base + 10MB per thread
-- **Network**: <1KB/s per thread for pool communication
-
----
-
-## 🎉 **Success Metrics**
-
-### **Development Achievements**
-- ✅ **100% Functional**: All 20 critical systems working
-- ✅ **Real Mining Verified**: Actual share acceptance confirmed
-- ✅ **Performance Optimized**: All APIs respond <2 seconds
-- ✅ **Architecture Consolidated**: 13-file optimized structure
-- ✅ **Enterprise Ready**: All V30 features operational
-
-### **Testing Results** 
-- 🏆 **100% Success Rate** (20/20 tests passed)
-- 🎯 **Exceeded Target** (94% requirement)
-- ⚡ **Real Mining Loop**: Sustained 6+ minute operation
-- 📊 **Share Acceptance**: 95%+ with real pools
-- 🔧 **All APIs Functional**: Zero critical failures
-
----
-
-## 📞 **Support & Contributing**
-
-### **Documentation**
-- 📖 **README.md** - This comprehensive guide
-- 🐛 **SCRYPT_MINING_FIX.md** - Real mining implementation details
-- 🚀 **DEPLOYMENT_GUIDE.md** - Enterprise deployment instructions  
-- 🗄️ **MONGODB_FIX_GUIDE.md** - Database configuration guide
-- 🐍 **PYTHON_COMPATIBILITY_GUIDE.md** - Python version requirements
-
-### **Getting Help**
-- 💬 Check documentation first
-- 🐛 Report bugs with detailed logs
-- 💡 Request features through issues
-- 🤝 Contribute improvements via pull requests
-
-### **System Status**
-- 🟢 **Backend**: All APIs operational  
-- 🟢 **Frontend**: All components functional
-- 🟢 **Mining**: Real pool mining working
-- 🟢 **Enterprise**: V30 features ready
-- 🟢 **Database**: MongoDB operations stable
-
----
-
-**CryptoMiner Pro V30** - *Where Professional Mining Meets AI Innovation* 🚀⛏️🤖
+*CryptoMiner Pro V30 - Terminal Edition: All the power, none of the complexity.*

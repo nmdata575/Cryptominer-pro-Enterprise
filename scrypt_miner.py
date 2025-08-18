@@ -86,24 +86,55 @@ class ScryptMiner:
         self.running = True
         logger.info(f"Thread {self.thread_id}: Starting mining")
         
+        retry_count = 0
+        max_retries = 3
+        
         try:
-            while self.running:
+            while self.running and retry_count < max_retries:
                 try:
+                    # Reset connection state
+                    self.connected = False
+                    self.subscribed = False
+                    self.authorized = False
+                    
                     # Connect to pool
                     await self._connect_to_pool()
                     
                     # Subscribe to pool
                     await self._subscribe_to_pool()
                     
+                    # Only proceed if subscription was successful
+                    if not self.subscribed:
+                        logger.warning(f"Thread {self.thread_id}: Subscription failed, retrying...")
+                        retry_count += 1
+                        await asyncio.sleep(5)
+                        continue
+                    
                     # Authorize worker
                     await self._authorize_worker()
                     
-                    # Start mining loop
-                    await self._mining_loop()
+                    # Only start mining if authorized or if authorization didn't fail critically
+                    if self.authorized:
+                        # Start mining loop
+                        await self._mining_loop()
+                    else:
+                        logger.warning(f"Thread {self.thread_id}: Authorization incomplete, retrying...")
+                        retry_count += 1
+                        await asyncio.sleep(5)
+                        continue
+                    
+                    # If we get here, mining completed normally
+                    break
                     
                 except Exception as e:
                     logger.error(f"Thread {self.thread_id}: Mining error: {e}")
-                    await asyncio.sleep(5)  # Wait before retry
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        logger.info(f"Thread {self.thread_id}: Retrying in 5 seconds... (attempt {retry_count + 1}/{max_retries})")
+                        await asyncio.sleep(5)
+                    else:
+                        logger.error(f"Thread {self.thread_id}: Max retries exceeded, stopping")
+                        break
                     
         except Exception as e:
             logger.error(f"Thread {self.thread_id}: Fatal error: {e}")

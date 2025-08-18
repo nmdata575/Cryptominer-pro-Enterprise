@@ -816,6 +816,11 @@ class EnterpriseScryptMiner:
                 # Get password from coin config (default to "x")
                 pool_password = getattr(coin_config, 'pool_password', 'x')
                 
+                # Pass auth tuning into miner instance
+                setattr(self.real_miner, 'auth_resend', getattr(self.current_config, 'auth_resend', False))
+                setattr(self.real_miner, 'auth_resend_interval', getattr(self.current_config, 'auth_resend_interval', 60))
+                setattr(self.real_miner, 'auth_wait_seconds', getattr(self.current_config, 'auth_wait_seconds', 300))
+                
                 success = loop.run_until_complete(
                     self.real_miner.start_mining(pool_host, pool_port, username, pool_password)
                 )

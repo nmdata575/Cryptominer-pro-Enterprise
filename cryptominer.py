@@ -49,7 +49,16 @@ class CryptoMinerPro:
         """Handle Ctrl+C and termination signals gracefully"""
         logger.info(f"Received signal {signum}, initiating graceful shutdown...")
         if self.running:
-            asyncio.create_task(self.shutdown())
+            # Create shutdown task in the current event loop
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(self.shutdown())
+                else:
+                    asyncio.run(self.shutdown())
+            except RuntimeError:
+                # No event loop running, create new one
+                asyncio.run(self.shutdown())
 
     async def shutdown(self):
         """Gracefully shutdown all mining components"""

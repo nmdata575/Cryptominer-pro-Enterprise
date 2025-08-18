@@ -177,18 +177,32 @@ class ScryptMiner:
             
             if response and 'result' in response:
                 result = response['result']
-                if len(result) >= 3:
+                if isinstance(result, list) and len(result) >= 3:
                     self.extranonce1 = result[1]
                     self.extranonce2_size = result[2]
                     self.subscribed = True
                     logger.info(f"Thread {self.thread_id}: Subscribed to pool")
                     
-                    # Request difficulty
+                    # Request difficulty after successful subscription
                     await self._suggest_difficulty()
+                elif isinstance(result, list) and len(result) >= 2:
+                    # Some pools might send shorter result arrays
+                    self.extranonce1 = result[1] if len(result) > 1 else "00000000"
+                    self.extranonce2_size = result[2] if len(result) > 2 else 4
+                    self.subscribed = True
+                    logger.info(f"Thread {self.thread_id}: Subscribed to pool (short format)")
+                    await self._suggest_difficulty()
+                else:
+                    logger.error(f"Thread {self.thread_id}: Invalid subscription result: {result}")
+            elif response and 'error' in response:
+                error = response['error']
+                logger.error(f"Thread {self.thread_id}: Subscription error: {error}")
+            else:
+                logger.error(f"Thread {self.thread_id}: No valid subscription response")
                     
         except Exception as e:
             logger.error(f"Thread {self.thread_id}: Subscription failed: {e}")
-            raise
+            # Don't re-raise to allow retry
 
     async def _authorize_worker(self):
         """Authorize worker with pool"""

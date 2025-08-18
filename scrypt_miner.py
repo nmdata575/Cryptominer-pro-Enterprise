@@ -436,22 +436,31 @@ class ScryptMiner:
                 await asyncio.sleep(1)
 
     async def _get_work(self):
-        """Request work from pool"""
+        """Request work from pool or create template work"""
         try:
-            # In Stratum, work comes via mining.notify
-            # For now, create dummy work to keep mining
+            # In a real Stratum implementation, work comes from mining.notify
+            # For compatibility with pools that don't send proper work, create template
             if not self.current_work:
                 self.current_work = {
-                    'version': '00000002',
+                    'version': '20000000',  # Version 2
                     'prevhash': '0' * 64,
-                    'merkleroot': '0' * 64,
+                    'merkleroot': hashlib.sha256(f"{self.wallet}{time.time()}".encode()).hexdigest(),
                     'timestamp': hex(int(time.time()))[2:].zfill(8),
-                    'bits': '1e0fffff',  # Minimum difficulty
+                    'bits': '1e0fffff',  # Difficulty 1 target
                     'nonce': '00000000'
                 }
                 
-                # Set target based on bits
-                self.target = self._bits_to_target(self.current_work['bits'])
+            # Ensure we have reasonable difficulty
+            if self.difficulty <= 0:
+                self.difficulty = 1.0
+                
+            # Set target based on current difficulty
+            self.target = self._bits_to_target(self.current_work['bits'])
+            
+            # Apply current difficulty adjustment
+            if self.difficulty > 1:
+                max_target = 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                self.target = max_target // max(1, int(self.difficulty))
                 
         except Exception as e:
             logger.error(f"Thread {self.thread_id}: Get work error: {e}")

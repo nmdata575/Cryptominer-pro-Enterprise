@@ -781,12 +781,18 @@ class EnterpriseScryptMiner:
                 return False
             
             # Prepare username format: wallet_address.worker_name (can be overridden by explicit username)
-            worker_name = f"CryptoMiner-V30-{int(time.time())}"
+            # Worker selection
+            stable_worker = getattr(self.current_config, 'stable_worker', None)
+            worker_name = stable_worker if stable_worker else f"CryptoMiner-V30-{int(time.time())}"
             username = f"{wallet_address}.{worker_name}"
             # Override if explicit username provided in current_config
             explicit_user = getattr(self.current_config, 'explicit_username', None)
             if explicit_user:
-                username = explicit_user
+                # If user provided account name without worker, append worker
+                if '.' not in explicit_user and worker_name:
+                    username = f"{explicit_user}.{worker_name}"
+                else:
+                    username = explicit_user
                 logger.info(f"Using explicit stratum username: {username}")
             
             # Pass initial intensity from current config if available

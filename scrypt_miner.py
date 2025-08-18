@@ -255,12 +255,46 @@ class ScryptMiner:
             if response_data:
                 response_str = response_data.decode('utf-8').strip()
                 if response_str:
-                    return json.loads(response_str)
+                    # Handle multiple JSON messages or extra data
+                    return self._parse_stratum_response(response_str)
                     
         except Exception as e:
             logger.error(f"Thread {self.thread_id}: Stratum message error: {e}")
             
         return None
+
+    def _parse_stratum_response(self, response_str: str) -> Optional[dict]:
+        """Parse Stratum response handling multiple messages and extra data"""
+        try:
+            # Split by newlines to handle multiple messages
+            lines = response_str.strip().split('\n')
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                try:
+                    # Try to parse each line as JSON
+                    response = json.loads(line)
+                    
+                    # Return the first valid response with an ID matching our requests
+                    if isinstance(response, dict):
+                        return response
+                        
+                except json.JSONDecodeError:
+                    # Skip invalid JSON lines
+                    continue
+            
+            # If no valid JSON found, try parsing the entire string
+            return json.loads(response_str.split('\n')[0])
+            
+        except json.JSONDecodeError as e:
+            logger.debug(f"Thread {self.thread_id}: JSON parse error: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Thread {self.thread_id}: Response parsing error: {e}")
+            return None
 
     async def _mining_loop(self):
         """Main mining loop"""

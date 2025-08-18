@@ -333,7 +333,7 @@ AI_ENABLED=true
         try:
             import aiohttp
             
-            backend_url = "https://emt-portal.preview.emergentagent.com/api/mining/update-stats"
+            backend_url = "http://localhost:8001/api/mining/update-stats"
             
             # Prepare stats data for API
             api_stats = {
@@ -350,7 +350,7 @@ AI_ENABLED=true
                 "ai_optimization": float(stats.get('ai_stats', {}).get('optimization_progress', 0)) if stats.get('ai_stats') else 0
             }
             
-            logger.info(f"📊 Sending stats to web API: {api_stats}")
+            logger.info(f"📊 Sending stats to local backend API: {api_stats}")
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(backend_url, json=api_stats, timeout=5) as response:

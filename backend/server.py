@@ -6,9 +6,11 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Dict, Any, Optional
 import uuid
 from datetime import datetime
+import json
+import asyncio
 
 
 ROOT_DIR = Path(__file__).parent
@@ -20,11 +22,26 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
-app = FastAPI()
+app = FastAPI(title="CryptoMiner Pro V30 API", description="Enterprise Mining Platform API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+# Global mining stats storage (in production this would be in MongoDB)
+mining_stats = {
+    "hashrate": 0,
+    "threads": 0,
+    "intensity": 80,
+    "coin": "LTC",
+    "pool_connected": False,
+    "accepted_shares": 0,
+    "rejected_shares": 0,
+    "uptime": 0,
+    "difficulty": 1,
+    "ai_learning": 0,
+    "ai_optimization": 0,
+    "last_update": datetime.utcnow()
+}
 
 # Define Models
 class StatusCheck(BaseModel):
@@ -35,10 +52,29 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+class MiningStats(BaseModel):
+    hashrate: float
+    threads: int
+    intensity: int
+    coin: str
+    pool_connected: bool
+    accepted_shares: int
+    rejected_shares: int
+    uptime: float
+    difficulty: float
+    ai_learning: float
+    ai_optimization: float
+    last_update: datetime
+
+class MiningConfig(BaseModel):
+    coin: Optional[str] = None
+    intensity: Optional[int] = None
+    threads: Optional[int] = None
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "CryptoMiner Pro V30 API", "status": "running"}
 
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
@@ -51,6 +87,95 @@ async def create_status_check(input: StatusCheckCreate):
 async def get_status_checks():
     status_checks = await db.status_checks.find().to_list(1000)
     return [StatusCheck(**status_check) for status_check in status_checks]
+
+# CryptoMiner Pro V30 API endpoints
+@api_router.get("/mining/stats", response_model=MiningStats)
+async def get_mining_stats():
+    """Get current mining statistics"""
+    return MiningStats(**mining_stats)
+
+@api_router.post("/mining/update-stats")
+async def update_mining_stats(stats: Dict[str, Any]):
+    """Update mining statistics from the mining engine"""
+    global mining_stats
+    
+    # Update stats with provided data
+    mining_stats.update(stats)
+    mining_stats["last_update"] = datetime.utcnow()
+    
+    # Store in MongoDB for history
+    await db.mining_stats.insert_one({
+        **stats,
+        "timestamp": datetime.utcnow()
+    })
+    
+    return {"status": "updated"}
+
+@api_router.get("/mining/config")
+async def get_mining_config():
+    """Get current mining configuration"""
+    return {
+        "coin": mining_stats.get("coin", "LTC"),
+        "intensity": mining_stats.get("intensity", 80),
+        "threads": mining_stats.get("threads", 4)
+    }
+
+@api_router.post("/mining/config")
+async def update_mining_config(config: MiningConfig):
+    """Update mining configuration"""
+    global mining_stats
+    
+    if config.coin:
+        mining_stats["coin"] = config.coin
+    if config.intensity is not None:
+        mining_stats["intensity"] = config.intensity  
+    if config.threads is not None:
+        mining_stats["threads"] = config.threads
+    
+    return {"status": "config updated", "config": config.dict()}
+
+@api_router.get("/mining/history")
+async def get_mining_history(limit: int = 100):
+    """Get mining statistics history"""
+    history = await db.mining_stats.find().sort("timestamp", -1).limit(limit).to_list(limit)
+    return history
+
+@api_router.get("/mining/coins")
+async def get_available_coins():
+    """Get list of available coins for mining"""
+    return {
+        "coins": [
+            {"symbol": "LTC", "name": "Litecoin", "algorithm": "Scrypt"},
+            {"symbol": "DOGE", "name": "Dogecoin", "algorithm": "Scrypt"},
+            {"symbol": "VTC", "name": "Vertcoin", "algorithm": "Scrypt"},
+            {"symbol": "XMR", "name": "Monero", "algorithm": "RandomX"}
+        ]
+    }
+
+@api_router.get("/mining/pools")
+async def get_popular_pools():
+    """Get list of popular mining pools"""
+    return {
+        "pools": [
+            {"name": "LitecoinPool", "url": "stratum+tcp://stratum.litecoinpool.org:3333", "coin": "LTC"},
+            {"name": "Prohashing", "url": "stratum+tcp://prohashing.com:3333", "coin": "MULTI"},
+            {"name": "F2Pool", "url": "stratum+tcp://ltc.f2pool.com:4444", "coin": "LTC"},
+            {"name": "ViaBTC", "url": "stratum+tcp://ltc.viabtc.com:3333", "coin": "LTC"}
+        ]
+    }
+
+@api_router.get("/system/info")
+async def get_system_info():
+    """Get system information"""
+    import psutil
+    
+    return {
+        "cpu_count": psutil.cpu_count(),
+        "memory_total": psutil.virtual_memory().total,
+        "memory_available": psutil.virtual_memory().available,
+        "disk_usage": psutil.disk_usage('/').percent,
+        "load_average": psutil.getloadavg() if hasattr(psutil, 'getloadavg') else [0, 0, 0]
+    }
 
 # Include the router in the main app
 app.include_router(api_router)

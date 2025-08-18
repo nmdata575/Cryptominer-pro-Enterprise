@@ -154,7 +154,10 @@ class StratumClient:
             last_auth_send = start_wait
             while time.time() - start_wait < max_seconds:
                 # Periodically resend authorize (some pools drop the first)
-                if time.time() - last_auth_send > 20:
+                # Resend authorize only if enabled
+                resend_enabled = getattr(self, 'auth_resend', False)
+                resend_interval = getattr(self, 'auth_resend_interval', 60)
+                if resend_enabled and time.time() - last_auth_send > max(10, resend_interval):
                     try:
                         self.message_id += 1
                         authorize_msg = {

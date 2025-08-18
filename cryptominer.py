@@ -300,23 +300,64 @@ AI_ENABLED=true
                 await self.shutdown()
 
     async def start_web_server(self):
-        """Start the web monitoring server"""
+        """Start the web monitoring server and data updates"""
         try:
-            # Import here to avoid circular imports
-            import subprocess
-            import os
+            logger.info("🌐 Web monitoring integration started")
             
-            # Start the FastAPI backend for web monitoring
-            backend_env = os.environ.copy()
-            backend_env['MINING_MODE'] = 'true'
-            
-            logger.info("🌐 Starting web monitoring server on http://localhost:8001")
-            
-            # This would be handled by supervisor in production
-            # For now, we'll integrate with the existing FastAPI setup
-            
+            # Start periodic data updates to backend API
+            while self.running:
+                try:
+                    await asyncio.sleep(5)  # Update every 5 seconds
+                    
+                    if not self.running:
+                        break
+                    
+                    # Get current mining stats
+                    if self.mining_engine:
+                        stats = self.mining_engine.get_stats()
+                        
+                        # Send stats to backend API
+                        await self._update_backend_stats(stats)
+                    
+                except Exception as e:
+                    logger.error(f"Web monitoring update error: {e}")
+                    
         except Exception as e:
-            logger.error(f"Failed to start web server: {e}")
+            logger.error(f"Failed to start web monitoring: {e}")
+
+    async def _update_backend_stats(self, stats):
+        """Update backend API with current mining statistics"""
+        try:
+            import aiohttp
+            
+            backend_url = "https://emt-portal.preview.emergentagent.com/api/mining/update-stats"
+            
+            # Prepare stats data for API
+            api_stats = {
+                "hashrate": float(stats.get('hashrate', 0)),
+                "threads": int(stats.get('thread_count', 0)),
+                "intensity": int(stats.get('intensity', 80)),
+                "coin": str(stats.get('coin', 'LTC')),
+                "pool_connected": bool(stats.get('pool_connected', False)),
+                "accepted_shares": int(stats.get('accepted_shares', 0)),
+                "rejected_shares": int(stats.get('rejected_shares', 0)),
+                "uptime": float(time.time() - stats.get('uptime', time.time())),
+                "difficulty": float(stats.get('difficulty', 1)),
+                "ai_learning": float(stats.get('ai_stats', {}).get('learning_progress', 0)) if stats.get('ai_stats') else 0,
+                "ai_optimization": float(stats.get('ai_stats', {}).get('optimization_progress', 0)) if stats.get('ai_stats') else 0
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(backend_url, json=api_stats, timeout=5) as response:
+                    if response.status == 200:
+                        logger.debug("📊 Stats updated to web dashboard")
+                    else:
+                        logger.warning(f"Web API update failed: {response.status}")
+                        
+        except ImportError:
+            logger.warning("aiohttp not available for web monitoring updates")
+        except Exception as e:
+            logger.debug(f"Web stats update error: {e}")
 
 def main():
     """Main entry point"""

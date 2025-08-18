@@ -262,35 +262,27 @@ THREADS={threads or 'auto'}
             mining_task = asyncio.create_task(self.mining_engine.start())
             
             # Wait for shutdown signal or mining completion
-            try:
-                while self.running:
-                    # Check if mining engine is still running
-                    if mining_task.done():
-                        logger.warning("Mining engine stopped unexpectedly")
-                        break
-                    
-                    # Wait for shutdown signal or brief sleep
-                    try:
-                        await asyncio.wait_for(self.shutdown_event.wait(), timeout=1.0)
-                        break  # Shutdown signal received
-                    except asyncio.TimeoutError:
-                        continue  # Normal operation, continue loop
-                        
-            except KeyboardInterrupt:
-                logger.info("Received keyboard interrupt")
-            except Exception as e:
-                logger.error(f"Mining error: {e}")
-            finally:
-                # Ensure clean shutdown
-                if self.running:
-                    await self.shutdown()
+            while self.running:
+                # Check if mining engine is still running
+                if mining_task.done():
+                    logger.warning("Mining engine stopped unexpectedly")
+                    break
+                
+                # Wait for shutdown signal or brief sleep
+                try:
+                    await asyncio.wait_for(self.shutdown_event.wait(), timeout=1.0)
+                    break  # Shutdown signal received
+                except asyncio.TimeoutError:
+                    continue  # Normal operation, continue loop
                     
         except KeyboardInterrupt:
             logger.info("Received keyboard interrupt")
         except Exception as e:
             logger.error(f"Mining error: {e}")
         finally:
-            await self.shutdown()
+            # Ensure clean shutdown
+            if self.running:
+                await self.shutdown()
 
     async def start_web_server(self):
         """Start the web monitoring server"""

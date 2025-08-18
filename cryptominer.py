@@ -66,26 +66,76 @@ class CryptoMinerPro:
         self.running = False
         self.shutdown_event.set()
         
+        # Cancel all running tasks
+        try:
+            # Get all running tasks except current one
+            current_task = asyncio.current_task()
+            tasks = [task for task in asyncio.all_tasks() if task is not current_task and not task.done()]
+            
+            if tasks:
+                logger.info(f"Cancelling {len(tasks)} running tasks...")
+                for task in tasks:
+                    task.cancel()
+                
+                # Wait for tasks to complete cancellation
+                try:
+                    await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=5.0)
+                except asyncio.TimeoutError:
+                    logger.warning("Some tasks did not shutdown gracefully within timeout")
+        
+        except Exception as e:
+            logger.error(f"Error during task cleanup: {e}")
+        
         # Stop mining engine
         if self.mining_engine:
             logger.info("Stopping mining engine...")
-            await self.mining_engine.stop()
+            try:
+                await asyncio.wait_for(self.mining_engine.stop(), timeout=3.0)
+            except asyncio.TimeoutError:
+                logger.warning("Mining engine shutdown timed out")
+            except Exception as e:
+                logger.error(f"Error stopping mining engine: {e}")
             
         # Stop AI optimizer
         if self.ai_optimizer:
             logger.info("Stopping AI optimizer...")
-            self.ai_optimizer.stop()
+            try:
+                self.ai_optimizer.stop()
+            except Exception as e:
+                logger.error(f"Error stopping AI optimizer: {e}")
             
         # Stop web server
         if self.web_server_task and not self.web_server_task.done():
             logger.info("Stopping web monitoring server...")
-            self.web_server_task.cancel()
             try:
-                await self.web_server_task
-            except asyncio.CancelledError:
+                self.web_server_task.cancel()
+                await asyncio.wait_for(self.web_server_task, timeout=2.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError):
                 pass
+            except Exception as e:
+                logger.error(f"Error stopping web server: {e}")
+        
+        # Force close any remaining connections
+        try:
+            # Close any open sockets or connections
+            if hasattr(self, 'mining_engine') and self.mining_engine and hasattr(self.mining_engine, 'miners'):
+                for miner in self.mining_engine.miners:
+                    if hasattr(miner, 'socket') and miner.socket:
+                        try:
+                            miner.socket.close()
+                        except:
+                            pass
+        except Exception as e:
+            logger.error(f"Error during connection cleanup: {e}")
         
         logger.info("✅ CryptoMiner Pro V30 shutdown complete")
+        
+        # Force exit if we're in signal handler context
+        try:
+            loop = asyncio.get_running_loop()
+            loop.stop()
+        except RuntimeError:
+            pass
 
     def print_banner(self):
         """Display the application banner"""

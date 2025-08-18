@@ -276,19 +276,31 @@ AI_ENABLED=true
             # Start mining in background task
             mining_task = asyncio.create_task(self.mining_engine.start())
             
-            # Wait for shutdown signal or mining completion
-            while self.running:
-                # Check if mining engine is still running
-                if mining_task.done():
-                    logger.warning("Mining engine stopped unexpectedly")
-                    break
-                
-                # Wait for shutdown signal or brief sleep
-                try:
-                    await asyncio.wait_for(self.shutdown_event.wait(), timeout=1.0)
-                    break  # Shutdown signal received
-                except asyncio.TimeoutError:
-                    continue  # Normal operation, continue loop
+            # Run both tasks concurrently and wait for shutdown signal
+            try:
+                while self.running:
+                    # Check if mining engine is still running
+                    if mining_task.done():
+                        logger.warning("Mining engine stopped unexpectedly")
+                        break
+                    
+                    # Check if web monitoring is still running
+                    if self.web_server_task.done():
+                        logger.warning("Web monitoring stopped unexpectedly")
+                        # Restart web monitoring
+                        self.web_server_task = asyncio.create_task(self.start_web_server())
+                    
+                    # Wait for shutdown signal or brief sleep
+                    try:
+                        await asyncio.wait_for(self.shutdown_event.wait(), timeout=1.0)
+                        break  # Shutdown signal received
+                    except asyncio.TimeoutError:
+                        continue  # Normal operation, continue loop
+                        
+            except asyncio.CancelledError:
+                logger.info("Mining tasks cancelled")
+            except Exception as e:
+                logger.error(f"Task execution error: {e}")
                     
         except KeyboardInterrupt:
             logger.info("Received keyboard interrupt")

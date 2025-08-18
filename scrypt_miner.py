@@ -453,17 +453,28 @@ class ScryptMiner:
                 # Fallback to SHA256 (not real Scrypt, but for testing)
                 hash_result = hashlib.sha256(header).digest()
             
-            # Convert to integer for comparison
-            hash_int = int.from_bytes(hash_result, 'big')
+            # Convert to integer for comparison (little endian for Scrypt)
+            hash_int = int.from_bytes(hash_result[::-1], 'big')
             
             self.hash_count += 1
             
-            # Check if hash meets target
-            if hash_int < self.target:
+            # Use proper difficulty-based target
+            if self.difficulty > 0:
+                # Calculate target from difficulty (Bitcoin-style)
+                max_target = 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                current_target = max_target // max(1, int(self.difficulty))
+            else:
+                current_target = self.target or 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+            
+            # Check if hash meets target (lower hash = better)
+            if hash_int < current_target:
+                logger.info(f"Thread {self.thread_id}: Found valid share! Hash: {hash_result.hex()[:16]}...")
                 return {
                     'nonce': nonce,
                     'hash': hash_result.hex(),
-                    'header': header.hex()
+                    'header': header.hex(),
+                    'difficulty': self.difficulty,
+                    'target': hex(current_target)
                 }
                 
         except Exception as e:

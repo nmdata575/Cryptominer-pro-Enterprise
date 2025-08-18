@@ -219,6 +219,12 @@ class MiningEngine:
         stats['intensity'] = self.intensity
         stats['coin'] = self.coin
         
+        # Calculate actual uptime if mining started
+        if hasattr(self, 'start_time'):
+            stats['uptime'] = self.start_time
+        else:
+            stats['uptime'] = time.time()
+        
         if self.ai_optimizer:
             stats['ai_stats'] = self.ai_optimizer.get_stats()
             

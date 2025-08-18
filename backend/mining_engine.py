@@ -820,6 +820,7 @@ class EnterpriseScryptMiner:
                 setattr(self.real_miner, 'auth_resend', getattr(self.current_config, 'auth_resend', False))
                 setattr(self.real_miner, 'auth_resend_interval', getattr(self.current_config, 'auth_resend_interval', 60))
                 setattr(self.real_miner, 'auth_wait_seconds', getattr(self.current_config, 'auth_wait_seconds', 300))
+                logger.info(f"Auth settings → resend={getattr(self.real_miner, 'auth_resend', False)}, interval={getattr(self.real_miner, 'auth_resend_interval', 60)}s, wait={getattr(self.real_miner, 'auth_wait_seconds', 300)}s")
                 
                 success = loop.run_until_complete(
                     self.real_miner.start_mining(pool_host, pool_port, username, pool_password)

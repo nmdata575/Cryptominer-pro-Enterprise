@@ -1,0 +1,24 @@
+# CryptoMiner Pro V30 Configuration Template
+# Copy this file to mining_config.env and customize for your setup
+
+# Mining Configuration
+COIN=LTC
+WALLET=your_wallet_address_here
+POOL=stratum+tcp://pool.example.com:4444
+PASSWORD=worker1
+
+# Performance Settings  
+INTENSITY=80
+THREADS=auto
+
+# Web Monitoring
+WEB_PORT=8001
+WEB_ENABLED=true
+
+# AI Optimization
+AI_ENABLED=true
+AI_LEARNING_RATE=0.1
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FILE=mining.log

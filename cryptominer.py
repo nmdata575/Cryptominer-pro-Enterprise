@@ -319,6 +319,7 @@ AI_ENABLED=true
             # Start periodic data updates to backend API
             while self.running:
                 try:
+                    logger.info(f"⏰ Web monitoring loop iteration - running: {self.running}")
                     await asyncio.sleep(5)  # Update every 5 seconds
                     
                     if not self.running:

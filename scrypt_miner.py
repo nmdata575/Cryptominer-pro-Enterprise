@@ -606,9 +606,14 @@ class ScryptMiner:
 
     def adjust_difficulty(self, new_difficulty: float):
         """Adjust mining difficulty"""
+        if new_difficulty <= 0:
+            new_difficulty = 1.0
+            
         self.difficulty = new_difficulty
-        # Recalculate target based on new difficulty
-        base_target = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
-        self.target = int(base_target / new_difficulty)
         
-        logger.info(f"Thread {self.thread_id}: Difficulty adjusted to {new_difficulty}")
+        # Calculate target based on difficulty using Bitcoin formula
+        # Max target for difficulty 1 (Litecoin uses same as Bitcoin)
+        max_target = 0x00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        self.target = max_target // max(1, int(new_difficulty))
+        
+        logger.info(f"Thread {self.thread_id}: Difficulty adjusted to {new_difficulty} (Target: {hex(self.target)[:16]}...)")

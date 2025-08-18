@@ -385,10 +385,13 @@ class ScryptMiner:
             
         logger.info(f"Thread {self.thread_id}: Starting mining loop")
         
-        # Initialize work data
+        # Initialize work data with better defaults
         await self._get_work()
         
         nonce = 0
+        last_work_refresh = time.time()
+        shares_submitted = 0
+        
         while self.running and self.connected:
             try:
                 # Mine with current work
@@ -397,16 +400,29 @@ class ScryptMiner:
                     
                     if result:
                         # Found valid share, submit it
-                        await self._submit_share(result)
+                        success = await self._submit_share(result)
+                        shares_submitted += 1
+                        
+                        # If too many rejections, get new work
+                        if shares_submitted % 10 == 0:
+                            await self._get_work()
                     
                     nonce += 1
                     
-                    # Update statistics
-                    self._update_local_stats()
-                    
-                    # Get new work periodically or when needed
-                    if nonce % 1000 == 0:  # Every 1000 nonces
+                    # Prevent nonce overflow and refresh work periodically
+                    if nonce > 0xFFFFFFFF:
+                        nonce = 0
                         await self._get_work()
+                    
+                    # Update statistics every 1000 hashes
+                    if nonce % 1000 == 0:
+                        self._update_local_stats()
+                        
+                    # Refresh work every 30 seconds to avoid stale shares
+                    current_time = time.time()
+                    if current_time - last_work_refresh > 30:
+                        await self._get_work()
+                        last_work_refresh = current_time
                         
                 else:
                     # No work available, wait and retry
@@ -415,6 +431,8 @@ class ScryptMiner:
                     
             except Exception as e:
                 logger.error(f"Thread {self.thread_id}: Mining loop error: {e}")
+                # Try to recover by getting new work
+                await self._get_work()
                 await asyncio.sleep(1)
 
     async def _get_work(self):

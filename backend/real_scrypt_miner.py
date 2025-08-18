@@ -148,7 +148,8 @@ class StratumClient:
             # Wait for authorization response (may receive difficulty updates or notify first)
             auth_success = False
             
-            max_seconds = 120  # allow up to 2 minutes for auth on some pools
+            # Allow override via engine-provided config if set (defaults tuned for pool quirks)
+            max_seconds = getattr(self, 'auth_wait_seconds', 120)  # default 120s
             start_wait = time.time()
             last_auth_send = start_wait
             while time.time() - start_wait < max_seconds:

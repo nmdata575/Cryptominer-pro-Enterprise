@@ -327,12 +327,12 @@ AI_ENABLED=true
                     # Get current mining stats
                     if self.mining_engine:
                         stats = self.mining_engine.get_stats()
-                        logger.debug(f"📊 Current mining stats: {stats}")
+                        logger.info(f"📊 Current mining stats: {stats}")
                         
                         # Send stats to backend API
                         await self._update_backend_stats(stats)
                     else:
-                        logger.debug("⚠️ Mining engine not available for stats")
+                        logger.info("⚠️ Mining engine not available for stats")
                     
                 except Exception as e:
                     logger.error(f"Web monitoring update error: {e}")

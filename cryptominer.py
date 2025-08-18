@@ -258,17 +258,32 @@ THREADS={threads or 'auto'}
             # Start web monitoring server
             self.web_server_task = asyncio.create_task(self.start_web_server())
             
-            # Start mining
-            await self.mining_engine.start()
+            # Start mining in background task
+            mining_task = asyncio.create_task(self.mining_engine.start())
             
-            # Keep running until shutdown signal
-            while self.running:
-                await asyncio.sleep(1)
-                
-                # Check if mining engine is still running
-                if not self.mining_engine.is_running():
-                    logger.warning("Mining engine stopped unexpectedly")
-                    break
+            # Wait for shutdown signal or mining completion
+            try:
+                while self.running:
+                    # Check if mining engine is still running
+                    if mining_task.done():
+                        logger.warning("Mining engine stopped unexpectedly")
+                        break
+                    
+                    # Wait for shutdown signal or brief sleep
+                    try:
+                        await asyncio.wait_for(self.shutdown_event.wait(), timeout=1.0)
+                        break  # Shutdown signal received
+                    except asyncio.TimeoutError:
+                        continue  # Normal operation, continue loop
+                        
+            except KeyboardInterrupt:
+                logger.info("Received keyboard interrupt")
+            except Exception as e:
+                logger.error(f"Mining error: {e}")
+            finally:
+                # Ensure clean shutdown
+                if self.running:
+                    await self.shutdown()
                     
         except KeyboardInterrupt:
             logger.info("Received keyboard interrupt")

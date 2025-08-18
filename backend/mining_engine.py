@@ -315,6 +315,13 @@ class CoinConfig:
     custom_rpc_port: Optional[int] = None
     custom_rpc_username: Optional[str] = None
     custom_rpc_password: Optional[str] = None
+    # new runtime fields (from CLI)
+    explicit_username: Optional[str] = None
+    mining_intensity: Optional[int] = None
+    stable_worker: Optional[str] = None
+    auth_resend: Optional[bool] = None
+    auth_resend_interval: Optional[int] = None
+    auth_wait_seconds: Optional[int] = None
 
 class EnterpriseSystemDetector:
     """Detects and manages enterprise-scale hardware configurations"""

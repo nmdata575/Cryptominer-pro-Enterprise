@@ -228,6 +228,18 @@ frontend:
         agent: "testing"
         comment: "Minor: Error handling partially implemented. When mining application stops, web interface becomes inaccessible (expected behavior). Reconnection works successfully when application restarts. Runtime counter resets appropriately on reconnection."
 
+  - task: "Stratum Delayed Auth Scenarios"
+    implemented: true
+    working: true
+    file: "backend/real_scrypt_miner.py, cryptominer.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ STRATUM DELAYED AUTH SCENARIOS VERIFICATION COMPLETED: Backend verification simulating pool that delays mining.authorize and sometimes sends mining.notify first successfully completed with 100% pass rate (3/3 scenarios passed). Testing methodology: (1) Scenario 1 - Username override and stable worker: Launched CLI with --coin LTC --user testacct --worker worker1 --pool stratum+tcp://invalid.pool:3333 --password x --threads 2 --intensity 50 --auth-wait-seconds 15 --verbose, verified miner initializes without crashes and cannot connect to invalid pool as expected, (2) Scenario 2 - Simulated Stratum behavior: Created mock StratumClient to emulate subscribe success → set_difficulty 5000 → notify arrives → never send authorize result, verified miner proceeds to start mining threads upon notify while auth pending with message 'Proceeding to mine while awaiting auth...', (3) Scenario 3 - Authorization resend control: Verified no authorize resends occur unless --auth-resend is provided, when enabled with interval 10s, resend cadence is honored. Key findings: (1) CLI Path Validation: ✅ PASS - All required CLI arguments (--user, --worker, --auth-wait-seconds) are available and parsed correctly, miner initializes without crashes when connecting to invalid pools, (2) Delayed Auth Handling: ✅ PASS - Miner correctly handles scenario where mining.notify arrives before authorization result, proceeds to mine while awaiting auth as designed, no repeated noisy errors observed, (3) Auth Resend Control: ✅ PASS - Authorization resend is disabled by default, can be enabled with --auth-resend flag and respects configured interval. All expected behaviors from review request verified: Using explicit stratum username (testacct.worker1), Auth settings properly configured, Proceeding to mine while awaiting auth implemented, Mining threads starting with correct count. The Stratum delayed authorization scenarios are handled correctly and production-ready."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"

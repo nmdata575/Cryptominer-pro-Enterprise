@@ -114,14 +114,23 @@ class ScryptMiner:
         """Stop mining and cleanup"""
         self.running = False
         
+        # Close socket connection properly
         if self.socket:
             try:
+                # Shutdown socket before closing
+                try:
+                    self.socket.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass  # Already disconnected
                 self.socket.close()
-            except:
-                pass
-            self.socket = None
+            except Exception as e:
+                logger.debug(f"Thread {self.thread_id}: Socket cleanup error: {e}")
+            finally:
+                self.socket = None
             
         self.connected = False
+        self.authorized = False
+        self.subscribed = False
         logger.info(f"Thread {self.thread_id}: Stopped")
 
     async def _connect_to_pool(self):

@@ -205,17 +205,36 @@ class ScryptMiner:
             
             response = await self._send_stratum_message(auth_msg)
             
-            if response and response.get('result') is True:
-                self.authorized = True
-                logger.info(f"Thread {self.thread_id}: Authorized with pool")
+            if response:
+                # Check for successful authorization
+                if response.get('result') is True:
+                    self.authorized = True
+                    logger.info(f"Thread {self.thread_id}: Authorized with pool")
+                elif response.get('result') is False:
+                    error = response.get('error', 'Authorization rejected by pool')
+                    logger.error(f"Thread {self.thread_id}: Authorization failed: {error}")
+                    raise Exception(f"Authorization failed: {error}")
+                elif 'error' in response:
+                    error = response.get('error', 'Unknown authorization error')
+                    logger.error(f"Thread {self.thread_id}: Authorization error: {error}")
+                    raise Exception(f"Authorization error: {error}")
+                else:
+                    # Some pools might not send explicit true/false
+                    # If no error field, assume success
+                    if 'error' not in response:
+                        self.authorized = True
+                        logger.info(f"Thread {self.thread_id}: Authorized with pool (implicit)")
+                    else:
+                        logger.error(f"Thread {self.thread_id}: Unexpected authorization response: {response}")
+                        raise Exception("Unexpected authorization response")
             else:
-                error = response.get('error', 'Unknown authorization error')
-                logger.error(f"Thread {self.thread_id}: Authorization failed: {error}")
-                raise Exception(f"Authorization failed: {error}")
+                logger.error(f"Thread {self.thread_id}: No response to authorization request")
+                raise Exception("No authorization response from pool")
                 
         except Exception as e:
             logger.error(f"Thread {self.thread_id}: Authorization error: {e}")
-            raise
+            # Don't re-raise, let the connection retry
+            # raise
 
     async def _suggest_difficulty(self):
         """Suggest mining difficulty to pool"""

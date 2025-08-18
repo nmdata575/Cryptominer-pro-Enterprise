@@ -323,26 +323,74 @@ Examples:
   python3 cryptominer.py --list-coins              # Show available coins
   python3 cryptominer.py --coin LTC --wallet LTC_ADDRESS --pool stratum+tcp://pool.example.com:4444
   python3 cryptominer.py --coin LTC --wallet LTC_ADDRESS --pool stratum+tcp://pool.example.com:4444 --password worker1 --intensity 90 --threads 8
+
+Configuration File:
+  Create mining_config.env with your settings:
+    COIN=LTC
+    WALLET=your_wallet_address
+    POOL=stratum+tcp://pool.example.com:4444
+    PASSWORD=worker1
+    INTENSITY=80
+    THREADS=4
         """
     )
     
+    # Get defaults from environment variables (from mining_config.env)
+    default_coin = os.getenv('COIN')
+    default_wallet = os.getenv('WALLET')
+    default_pool = os.getenv('POOL')
+    default_password = os.getenv('PASSWORD')
+    default_intensity = int(os.getenv('INTENSITY', '80'))
+    default_threads = os.getenv('THREADS')
+    default_web_port = int(os.getenv('WEB_PORT', '8001'))
+    
+    # Convert THREADS from env (could be 'auto' or number)
+    if default_threads and default_threads.lower() != 'auto':
+        try:
+            default_threads = int(default_threads)
+        except ValueError:
+            default_threads = None
+    else:
+        default_threads = None
+    
     parser.add_argument('--setup', action='store_true', help='Run interactive setup wizard')
     parser.add_argument('--list-coins', action='store_true', help='List available coins')
-    parser.add_argument('--coin', help='Coin to mine (e.g., LTC, DOGE)')
-    parser.add_argument('--wallet', help='Wallet address')
-    parser.add_argument('--pool', help='Mining pool URL')
-    parser.add_argument('--password', help='Pool password (optional)')
-    parser.add_argument('--intensity', type=int, default=80, help='Mining intensity 1-100%% (default: 80)')
-    parser.add_argument('--threads', type=int, help='Number of threads (default: auto)')
-    parser.add_argument('--web-port', type=int, default=8001, help='Web monitoring port (default: 8001)')
+    parser.add_argument('--coin', default=default_coin, help='Coin to mine (e.g., LTC, DOGE)')
+    parser.add_argument('--wallet', default=default_wallet, help='Wallet address')
+    parser.add_argument('--pool', default=default_pool, help='Mining pool URL')
+    parser.add_argument('--password', default=default_password, help='Pool password (optional)')
+    parser.add_argument('--intensity', type=int, default=default_intensity, help=f'Mining intensity 1-100%% (default: {default_intensity})')
+    parser.add_argument('--threads', type=int, default=default_threads, help='Number of threads (default: auto)')
+    parser.add_argument('--web-port', type=int, default=default_web_port, help=f'Web monitoring port (default: {default_web_port})')
+    parser.add_argument('--config', help='Use specific config file (default: mining_config.env)')
     
     args = parser.parse_args()
+    
+    # Load custom config file if specified
+    if args.config:
+        config_path = Path(args.config)
+        if config_path.exists():
+            load_dotenv(config_path)
+            print(f"📁 Loaded custom configuration from {config_path}")
+        else:
+            print(f"❌ Config file not found: {config_path}")
+            return 1
     
     # Create miner instance
     miner = CryptoMinerPro()
     
     # Show banner
     miner.print_banner()
+    
+    # Display current configuration if loaded from env
+    if any([default_coin, default_wallet, default_pool]):
+        print("\n⚙️ Configuration loaded from file:")
+        print(f"  Coin: {args.coin or 'Not set'}")
+        print(f"  Wallet: {args.wallet or 'Not set'}")
+        print(f"  Pool: {args.pool or 'Not set'}")
+        print(f"  Intensity: {args.intensity}%")
+        print(f"  Threads: {args.threads or 'auto'}")
+        print()
     
     # Handle different modes
     if args.list_coins:
@@ -365,13 +413,21 @@ Examples:
         ))
         return
     
-    # No valid arguments provided
-    print("⚠️  No configuration found!")
-    print("Options:")
-    print("  python3 cryptominer.py --setup           # Interactive setup")
-    print("  python3 cryptominer.py --list-coins      # Show available coins")
-    print("  python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL:PORT")
-    print("\nFor full help: python3 cryptominer.py --help")
+    # No valid configuration found
+    print("⚠️  Incomplete configuration!")
+    print("\nOptions:")
+    print("  1. Create mining_config.env file:")
+    print("     cp mining_config.template mining_config.env")
+    print("     # Edit mining_config.env with your settings")
+    print("     python3 cryptominer.py")
+    print()
+    print("  2. Use interactive setup:")
+    print("     python3 cryptominer.py --setup")
+    print()
+    print("  3. Use command line arguments:")
+    print("     python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL:PORT")
+    print()
+    print("For full help: python3 cryptominer.py --help")
 
 if __name__ == "__main__":
     main()

@@ -13,6 +13,15 @@ import sys
 import os
 from pathlib import Path
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load configuration from mining_config.env if it exists
+config_file = Path("mining_config.env")
+if config_file.exists():
+    load_dotenv(config_file)
+    print(f"📁 Loaded configuration from {config_file}")
+else:
+    print("📁 No mining_config.env found, using command line arguments or defaults")
 
 # Configure logging
 logging.basicConfig(

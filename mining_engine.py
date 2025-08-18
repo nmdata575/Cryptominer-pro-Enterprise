@@ -86,6 +86,7 @@ class MiningEngine:
             
         self.running = True
         self.stats['uptime'] = time.time()
+        self.start_time = time.time()  # Store start time for uptime calculation
         
         logger.info(f"🚀 Starting mining with {self.thread_count} threads")
         

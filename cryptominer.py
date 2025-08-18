@@ -350,17 +350,19 @@ AI_ENABLED=true
                 "ai_optimization": float(stats.get('ai_stats', {}).get('optimization_progress', 0)) if stats.get('ai_stats') else 0
             }
             
+            logger.info(f"📊 Sending stats to web API: {api_stats}")
+            
             async with aiohttp.ClientSession() as session:
                 async with session.post(backend_url, json=api_stats, timeout=5) as response:
                     if response.status == 200:
-                        logger.debug("📊 Stats updated to web dashboard")
+                        logger.info("✅ Stats updated to web dashboard successfully")
                     else:
-                        logger.warning(f"Web API update failed: {response.status}")
+                        logger.warning(f"❌ Web API update failed: {response.status}")
                         
         except ImportError:
             logger.warning("aiohttp not available for web monitoring updates")
         except Exception as e:
-            logger.debug(f"Web stats update error: {e}")
+            logger.error(f"Web stats update error: {e}")
 
 def main():
     """Main entry point"""

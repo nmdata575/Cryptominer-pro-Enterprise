@@ -535,16 +535,20 @@ class ScryptMiner:
             logger.error(f"Thread {self.thread_id}: Header build error: {e}")
             return b'\x00' * 80
 
-    async def _submit_share(self, result: dict):
+    async def _submit_share(self, result: dict) -> bool:
         """Submit mining share to pool"""
         try:
+            # Use actual work data from pool if available
+            job_id = getattr(self, 'current_job_id', '1')
+            extranonce2 = "00000000"  # Should be incremented per share
+            
             submit_msg = {
                 "id": 4,
                 "method": "mining.submit",
                 "params": [
                     self.wallet,
-                    "1",  # Job ID (would come from mining.notify)
-                    "00000000",  # Extranonce2
+                    job_id,
+                    extranonce2,
                     self.current_work['timestamp'],
                     hex(result['nonce'])[2:].zfill(8)
                 ]
@@ -555,14 +559,30 @@ class ScryptMiner:
             if response:
                 if response.get('result') is True:
                     self.stats['accepted_shares'] += 1
-                    logger.info(f"Thread {self.thread_id}: Share accepted! ✅")
+                    logger.info(f"Thread {self.thread_id}: Share accepted! ✅ (Difficulty: {result.get('difficulty', self.difficulty)})")
+                    return True
                 else:
                     self.stats['rejected_shares'] += 1
                     error = response.get('error', 'Unknown error')
                     logger.warning(f"Thread {self.thread_id}: Share rejected: {error} ❌")
                     
+                    # If rejection rate is too high, reconnect
+                    total_shares = self.stats['accepted_shares'] + self.stats['rejected_shares']
+                    if total_shares > 10 and (self.stats['rejected_shares'] / total_shares) > 0.5:
+                        logger.warning(f"Thread {self.thread_id}: High rejection rate ({self.stats['rejected_shares']}/{total_shares}), reconnecting...")
+                        self.connected = False
+                    
+                    return False
+            else:
+                logger.error(f"Thread {self.thread_id}: No response to share submission")
+                return False
+                    
         except Exception as e:
             logger.error(f"Thread {self.thread_id}: Share submission error: {e}")
+            # On broken pipe or connection error, mark as disconnected
+            if "Broken pipe" in str(e) or "Connection" in str(e):
+                self.connected = False
+            return False
 
     def _update_local_stats(self):
         """Update local statistics"""

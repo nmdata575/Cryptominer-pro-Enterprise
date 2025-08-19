@@ -13,6 +13,8 @@
 ./backend/requirements.txt
 ./backend/server.py
 ./backend_test.py
+./config.py
+./constants.py
 ./cryptominer.py
 ./docker-compose.yml
 ./frontend/.env
@@ -42,3 +44,4 @@
 ./scrypt_miner.py
 ./test_result.md
 ./tests/__init__.py
+./utils.py

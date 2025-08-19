@@ -9,6 +9,9 @@ cryptominer-pro-v30/
 │   ├── mining_engine.py        # Mining coordination and thread management
 │   ├── scrypt_miner.py        # Low-level Scrypt mining implementation
 │   ├── ai_optimizer.py        # AI-driven performance optimization
+│   ├── config.py              # Centralized configuration management
+│   ├── constants.py           # Application constants and default values
+│   ├── utils.py               # Common utility functions
 │   └── install.py             # Automated installation script
 │
 ├── 🏗️ Backend API

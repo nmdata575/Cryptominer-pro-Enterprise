@@ -152,17 +152,10 @@ class CryptoMinerPro:
 
     def list_coins(self):
         """List available coins for mining"""
-        coins = {
-            'LTC': 'Litecoin - Scrypt algorithm',
-            'DOGE': 'Dogecoin - Scrypt algorithm', 
-            'VTC': 'Vertcoin - Scrypt algorithm',
-            'XMR': 'Monero - RandomX algorithm (CPU-friendly)'
-        }
-        
         print("\n📋 Available Coins:")
         print("=" * 50)
-        for symbol, description in coins.items():
-            print(f"  {symbol:<6} - {description}")
+        for symbol, info in SUPPORTED_COINS.items():
+            print(f"  {symbol:<6} - {info['description']}")
         print()
 
     async def setup_interactive(self):

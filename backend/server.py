@@ -138,6 +138,12 @@ async def update_mining_config(config: MiningConfig):
 async def get_mining_history(limit: int = 100):
     """Get mining statistics history"""
     history = await db.mining_stats.find().sort("timestamp", -1).limit(limit).to_list(limit)
+    
+    # Convert ObjectId to string for JSON serialization
+    for record in history:
+        if '_id' in record:
+            record['_id'] = str(record['_id'])
+    
     return history
 
 @api_router.get("/mining/coins")

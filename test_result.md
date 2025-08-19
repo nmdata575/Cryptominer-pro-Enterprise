@@ -140,6 +140,9 @@ backend:
       - working: true
         agent: "main"
         comment: "FastAPI backend serving mining stats and configuration endpoints"
+      - working: true
+        agent: "testing"
+        comment: "Comprehensive API testing completed successfully. All 11 endpoints tested and working: Basic API health ✅, Mining stats ✅, Mining config (GET/POST) ✅, Available coins ✅, Popular pools ✅, System info ✅, Mining history ✅ (fixed ObjectId serialization issue), Update mining stats ✅, Status endpoints ✅. CORS functionality verified. MongoDB integration working correctly with proper data persistence. Fixed minor ObjectId serialization bug in mining history endpoint."
 
 frontend:
   - task: "Mining dashboard UI"

@@ -362,7 +362,7 @@ AI_ENABLED=true
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="CryptoMiner Pro V30 - Enterprise Mining Platform",
+        description=f"{APP_NAME} - Enterprise Mining Platform",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -382,33 +382,18 @@ Configuration File:
         """
     )
     
-    # Get defaults from environment variables (from mining_config.env)
-    default_coin = os.getenv('COIN')
-    default_wallet = os.getenv('WALLET')
-    default_pool = os.getenv('POOL')
-    default_password = os.getenv('PASSWORD')
-    default_intensity = int(os.getenv('INTENSITY', '80'))
-    default_threads = os.getenv('THREADS')
-    default_web_port = int(os.getenv('WEB_PORT', '8001'))
-    
-    # Convert THREADS from env (could be 'auto' or number)
-    if default_threads and default_threads.lower() != 'auto':
-        try:
-            default_threads = int(default_threads)
-        except ValueError:
-            default_threads = None
-    else:
-        default_threads = None
+    # Get defaults from centralized configuration
+    cfg = config.to_dict()
     
     parser.add_argument('--setup', action='store_true', help='Run interactive setup wizard')
     parser.add_argument('--list-coins', action='store_true', help='List available coins')
-    parser.add_argument('--coin', default=default_coin, help='Coin to mine (e.g., LTC, DOGE)')
-    parser.add_argument('--wallet', default=default_wallet, help='Wallet address')
-    parser.add_argument('--pool', default=default_pool, help='Mining pool URL')
-    parser.add_argument('--password', default=default_password, help='Pool password (optional)')
-    parser.add_argument('--intensity', type=int, default=default_intensity, help=f'Mining intensity 1-100%% (default: {default_intensity})')
-    parser.add_argument('--threads', type=int, default=default_threads, help='Number of threads (default: auto)')
-    parser.add_argument('--web-port', type=int, default=default_web_port, help=f'Web monitoring port (default: {default_web_port})')
+    parser.add_argument('--coin', default=cfg.get('coin'), help='Coin to mine (e.g., LTC, DOGE)')
+    parser.add_argument('--wallet', default=cfg.get('wallet'), help='Wallet address')
+    parser.add_argument('--pool', default=cfg.get('pool'), help='Mining pool URL')
+    parser.add_argument('--password', default=cfg.get('password'), help='Pool password (optional)')
+    parser.add_argument('--intensity', type=int, default=cfg.get('intensity', 80), help=f'Mining intensity 1-100%% (default: {cfg.get("intensity", 80)})')
+    parser.add_argument('--threads', type=int, default=cfg.get('threads'), help='Number of threads (default: auto)')
+    parser.add_argument('--web-port', type=int, default=cfg.get('web_port', 8001), help=f'Web monitoring port (default: {cfg.get("web_port", 8001)})')
     parser.add_argument('--config', help='Use specific config file (default: mining_config.env)')
     
     args = parser.parse_args()
@@ -430,7 +415,7 @@ Configuration File:
     miner.print_banner()
     
     # Display current configuration if loaded from env
-    if any([default_coin, default_wallet, default_pool]):
+    if any([cfg.get('coin'), cfg.get('wallet'), cfg.get('pool')]):
         print("\n⚙️ Configuration loaded from file:")
         print(f"  Coin: {args.coin or 'Not set'}")
         print(f"  Wallet: {args.wallet or 'Not set'}")

@@ -7,7 +7,6 @@ Consolidated terminal-based mining application with optional web monitoring
 
 import argparse
 import asyncio
-import logging
 import signal
 import sys
 import os
@@ -15,6 +14,11 @@ import time
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
+
+# Import consolidated modules
+from config import config
+from constants import APP_NAME, APP_VERSION, BANNER, SUPPORTED_COINS
+from utils import format_uptime
 
 # Load configuration from mining_config.env if it exists
 config_file = Path("mining_config.env")
@@ -24,15 +28,9 @@ if config_file.exists():
 else:
     print("📁 No mining_config.env found, using command line arguments or defaults")
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler('mining.log')
-    ]
-)
+# Configure logging using centralized config
+config.setup_logging()
+import logging
 logger = logging.getLogger(__name__)
 
 # Import mining components

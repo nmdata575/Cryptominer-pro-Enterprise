@@ -147,16 +147,7 @@ class CryptoMinerPro:
 
     def print_banner(self):
         """Display the application banner"""
-        banner = """
-╔══════════════════════════════════════════════════════════╗
-║              🚀 CryptoMiner Pro V30 🚀                  ║
-║           Compact Terminal Mining Application            ║
-║                                                         ║
-║  ⚡ Enterprise Mining Engine    🤖 AI Optimization     ║
-║  🔗 Pool & Solo Support         📊 Web Monitoring      ║
-╚══════════════════════════════════════════════════════════╝
-        """
-        print(banner)
+        print(BANNER)
         print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     def list_coins(self):

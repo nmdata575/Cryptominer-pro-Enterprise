@@ -28,6 +28,7 @@ typer>=0.9.0
 # CryptoMiner Pro V30 specific dependencies
 websockets==12.0
 aiofiles==23.2.1
+aiohttp>=3.8.0
 
 # Cryptographic libraries
 scrypt==0.8.20

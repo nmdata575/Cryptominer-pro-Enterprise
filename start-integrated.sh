@@ -38,14 +38,18 @@ cleanup() {
     # Kill backend server
     if [[ -n "$BACKEND_PID" ]] && kill -0 "$BACKEND_PID" 2>/dev/null; then
         log_info "Stopping backend server (PID: $BACKEND_PID)..."
-        kill "$BACKEND_PID" 2>/dev/null || true
-        wait "$BACKEND_PID" 2>/dev/null || true
+        kill -TERM "$BACKEND_PID" 2>/dev/null || true
+        sleep 2
+        # Force kill if still running
+        kill -9 "$BACKEND_PID" 2>/dev/null || true
     fi
     
-    # Kill any remaining processes
-    pkill -f "uvicorn.*server:app" 2>/dev/null || true
-    pkill -f "python3.*cryptominer" 2>/dev/null || true
-    pkill -f "http.server" 2>/dev/null || true
+    # Force kill any remaining processes
+    log_info "Force stopping all CryptoMiner processes..."
+    pkill -9 -f "uvicorn.*server:app" 2>/dev/null || true
+    pkill -9 -f "python3.*cryptominer" 2>/dev/null || true
+    pkill -9 -f "http.server" 2>/dev/null || true
+    pkill -9 -f "timeout.*cryptominer" 2>/dev/null || true
     
     log_success "All services stopped"
     exit 0

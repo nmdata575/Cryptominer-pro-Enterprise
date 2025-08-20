@@ -221,7 +221,7 @@ AI_ENABLED=true
         # Ask if user wants to start mining
         start_now = input("\nStart mining now? (y/n): ").lower().strip()
         if start_now in ['y', 'yes']:
-            await self.start_mining(coin, wallet, pool, password, intensity, threads)
+            await self.start_mining(coin, wallet, pool, password, intensity, threads, proxy_mode=False)
 
     async def start_mining(self, coin, wallet, pool, password=None, intensity=80, threads=None, proxy_mode=False):
         """Start the mining operation"""

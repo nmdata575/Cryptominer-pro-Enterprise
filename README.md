@@ -20,33 +20,70 @@ CryptoMiner Pro V30 is an enterprise-scale distributed mining platform designed 
 - **Scrypt** - Litecoin (LTC), Dogecoin (DOGE), Vertcoin (VTC)
 - **RandomX** - Monero (XMR) *(CPU-friendly)*
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Installation
+### Automated Installation
 
 ```bash
-# Install dependencies
-python3 install.py
+# Run the installation script
+chmod +x install.sh
+./install.sh
 
-# Or manually install
+# Edit your configuration
+nano mining_config.env
+
+# Start mining with integrated web dashboard
+./start-integrated.sh
+```
+
+### Manual Installation
+
+```bash
+# Install system dependencies
+sudo apt-get update
+sudo apt-get install python3 python3-pip python3-venv build-essential
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install Python dependencies  
 pip install -r requirements.txt
+
+# Configure mining settings
+cp mining_config.template mining_config.env
+# Edit mining_config.env with your wallet address
+
+# Start mining
+python3 cryptominer.py --proxy-mode
 ```
 
-### 2. Interactive Setup
+## 📊 Web Dashboard
 
+The application automatically creates and starts a beautiful web dashboard:
+
+- **URL**: http://localhost:3000
+- **Features**: Real-time mining statistics, AI optimization progress, share tracking
+- **Backend API**: http://localhost:8001/docs
+
+## 🏗️ Architecture Options
+
+### Proxy Mode (Recommended)
 ```bash
-python3 cryptominer.py --setup
+python3 cryptominer.py --proxy-mode --threads 8
 ```
+- Single connection to pool
+- Multiple internal mining threads
+- Bypasses pool connection limits
+- Maximum efficiency
 
-### 3. Direct Mining
-
-```bash
-# Basic usage
-python3 cryptominer.py --coin LTC --wallet YOUR_WALLET_ADDRESS --pool stratum+tcp://pool.example.com:4444
-
-# Advanced usage with all options
-python3 cryptominer.py --coin LTC --wallet YOUR_WALLET_ADDRESS --pool stratum+tcp://pool.example.com:4444 --password worker1 --intensity 90 --threads 8
+### Direct Mode
+```bash  
+python3 cryptominer.py --threads 8
 ```
+- Direct connections to pool
+- Traditional mining approach
+- May hit pool connection limits
 
 ## Command Line Options
 

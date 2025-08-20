@@ -394,6 +394,7 @@ Configuration File:
     parser.add_argument('--intensity', type=int, default=cfg.get('intensity', 80), help=f'Mining intensity 1-100%% (default: {cfg.get("intensity", 80)})')
     parser.add_argument('--threads', type=int, default=cfg.get('threads'), help='Number of threads (default: auto)')
     parser.add_argument('--web-port', type=int, default=cfg.get('web_port', 8001), help=f'Web monitoring port (default: {cfg.get("web_port", 8001)})')
+    parser.add_argument('--proxy-mode', action='store_true', help='Use proxy connection manager (single pool connection, multiple threads)')
     parser.add_argument('--config', help='Use specific config file (default: mining_config.env)')
     
     args = parser.parse_args()

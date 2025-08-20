@@ -223,7 +223,7 @@ AI_ENABLED=true
         if start_now in ['y', 'yes']:
             await self.start_mining(coin, wallet, pool, password, intensity, threads)
 
-    async def start_mining(self, coin, wallet, pool, password=None, intensity=80, threads=None):
+    async def start_mining(self, coin, wallet, pool, password=None, intensity=80, threads=None, proxy_mode=False):
         """Start the mining operation"""
         self.running = True
         
@@ -233,24 +233,46 @@ AI_ENABLED=true
         logger.info(f"Pool: {pool}")
         logger.info(f"Intensity: {intensity}%")
         logger.info(f"Threads: {threads or 'auto'}")
+        logger.info(f"Connection Mode: {'Proxy (Single Connection)' if proxy_mode else 'Direct (Multiple Connections)'}")
         
         try:
-            # Initialize AI optimizer
-            self.ai_optimizer = AIOptimizer()
-            
-            # Initialize mining engine
-            self.mining_engine = MiningEngine(
-                coin=coin,
-                wallet=wallet, 
-                pool=pool,
-                password=password,
-                intensity=intensity,
-                ai_optimizer=self.ai_optimizer
-            )
-            
-            # Set thread count if specified
-            if threads:
-                self.mining_engine.set_thread_count(threads)
+            if proxy_mode:
+                logger.info("🔄 Initializing proxy connection manager")
+                from proxy_mining_engine import ProxyMiningEngine
+                
+                # Initialize proxy mining engine  
+                self.mining_engine = ProxyMiningEngine(
+                    coin=coin,
+                    wallet=wallet,
+                    pool_url=pool,
+                    password=password or "x",
+                    intensity=intensity
+                )
+                
+                # Set thread count if specified
+                if threads:
+                    self.mining_engine.set_thread_count(threads)
+                
+            else:
+                logger.info("🔗 Initializing direct connection mining engine")
+                from mining_engine import MiningEngine
+                
+                # Initialize AI optimizer
+                self.ai_optimizer = AIOptimizer()
+                
+                # Initialize traditional mining engine
+                self.mining_engine = MiningEngine(
+                    coin=coin,
+                    wallet=wallet, 
+                    pool=pool,
+                    password=password,
+                    intensity=intensity,
+                    ai_optimizer=self.ai_optimizer
+                )
+                
+                # Set thread count if specified
+                if threads:
+                    self.mining_engine.set_thread_count(threads)
             
             # Start web monitoring server
             self.web_server_task = asyncio.create_task(self.start_web_server())

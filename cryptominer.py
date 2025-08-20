@@ -464,7 +464,8 @@ Configuration File:
             pool=args.pool,
             password=args.password,
             intensity=args.intensity,
-            threads=args.threads
+            threads=args.threads,
+            proxy_mode=args.proxy_mode
         ))
         return
     

@@ -33,7 +33,7 @@ class ProxyMiningEngine:
         
         # AI Optimizer
         try:
-            self.ai_optimizer = AIOptimizer(coin)
+            self.ai_optimizer = AIOptimizer()
             logger.info("AI Optimizer initialized")
         except Exception as e:
             logger.warning(f"AI Optimizer failed to initialize: {e}")

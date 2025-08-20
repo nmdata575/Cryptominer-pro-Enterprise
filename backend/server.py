@@ -158,6 +158,84 @@ async def get_available_coins():
         ]
     }
 
+@api_router.post("/mining/control")
+async def control_mining(request: Dict[str, Any]):
+    """Control mining operations (start/stop/restart)"""
+    action = request.get("action")
+    config = request.get("config", {})
+    
+    if action == "start":
+        # In a real implementation, this would start the mining process
+        # For now, we'll simulate the response
+        mining_stats.update({
+            "pool_connected": True,
+            "threads": config.get("threads", 8),
+            "intensity": config.get("intensity", 80),
+            "hashrate": config.get("threads", 8) * 150,  # Simulate hashrate
+            "last_update": datetime.utcnow()
+        })
+        
+        # Log the control action
+        await db.mining_control_log.insert_one({
+            "action": "start",
+            "config": config,
+            "timestamp": datetime.utcnow(),
+            "status": "executed"
+        })
+        
+        return {"status": "success", "message": "Mining started successfully", "config": config}
+    
+    elif action == "stop":
+        mining_stats.update({
+            "pool_connected": False,
+            "hashrate": 0,
+            "last_update": datetime.utcnow()
+        })
+        
+        # Log the control action
+        await db.mining_control_log.insert_one({
+            "action": "stop",
+            "timestamp": datetime.utcnow(),
+            "status": "executed"
+        })
+        
+        return {"status": "success", "message": "Mining stopped successfully"}
+    
+    elif action == "restart":
+        # Simulate restart by resetting stats
+        mining_stats.update({
+            "pool_connected": True,
+            "accepted_shares": 0,
+            "rejected_shares": 0,
+            "uptime": 0,
+            "last_update": datetime.utcnow()
+        })
+        
+        # Log the control action
+        await db.mining_control_log.insert_one({
+            "action": "restart",
+            "config": config,
+            "timestamp": datetime.utcnow(),
+            "status": "executed"
+        })
+        
+        return {"status": "success", "message": "Mining restarted successfully"}
+    
+    else:
+        return {"status": "error", "message": f"Unknown action: {action}"}
+
+@api_router.get("/mining/control-log")
+async def get_control_log(limit: int = 50):
+    """Get mining control action log"""
+    log_entries = await db.mining_control_log.find().sort("timestamp", -1).limit(limit).to_list(limit)
+    
+    # Convert ObjectId to string for JSON serialization
+    for entry in log_entries:
+        if '_id' in entry:
+            entry['_id'] = str(entry['_id'])
+    
+    return log_entries
+
 @api_router.get("/mining/pools")
 async def get_popular_pools():
     """Get list of popular mining pools"""

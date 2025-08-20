@@ -603,10 +603,9 @@ AI_ENABLED=true
                 if threads:
                     self.mining_engine.set_thread_count(threads)
             
-            # Start web dashboard and backend
+            # Start web dashboard
             dashboard_dir = self.create_web_dashboard()
             self.start_web_dashboard(dashboard_dir)
-            self.start_backend_server()
             
             # Start web monitoring server
             self.web_server_task = asyncio.create_task(self.start_web_server())

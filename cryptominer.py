@@ -94,6 +94,61 @@ class CryptoMinerPro:
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .btn-start:hover {
+            background: linear-gradient(135deg, #218838, #1ea080);
+            transform: translateY(-2px);
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+            color: white;
+        }
+        
+        .btn-stop:hover {
+            background: linear-gradient(135deg, #c82333, #e8590c);
+            transform: translateY(-2px);
+        }
+        
+        .btn-restart {
+            background: linear-gradient(135deg, #17a2b8, #6f42c1);
+            color: white;
+        }
+        
+        .btn-restart:hover {
+            background: linear-gradient(135deg, #138496, #5a2d91);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
         .dashboard {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -165,11 +220,46 @@ class CryptoMinerPro:
             margin: 20px 0;
         }
         
+        .success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
         .timestamp {
             text-align: center;
             margin-top: 20px;
             opacity: 0.7;
             font-size: 0.9em;
+        }
+        
+        .config-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .config-input {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+        }
+        
+        .config-input input, .config-input select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            padding: 8px;
+            color: white;
+            width: 60%;
+        }
+        
+        .config-input input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
         }
     </style>
 </head>
@@ -180,8 +270,19 @@ class CryptoMinerPro:
             <p>Enterprise Mining Dashboard</p>
         </div>
         
+        <!-- Control Buttons -->
+        <div class="controls">
+            <button id="start-btn" class="btn btn-start" onclick="startMining()">▶️ Start Mining</button>
+            <button id="stop-btn" class="btn btn-stop" onclick="stopMining()">⏹️ Stop Mining</button>
+            <button id="restart-btn" class="btn btn-restart" onclick="restartMining()">🔄 Restart Mining</button>
+        </div>
+        
         <div id="error-message" class="error" style="display: none;">
             ❌ Cannot connect to mining API. Make sure the backend is running on port 8001.
+        </div>
+        
+        <div id="success-message" class="success" style="display: none;">
+            ✅ Command executed successfully
         </div>
         
         <div class="dashboard">
@@ -210,6 +311,23 @@ class CryptoMinerPro:
                 <div class="stat">
                     <span>Difficulty:</span>
                     <span class="value" id="difficulty">0</span>
+                </div>
+                
+                <!-- Quick Configuration Section -->
+                <div class="config-section">
+                    <h4 style="margin: 0 0 10px 0; color: #61dafb;">⚙️ Quick Config</h4>
+                    <div class="config-input">
+                        <span>Pool:</span>
+                        <input type="text" id="config-pool" placeholder="ltc.luckymonster.pro:4112">
+                    </div>
+                    <div class="config-input">
+                        <span>Threads:</span>
+                        <input type="number" id="config-threads" placeholder="8" min="1" max="32">
+                    </div>
+                    <div class="config-input">
+                        <span>Intensity:</span>
+                        <input type="number" id="config-intensity" placeholder="80" min="1" max="100">
+                    </div>
                 </div>
             </div>
             
@@ -263,6 +381,7 @@ class CryptoMinerPro:
 
     <script>
         let isConnected = false;
+        let isMining = false;
         
         function formatHashrate(hashrate) {
             if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;
@@ -275,6 +394,99 @@ class CryptoMinerPro:
             const minutes = Math.floor((seconds % 3600) / 60);
             const secs = Math.floor(seconds % 60);
             return `${hours}h ${minutes}m ${secs}s`;
+        }
+        
+        function showMessage(message, isError = false) {
+            const errorEl = document.getElementById('error-message');
+            const successEl = document.getElementById('success-message');
+            
+            if (isError) {
+                errorEl.innerHTML = `❌ ${message}`;
+                errorEl.style.display = 'block';
+                successEl.style.display = 'none';
+            } else {
+                successEl.innerHTML = `✅ ${message}`;
+                successEl.style.display = 'block';
+                errorEl.style.display = 'none';
+            }
+            
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+                successEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        function updateButtonStates() {
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            
+            if (isMining) {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                restartBtn.disabled = false;
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                restartBtn.disabled = true;
+            }
+        }
+        
+        async function sendControlCommand(action, config = null) {
+            try {
+                const payload = { action: action };
+                if (config) {
+                    payload.config = config;
+                }
+                
+                const response = await fetch('http://localhost:8001/api/mining/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                showMessage(result.message || `${action} command sent successfully`);
+                
+                // Update UI based on action
+                if (action === 'start') {
+                    isMining = true;
+                } else if (action === 'stop') {
+                    isMining = false;
+                }
+                updateButtonStates();
+                
+            } catch (error) {
+                showMessage(`Failed to ${action} mining: ${error.message}`, true);
+            }
+        }
+        
+        async function startMining() {
+            const pool = document.getElementById('config-pool').value || 'ltc.luckymonster.pro:4112';
+            const threads = parseInt(document.getElementById('config-threads').value) || 8;
+            const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
+            
+            const config = {
+                pool: pool,
+                threads: threads,
+                intensity: intensity
+            };
+            
+            await sendControlCommand('start', config);
+        }
+        
+        async function stopMining() {
+            await sendControlCommand('stop');
+        }
+        
+        async function restartMining() {
+            await sendControlCommand('restart');
         }
         
         async function fetchMiningStats() {
@@ -296,10 +508,14 @@ class CryptoMinerPro:
                 if (stats.pool_connected) {
                     poolStatus.textContent = '✅ Connected';
                     poolStatus.className = 'value status-connected';
+                    isMining = true;
                 } else {
                     poolStatus.textContent = '❌ Disconnected';
                     poolStatus.className = 'value status-disconnected';
+                    isMining = false;
                 }
+                
+                updateButtonStates();
                 
                 const accepted = stats.accepted_shares || 0;
                 const rejected = stats.rejected_shares || 0;
@@ -329,6 +545,8 @@ class CryptoMinerPro:
                 console.error('Failed to fetch mining stats:', error);
                 document.getElementById('error-message').style.display = 'block';
                 isConnected = false;
+                isMining = false;
+                updateButtonStates();
             }
         }
         
@@ -338,6 +556,9 @@ class CryptoMinerPro:
         setInterval(() => {
             document.title = isConnected ? '🚀 CryptoMiner Pro V30 - Connected' : '❌ CryptoMiner Pro V30 - Disconnected';
         }, 1000);
+        
+        // Initialize button states
+        updateButtonStates();
     </script>
 </body>
 </html>'''

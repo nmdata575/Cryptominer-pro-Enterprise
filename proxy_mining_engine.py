@@ -62,6 +62,14 @@ class ProxyMiningEngine:
             self.intensity = intensity
             logger.info(f"Mining intensity set to: {intensity}%")
     
+    async def start(self):
+        """Start mining (compatibility method for main application)"""
+        return await self.start_mining()
+    
+    async def stop(self):
+        """Stop mining (compatibility method for main application)"""
+        return await self.stop_mining()
+    
     async def start_mining(self):
         """Start mining using connection manager"""
         if self.running:

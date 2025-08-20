@@ -49,12 +49,338 @@ class CryptoMinerPro:
         self.mining_engine = None
         self.ai_optimizer = None
         self.web_server_task = None
+        self.web_server_thread = None
+        self.backend_process = None
         self.running = False
         self.shutdown_event = asyncio.Event()
         
         # Setup signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
+    
+    def create_web_dashboard(self):
+        """Create the HTML web dashboard"""
+        dashboard_dir = Path("web-dashboard")
+        dashboard_dir.mkdir(exist_ok=True)
+        
+        dashboard_html = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 CryptoMiner Pro V30 Dashboard</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card h3 {
+            margin-top: 0;
+            color: #61dafb;
+            font-size: 1.3em;
+            border-bottom: 2px solid #61dafb;
+            padding-bottom: 10px;
+        }
+        
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat:last-child {
+            border-bottom: none;
+        }
+        
+        .value {
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        .status-connected {
+            color: #00ff88;
+        }
+        
+        .status-disconnected {
+            color: #ff4444;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #61dafb);
+            transition: width 0.3s ease;
+        }
+        
+        .error {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .timestamp {
+            text-align: center;
+            margin-top: 20px;
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 CryptoMiner Pro V30</h1>
+            <p>Enterprise Mining Dashboard</p>
+        </div>
+        
+        <div id="error-message" class="error" style="display: none;">
+            ❌ Cannot connect to mining API. Make sure the backend is running on port 8001.
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h3>⚡ Mining Status</h3>
+                <div class="stat">
+                    <span>Hashrate:</span>
+                    <span class="value" id="hashrate">0 H/s</span>
+                </div>
+                <div class="stat">
+                    <span>Threads:</span>
+                    <span class="value" id="threads">0</span>
+                </div>
+                <div class="stat">
+                    <span>Intensity:</span>
+                    <span class="value" id="intensity">0%</span>
+                </div>
+                <div class="stat">
+                    <span>Coin:</span>
+                    <span class="value" id="coin">-</span>
+                </div>
+                <div class="stat">
+                    <span>Pool:</span>
+                    <span class="value" id="pool-status">❌ Disconnected</span>
+                </div>
+                <div class="stat">
+                    <span>Difficulty:</span>
+                    <span class="value" id="difficulty">0</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Share Statistics</h3>
+                <div class="stat">
+                    <span>Accepted:</span>
+                    <span class="value" id="accepted-shares">0</span>
+                </div>
+                <div class="stat">
+                    <span>Rejected:</span>
+                    <span class="value" id="rejected-shares">0</span>
+                </div>
+                <div class="stat">
+                    <span>Total:</span>
+                    <span class="value" id="total-shares">0</span>
+                </div>
+                <div class="stat">
+                    <span>Acceptance Rate:</span>
+                    <span class="value" id="acceptance-rate">0%</span>
+                </div>
+                <div class="stat">
+                    <span>Uptime:</span>
+                    <span class="value" id="uptime">0h 0m 0s</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🤖 AI Optimization</h3>
+                <div class="stat">
+                    <span>AI Learning:</span>
+                    <span class="value" id="ai-learning">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="ai-learning-bar" style="width: 0%"></div>
+                </div>
+                <div class="stat">
+                    <span>AI Optimization:</span>
+                    <span class="value" id="ai-optimization">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="ai-optimization-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="timestamp" id="last-update">
+            Last updated: Never
+        </div>
+    </div>
+
+    <script>
+        let isConnected = false;
+        
+        function formatHashrate(hashrate) {
+            if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;
+            if (hashrate >= 1000) return `${(hashrate / 1000).toFixed(2)} KH/s`;
+            return `${hashrate.toFixed(2)} H/s`;
+        }
+        
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${hours}h ${minutes}m ${secs}s`;
+        }
+        
+        async function fetchMiningStats() {
+            try {
+                const response = await fetch('http://localhost:8001/api/mining/stats');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const stats = await response.json();
+                
+                document.getElementById('hashrate').textContent = formatHashrate(stats.hashrate || 0);
+                document.getElementById('threads').textContent = stats.threads || 0;
+                document.getElementById('intensity').textContent = `${stats.intensity || 0}%`;
+                document.getElementById('coin').textContent = stats.coin || 'LTC';
+                document.getElementById('difficulty').textContent = stats.difficulty || 0;
+                
+                const poolStatus = document.getElementById('pool-status');
+                if (stats.pool_connected) {
+                    poolStatus.textContent = '✅ Connected';
+                    poolStatus.className = 'value status-connected';
+                } else {
+                    poolStatus.textContent = '❌ Disconnected';
+                    poolStatus.className = 'value status-disconnected';
+                }
+                
+                const accepted = stats.accepted_shares || 0;
+                const rejected = stats.rejected_shares || 0;
+                const total = accepted + rejected;
+                const acceptanceRate = total > 0 ? ((accepted / total) * 100).toFixed(1) : 0;
+                
+                document.getElementById('accepted-shares').textContent = accepted;
+                document.getElementById('rejected-shares').textContent = rejected;
+                document.getElementById('total-shares').textContent = total;
+                document.getElementById('acceptance-rate').textContent = `${acceptanceRate}%`;
+                document.getElementById('uptime').textContent = formatUptime(stats.uptime || 0);
+                
+                const aiLearning = stats.ai_learning || 0;
+                const aiOptimization = stats.ai_optimization || 0;
+                
+                document.getElementById('ai-learning').textContent = `${aiLearning.toFixed(1)}%`;
+                document.getElementById('ai-optimization').textContent = `${aiOptimization.toFixed(1)}%`;
+                document.getElementById('ai-learning-bar').style.width = `${Math.min(aiLearning, 100)}%`;
+                document.getElementById('ai-optimization-bar').style.width = `${Math.min(aiOptimization, 100)}%`;
+                
+                document.getElementById('last-update').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                
+                document.getElementById('error-message').style.display = 'none';
+                isConnected = true;
+                
+            } catch (error) {
+                console.error('Failed to fetch mining stats:', error);
+                document.getElementById('error-message').style.display = 'block';
+                isConnected = false;
+            }
+        }
+        
+        fetchMiningStats();
+        setInterval(fetchMiningStats, 5000);
+        
+        setInterval(() => {
+            document.title = isConnected ? '🚀 CryptoMiner Pro V30 - Connected' : '❌ CryptoMiner Pro V30 - Disconnected';
+        }, 1000);
+    </script>
+</body>
+</html>'''
+        
+        dashboard_file = dashboard_dir / "index.html"
+        dashboard_file.write_text(dashboard_html)
+        logger.info(f"📄 Created web dashboard: {dashboard_file}")
+        return dashboard_dir
+    
+    def start_web_dashboard(self, dashboard_dir, port=3000):
+        """Start the web dashboard server in a separate thread"""
+        def run_server():
+            try:
+                os.chdir(dashboard_dir)
+                handler = http.server.SimpleHTTPRequestHandler
+                with socketserver.TCPServer(("", port), handler) as httpd:
+                    logger.info(f"🌐 Web dashboard started: http://localhost:{port}")
+                    httpd.serve_forever()
+            except Exception as e:
+                logger.error(f"Web dashboard server error: {e}")
+        
+        self.web_server_thread = threading.Thread(target=run_server, daemon=True)
+        self.web_server_thread.start()
+    
+    def start_backend_server(self):
+        """Start the FastAPI backend server"""
+        try:
+            import subprocess
+            backend_cmd = [
+                sys.executable, "-m", "uvicorn", 
+                "backend.server:app", 
+                "--host", "0.0.0.0", 
+                "--port", "8001",
+                "--reload"
+            ]
+            self.backend_process = subprocess.Popen(
+                backend_cmd, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE
+            )
+            logger.info("🔧 Backend API server started on port 8001")
+        except Exception as e:
+            logger.error(f"Failed to start backend server: {e}")
 
     def _signal_handler(self, signum, frame):
         """Handle Ctrl+C and termination signals gracefully"""

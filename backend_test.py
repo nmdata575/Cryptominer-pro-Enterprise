@@ -185,6 +185,221 @@ class CryptoMinerAPITester:
                 200
             )
 
+    def test_mining_control_start(self):
+        """Test mining control start functionality"""
+        control_data = {
+            "action": "start",
+            "config": {
+                "coin": "LTC",
+                "wallet": "LTC_TEST_WALLET_ADDRESS_123456789",
+                "pool": "ltc.luckymonster.pro:4112",
+                "intensity": 75,
+                "threads": 4,
+                "password": "x"
+            }
+        }
+        return self.run_test(
+            "Mining Control - Start",
+            "POST",
+            "mining/control",
+            200,
+            data=control_data
+        )
+
+    def test_mining_control_start_already_running(self):
+        """Test starting mining when already running"""
+        control_data = {
+            "action": "start",
+            "config": {
+                "coin": "LTC",
+                "wallet": "LTC_TEST_WALLET_ADDRESS_123456789",
+                "pool": "ltc.luckymonster.pro:4112",
+                "intensity": 80,
+                "threads": 2
+            }
+        }
+        # This should return an error if mining is already running
+        success, response = self.run_test(
+            "Mining Control - Start (Already Running)",
+            "POST",
+            "mining/control",
+            200,
+            data=control_data
+        )
+        
+        # Check if response indicates error for already running
+        if success and isinstance(response, dict):
+            if response.get("status") == "error" and "already running" in response.get("message", "").lower():
+                print("   ✅ Correctly detected mining already running")
+            elif response.get("status") == "success":
+                print("   ⚠️  Started new mining process (previous may have been stopped)")
+        
+        return success, response
+
+    def test_mining_status(self):
+        """Test mining status endpoint"""
+        return self.run_test(
+            "Mining Status",
+            "GET",
+            "mining/status",
+            200
+        )
+
+    def test_mining_control_stop(self):
+        """Test mining control stop functionality"""
+        control_data = {
+            "action": "stop"
+        }
+        return self.run_test(
+            "Mining Control - Stop",
+            "POST",
+            "mining/control",
+            200,
+            data=control_data
+        )
+
+    def test_mining_control_stop_not_running(self):
+        """Test stopping mining when not running"""
+        control_data = {
+            "action": "stop"
+        }
+        success, response = self.run_test(
+            "Mining Control - Stop (Not Running)",
+            "POST",
+            "mining/control",
+            200,
+            data=control_data
+        )
+        
+        # Check if response indicates error for not running
+        if success and isinstance(response, dict):
+            if response.get("status") == "error" and "not currently running" in response.get("message", "").lower():
+                print("   ✅ Correctly detected mining not running")
+            elif response.get("status") == "success":
+                print("   ⚠️  Stopped mining processes (some may have been running)")
+        
+        return success, response
+
+    def test_mining_control_restart(self):
+        """Test mining control restart functionality"""
+        control_data = {
+            "action": "restart",
+            "config": {
+                "coin": "DOGE",
+                "wallet": "DOGE_TEST_WALLET_ADDRESS_987654321",
+                "pool": "doge.luckymonster.pro:4112",
+                "intensity": 85,
+                "threads": 6
+            }
+        }
+        return self.run_test(
+            "Mining Control - Restart",
+            "POST",
+            "mining/control",
+            200,
+            data=control_data
+        )
+
+    def test_mining_control_invalid_action(self):
+        """Test mining control with invalid action"""
+        control_data = {
+            "action": "invalid_action"
+        }
+        success, response = self.run_test(
+            "Mining Control - Invalid Action",
+            "POST",
+            "mining/control",
+            200,
+            data=control_data
+        )
+        
+        # Check if response indicates error for invalid action
+        if success and isinstance(response, dict):
+            if response.get("status") == "error" and "unknown action" in response.get("message", "").lower():
+                print("   ✅ Correctly rejected invalid action")
+            else:
+                print("   ⚠️  Unexpected response for invalid action")
+        
+        return success, response
+
+    def test_mining_control_log(self):
+        """Test mining control log endpoint"""
+        return self.run_test(
+            "Mining Control Log",
+            "GET",
+            "mining/control-log",
+            200
+        )
+
+    def test_mining_process_management_sequence(self):
+        """Test complete mining process management sequence"""
+        print("\n🔄 Testing Complete Mining Process Management Sequence...")
+        
+        # 1. Check initial status
+        print("   Step 1: Check initial mining status")
+        success, status_response = self.test_mining_status()
+        if success:
+            initial_active = status_response.get("is_active", False)
+            print(f"   Initial mining active: {initial_active}")
+        
+        # 2. Stop any existing mining (cleanup)
+        print("   Step 2: Stop any existing mining processes")
+        self.test_mining_control_stop()
+        time.sleep(2)  # Wait for cleanup
+        
+        # 3. Start mining with custom config
+        print("   Step 3: Start mining with custom configuration")
+        success, start_response = self.test_mining_control_start()
+        if success and start_response.get("status") == "success":
+            print("   ✅ Mining started successfully")
+            time.sleep(3)  # Wait for process to initialize
+            
+            # 4. Check status shows active
+            print("   Step 4: Verify mining status shows active")
+            success, status_response = self.test_mining_status()
+            if success:
+                is_active = status_response.get("is_active", False)
+                process_id = status_response.get("process_id")
+                print(f"   Mining active: {is_active}, PID: {process_id}")
+                
+                if is_active and process_id:
+                    print("   ✅ Mining process is active with valid PID")
+                else:
+                    print("   ⚠️  Mining may not be fully active yet")
+            
+            # 5. Test restart with different config
+            print("   Step 5: Restart mining with different configuration")
+            success, restart_response = self.test_mining_control_restart()
+            if success and restart_response.get("status") == "success":
+                print("   ✅ Mining restarted successfully")
+                time.sleep(2)  # Wait for restart
+                
+                # 6. Final status check
+                print("   Step 6: Final status check after restart")
+                success, final_status = self.test_mining_status()
+                if success:
+                    final_active = final_status.get("is_active", False)
+                    final_pid = final_status.get("process_id")
+                    print(f"   Final mining active: {final_active}, PID: {final_pid}")
+            
+            # 7. Stop mining (cleanup)
+            print("   Step 7: Stop mining (cleanup)")
+            self.test_mining_control_stop()
+            time.sleep(2)  # Wait for cleanup
+            
+            # 8. Verify stopped
+            print("   Step 8: Verify mining is stopped")
+            success, stopped_status = self.test_mining_status()
+            if success:
+                stopped_active = stopped_status.get("is_active", False)
+                print(f"   Mining active after stop: {stopped_active}")
+                if not stopped_active:
+                    print("   ✅ Mining successfully stopped")
+                else:
+                    print("   ⚠️  Mining may still be running")
+        
+        print("   🏁 Process management sequence completed")
+
     def run_comprehensive_test(self):
         """Run all API tests"""
         print("🚀 Starting CryptoMiner Pro V30 API Testing")

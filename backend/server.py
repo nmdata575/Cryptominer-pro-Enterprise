@@ -403,6 +403,8 @@ async def get_mining_status():
         "pool_connected": mining_stats.get("pool_connected", False),
         "last_update": mining_stats.get("last_update")
     }
+
+@api_router.get("/mining/control-log")
 async def get_control_log(limit: int = 50):
     """Get mining control action log"""
     log_entries = await db.mining_control_log.find().sort("timestamp", -1).limit(limit).to_list(limit)

@@ -47,6 +47,10 @@ mining_stats = {
     "last_update": datetime.utcnow()
 }
 
+# Global process management
+mining_process = None
+is_mining_active = False
+
 # Define Models
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

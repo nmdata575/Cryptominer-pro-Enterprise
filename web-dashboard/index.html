@@ -318,6 +318,9 @@
         let isConnected = false;
         let isMining = false;
         
+        // Get backend URL from environment or use localhost as fallback
+        const BACKEND_URL = window.REACT_APP_BACKEND_URL || 'https://cryptomine-central.preview.emergentagent.com' || 'http://localhost:8001';
+        
         function formatHashrate(hashrate) {
             if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;
             if (hashrate >= 1000) return `${(hashrate / 1000).toFixed(2)} KH/s`;
@@ -374,7 +377,7 @@
                     payload.config = config;
                 }
                 
-                const response = await fetch('http://localhost:8001/api/mining/control', {
+                const response = await fetch(`${BACKEND_URL}/api/mining/control`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -397,6 +400,9 @@
                 }
                 updateButtonStates();
                 
+                // Refresh stats after a short delay
+                setTimeout(fetchMiningStats, 2000);
+                
             } catch (error) {
                 showMessage(`Failed to ${action} mining: ${error.message}`, true);
             }
@@ -410,7 +416,9 @@
             const config = {
                 pool: pool,
                 threads: threads,
-                intensity: intensity
+                intensity: intensity,
+                coin: "LTC",
+                wallet: "LTC_PLACEHOLDER_WALLET_ADDRESS"
             };
             
             await sendControlCommand('start', config);
@@ -421,12 +429,24 @@
         }
         
         async function restartMining() {
-            await sendControlCommand('restart');
+            const pool = document.getElementById('config-pool').value || 'ltc.luckymonster.pro:4112';
+            const threads = parseInt(document.getElementById('config-threads').value) || 8;
+            const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
+            
+            const config = {
+                pool: pool,
+                threads: threads,
+                intensity: intensity,
+                coin: "LTC",
+                wallet: "LTC_PLACEHOLDER_WALLET_ADDRESS"
+            };
+            
+            await sendControlCommand('restart', config);
         }
         
         async function fetchMiningStats() {
             try {
-                const response = await fetch('http://localhost:8001/api/mining/stats');
+                const response = await fetch(`${BACKEND_URL}/api/mining/stats`);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
@@ -478,6 +498,7 @@
                 
             } catch (error) {
                 console.error('Failed to fetch mining stats:', error);
+                document.getElementById('error-message').innerHTML = `❌ Cannot connect to mining API at ${BACKEND_URL}. Make sure the backend is running.`;
                 document.getElementById('error-message').style.display = 'block';
                 isConnected = false;
                 isMining = false;
@@ -494,6 +515,9 @@
         
         // Initialize button states
         updateButtonStates();
+        
+        // Show current backend URL in console for debugging
+        console.log(`Backend URL: ${BACKEND_URL}`);
     </script>
 </body>
 </html>

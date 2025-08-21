@@ -70,16 +70,16 @@ def kill_mining_processes():
         except Exception as e:
             logger.error(f"Error terminating managed process: {e}")
     
-    # Find and kill any cryptominer processes
+    # Find and kill any cryptominer processes (but NOT our backend server)
     killed_processes = []
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
             cmdline = ' '.join(proc.info['cmdline'] or [])
-            if ('cryptominer' in cmdline and 'python' in cmdline) or \
-               ('uvicorn' in cmdline and 'server' in cmdline):
+            # Only kill cryptominer processes, not the backend API server
+            if ('cryptominer' in cmdline and 'python' in cmdline):
                 proc.terminate()
                 killed_processes.append(proc.info['pid'])
-                logger.info(f"Terminated process {proc.info['pid']}: {cmdline}")
+                logger.info(f"Terminated cryptominer process {proc.info['pid']}: {cmdline}")
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
     

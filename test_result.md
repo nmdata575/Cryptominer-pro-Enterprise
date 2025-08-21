@@ -145,16 +145,19 @@ backend:
         comment: "Comprehensive API testing completed successfully. All 11 endpoints tested and working: Basic API health ✅, Mining stats ✅, Mining config (GET/POST) ✅, Available coins ✅, Popular pools ✅, System info ✅, Mining history ✅ (fixed ObjectId serialization issue), Update mining stats ✅, Status endpoints ✅. CORS functionality verified. MongoDB integration working correctly with proper data persistence. Fixed minor ObjectId serialization bug in mining history endpoint."
 
   - task: "Mining process control via API"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Current /api/mining/control endpoint only simulates control commands. Need to implement actual process management to start/stop real cryptominer.py processes from web interface."
+      - working: true
+        agent: "testing"
+        comment: "Mining process control API fully implemented and working! Comprehensive testing completed: ✅ POST /api/mining/control with actions 'start', 'stop', 'restart' all functional ✅ Real process management with subprocess and psutil integration ✅ Proper cryptominer.py process spawning with config parameters (coin, wallet, pool, intensity, threads) ✅ Process cleanup and kill functionality working ✅ GET /api/mining/status returns accurate process state (is_active, process_id, pool_connected) ✅ Error handling for invalid actions and edge cases ✅ MongoDB logging of all control actions to mining_control_log collection ✅ GET /api/mining/control-log shows detailed action history. The backend successfully starts real mining processes, manages them properly, and provides full control via API endpoints. Process management includes proper cleanup and error handling."
 
 frontend:
   - task: "Mining dashboard UI"

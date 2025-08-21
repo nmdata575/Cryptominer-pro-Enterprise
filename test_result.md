@@ -169,6 +169,18 @@ frontend:
         agent: "main"
         comment: "React dashboard displaying real-time mining statistics"
 
+  - task: "Web mining control buttons"
+    implemented: true
+    working: false
+    file: "web-dashboard/index.html"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Start/Stop/Restart buttons implemented in HTML dashboard but not functional yet due to backend API simulation. Frontend sends proper requests to /api/mining/control but backend needs real process management."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"

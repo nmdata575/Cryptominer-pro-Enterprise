@@ -364,7 +364,7 @@ async def control_mining(request: Dict[str, Any]):
     elif action == "restart":
         # Stop first
         if is_mining_active:
-            killed_count = kill_mining_processes()
+            killed_count = await kill_mining_processes()
             logger.info(f"Restart: killed {killed_count} processes")
         
         # Add default values if not provided

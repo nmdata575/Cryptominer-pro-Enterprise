@@ -290,65 +290,96 @@ async def get_available_coins():
 @api_router.post("/mining/control")
 async def control_mining(request: Dict[str, Any]):
     """Control mining operations (start/stop/restart)"""
+    global mining_process, is_mining_active
+    
     action = request.get("action")
     config = request.get("config", {})
     
     if action == "start":
-        # In a real implementation, this would start the mining process
-        # For now, we'll simulate the response
-        mining_stats.update({
-            "pool_connected": True,
-            "threads": config.get("threads", 8),
-            "intensity": config.get("intensity", 80),
-            "hashrate": config.get("threads", 8) * 150,  # Simulate hashrate
-            "last_update": datetime.utcnow()
-        })
+        if is_mining_active and mining_process and mining_process.poll() is None:
+            return {"status": "error", "message": "Mining is already running"}
         
-        # Log the control action
-        await db.mining_control_log.insert_one({
-            "action": "start",
-            "config": config,
-            "timestamp": datetime.utcnow(),
-            "status": "executed"
-        })
+        # Add default values if not provided
+        if not config.get("wallet"):
+            config["wallet"] = "LTC_PLACEHOLDER_WALLET_ADDRESS"
+        if not config.get("coin"):
+            config["coin"] = "LTC"
+        if not config.get("pool"):
+            config["pool"] = "ltc.luckymonster.pro:4112"
         
-        return {"status": "success", "message": "Mining started successfully", "config": config}
+        success = await start_mining_process(config)
+        
+        if success:
+            # Log the control action
+            await db.mining_control_log.insert_one({
+                "action": "start",
+                "config": config,
+                "timestamp": datetime.utcnow(),
+                "status": "executed",
+                "process_id": mining_process.pid if mining_process else None
+            })
+            
+            return {
+                "status": "success", 
+                "message": f"Mining started successfully (PID: {mining_process.pid})", 
+                "config": config
+            }
+        else:
+            return {"status": "error", "message": "Failed to start mining process"}
     
     elif action == "stop":
-        mining_stats.update({
-            "pool_connected": False,
-            "hashrate": 0,
-            "last_update": datetime.utcnow()
-        })
+        if not is_mining_active:
+            return {"status": "error", "message": "Mining is not currently running"}
+        
+        killed_count = kill_mining_processes()
         
         # Log the control action
         await db.mining_control_log.insert_one({
             "action": "stop",
             "timestamp": datetime.utcnow(),
-            "status": "executed"
+            "status": "executed",
+            "killed_processes": killed_count
         })
         
-        return {"status": "success", "message": "Mining stopped successfully"}
+        return {
+            "status": "success", 
+            "message": f"Mining stopped successfully (killed {killed_count} processes)"
+        }
     
     elif action == "restart":
-        # Simulate restart by resetting stats
-        mining_stats.update({
-            "pool_connected": True,
-            "accepted_shares": 0,
-            "rejected_shares": 0,
-            "uptime": 0,
-            "last_update": datetime.utcnow()
-        })
+        # Stop first
+        if is_mining_active:
+            killed_count = kill_mining_processes()
+            logger.info(f"Restart: killed {killed_count} processes")
         
-        # Log the control action
-        await db.mining_control_log.insert_one({
-            "action": "restart",
-            "config": config,
-            "timestamp": datetime.utcnow(),
-            "status": "executed"
-        })
+        # Add default values if not provided
+        if not config.get("wallet"):
+            config["wallet"] = "LTC_PLACEHOLDER_WALLET_ADDRESS"
+        if not config.get("coin"):
+            config["coin"] = "LTC"
+        if not config.get("pool"):
+            config["pool"] = "ltc.luckymonster.pro:4112"
         
-        return {"status": "success", "message": "Mining restarted successfully"}
+        # Start with current or provided config
+        success = await start_mining_process(config)
+        
+        if success:
+            # Log the control action
+            await db.mining_control_log.insert_one({
+                "action": "restart",
+                "config": config,
+                "timestamp": datetime.utcnow(),
+                "status": "executed",
+                "process_id": mining_process.pid if mining_process else None
+            })
+            
+            return {
+                "status": "success", 
+                "message": f"Mining restarted successfully (PID: {mining_process.pid})", 
+                "config": config
+            }
+        else:
+            return {"status": "error", "message": "Failed to restart mining process"}
     
     else:
         return {"status": "error", "message": f"Unknown action: {action}"}

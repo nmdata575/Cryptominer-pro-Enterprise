@@ -409,8 +409,8 @@ class CryptoMinerAPITester:
         print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("=" * 60)
 
-        # Test all endpoints
-        test_methods = [
+        # Test basic endpoints first
+        basic_test_methods = [
             self.test_basic_api_health,
             self.test_mining_stats,
             self.test_mining_config,
@@ -423,12 +423,45 @@ class CryptoMinerAPITester:
             self.test_status_endpoints
         ]
 
-        for test_method in test_methods:
+        print("\n📋 PHASE 1: Basic API Endpoints Testing")
+        print("-" * 50)
+        for test_method in basic_test_methods:
             try:
                 test_method()
                 time.sleep(0.5)  # Brief pause between tests
             except Exception as e:
                 print(f"❌ Test method {test_method.__name__} failed: {e}")
+
+        # Test mining control functionality
+        print("\n⚡ PHASE 2: Mining Control Functionality Testing")
+        print("-" * 50)
+        mining_control_tests = [
+            self.test_mining_status,
+            self.test_mining_control_stop_not_running,  # Ensure clean state
+            self.test_mining_control_start,
+            self.test_mining_control_start_already_running,
+            self.test_mining_status,
+            self.test_mining_control_restart,
+            self.test_mining_status,
+            self.test_mining_control_stop,
+            self.test_mining_control_invalid_action,
+            self.test_mining_control_log
+        ]
+
+        for test_method in mining_control_tests:
+            try:
+                test_method()
+                time.sleep(1)  # Longer pause for process management tests
+            except Exception as e:
+                print(f"❌ Test method {test_method.__name__} failed: {e}")
+
+        # Test complete process management sequence
+        print("\n🔄 PHASE 3: Complete Process Management Sequence")
+        print("-" * 50)
+        try:
+            self.test_mining_process_management_sequence()
+        except Exception as e:
+            print(f"❌ Process management sequence failed: {e}")
 
         # Print final results
         print("\n" + "=" * 60)

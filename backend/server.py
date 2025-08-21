@@ -384,7 +384,25 @@ async def control_mining(request: Dict[str, Any]):
     else:
         return {"status": "error", "message": f"Unknown action: {action}"}
 
-@api_router.get("/mining/control-log")
+@api_router.get("/mining/status")
+async def get_mining_status():
+    """Get current mining process status"""
+    global mining_process, is_mining_active
+    
+    # Check if the process is still running
+    if mining_process:
+        if mining_process.poll() is None:
+            is_mining_active = True
+        else:
+            is_mining_active = False
+            mining_process = None
+    
+    return {
+        "is_active": is_mining_active,
+        "process_id": mining_process.pid if mining_process and mining_process.poll() is None else None,
+        "pool_connected": mining_stats.get("pool_connected", False),
+        "last_update": mining_stats.get("last_update")
+    }
 async def get_control_log(limit: int = 50):
     """Get mining control action log"""
     log_entries = await db.mining_control_log.find().sort("timestamp", -1).limit(limit).to_list(limit)

@@ -181,3 +181,5 @@ agent_communication:
     message: "Backend API testing completed successfully. All 11 endpoints are working correctly after code consolidation. Fixed one minor ObjectId serialization issue in mining history endpoint. CORS functionality verified. MongoDB integration working properly with data persistence confirmed. The consolidated backend architecture is fully functional."
   - agent: "main"
     message: "Thread configuration verified: Mining application correctly uses multiple threads as configured. Test with 4 threads showed proper initialization of 4 ScryptMiner instances with successful pool connections. The web dashboard shows cached data when no active mining session is running. Multi-threading functionality is working correctly in consolidated code."
+  - agent: "main"
+    message: "Working on implementing actual process control for start/stop mining buttons. Current /api/mining/control endpoint only simulates mining control. Need to implement real process management that can start and kill cryptominer.py processes from web interface."

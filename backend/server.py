@@ -346,7 +346,7 @@ async def control_mining(request: Dict[str, Any]):
         if not is_mining_active:
             return {"status": "error", "message": "Mining is not currently running"}
         
-        killed_count = kill_mining_processes()
+        killed_count = await kill_mining_processes()
         
         # Log the control action
         await db.mining_control_log.insert_one({

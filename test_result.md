@@ -189,12 +189,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Code consolidation review"
-    - "Project structure finalization"
-    - "File cleanup for GitHub upload"
+    - "Mining process control via API"
+    - "Web mining control buttons"
+    - "Process management and cleanup"
   stuck_tasks: []
   test_all: false
-  test_priority: "sequential"
+  test_priority: "high_first"
 
 agent_communication:
   - agent: "main"

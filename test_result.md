@@ -195,9 +195,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Mining process control via API"
-    - "Web mining control buttons"
-    - "Process management and cleanup"
+    - "Final integration testing"
+    - "End-to-end functionality verification"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

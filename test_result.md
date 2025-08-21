@@ -144,6 +144,18 @@ backend:
         agent: "testing"
         comment: "Comprehensive API testing completed successfully. All 11 endpoints tested and working: Basic API health ✅, Mining stats ✅, Mining config (GET/POST) ✅, Available coins ✅, Popular pools ✅, System info ✅, Mining history ✅ (fixed ObjectId serialization issue), Update mining stats ✅, Status endpoints ✅. CORS functionality verified. MongoDB integration working correctly with proper data persistence. Fixed minor ObjectId serialization bug in mining history endpoint."
 
+  - task: "Mining process control via API"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Current /api/mining/control endpoint only simulates control commands. Need to implement actual process management to start/stop real cryptominer.py processes from web interface."
+
 frontend:
   - task: "Mining dashboard UI"
     implemented: true

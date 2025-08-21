@@ -131,7 +131,7 @@ async def start_mining_process(config):
     
     try:
         # Kill any existing processes first
-        killed_count = kill_mining_processes()
+        killed_count = await kill_mining_processes()
         if killed_count > 0:
             logger.info(f"Killed {killed_count} existing mining processes")
         

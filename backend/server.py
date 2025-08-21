@@ -51,8 +51,8 @@ mining_stats = {
 mining_process = None
 is_mining_active = False
 
-def kill_mining_processes():
-    """Kill all existing mining processes"""
+async def kill_mining_processes():
+    """Kill all existing mining processes (async version)"""
     global mining_process, is_mining_active
     
     logger.info("🛑 Attempting to kill mining processes...")
@@ -62,40 +62,55 @@ def kill_mining_processes():
         try:
             mining_process.terminate()
             try:
-                mining_process.wait(timeout=5)  # Wait up to 5 seconds for graceful shutdown
-            except subprocess.TimeoutExpired:
+                # Use asyncio.wait_for to prevent hanging
+                await asyncio.wait_for(
+                    asyncio.to_thread(mining_process.wait), 
+                    timeout=3.0
+                )
+            except asyncio.TimeoutError:
                 mining_process.kill()  # Force kill if still running
-                mining_process.wait()  # Wait for completion
+                try:
+                    await asyncio.wait_for(
+                        asyncio.to_thread(mining_process.wait), 
+                        timeout=2.0
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning("Process may still be running after force kill")
             logger.info("✅ Managed mining process terminated")
         except Exception as e:
             logger.error(f"Error terminating managed process: {e}")
     
     # Find and kill any cryptominer processes (but NOT our backend server)
     killed_processes = []
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-        try:
-            cmdline = ' '.join(proc.info['cmdline'] or [])
-            # Only kill cryptominer processes, not the backend API server
-            if ('cryptominer' in cmdline and 'python' in cmdline):
-                proc.terminate()
-                killed_processes.append(proc.info['pid'])
-                logger.info(f"Terminated cryptominer process {proc.info['pid']}: {cmdline}")
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
-    
-    # Wait for processes to terminate, then force kill if needed
-    if killed_processes:
-        import time
-        time.sleep(2)  # Give processes time to terminate gracefully
-        
-        for pid in killed_processes:
+    try:
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
             try:
-                proc = psutil.Process(pid)
-                if proc.is_running():
-                    proc.kill()
-                    logger.info(f"Force killed process {pid}")
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                pass  # Process already gone
+                cmdline = ' '.join(proc.info['cmdline'] or [])
+                # Only kill cryptominer processes, not the backend API server
+                if ('cryptominer' in cmdline and 'python' in cmdline):
+                    proc.terminate()
+                    killed_processes.append(proc.info['pid'])
+                    logger.info(f"Terminated cryptominer process {proc.info['pid']}: {cmdline}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+    except Exception as e:
+        logger.error(f"Error enumerating processes: {e}")
+    
+    # Wait for processes to terminate, then force kill if needed (async)
+    if killed_processes:
+        try:
+            await asyncio.sleep(2)  # Give processes time to terminate gracefully
+            
+            for pid in killed_processes:
+                try:
+                    proc = psutil.Process(pid)
+                    if proc.is_running():
+                        proc.kill()
+                        logger.info(f"Force killed process {pid}")
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass  # Process already gone
+        except Exception as e:
+            logger.error(f"Error during force kill phase: {e}")
     
     mining_process = None
     is_mining_active = False

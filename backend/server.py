@@ -51,6 +51,127 @@ mining_stats = {
 mining_process = None
 is_mining_active = False
 
+def kill_mining_processes():
+    """Kill all existing mining processes"""
+    global mining_process, is_mining_active
+    
+    logger.info("🛑 Attempting to kill mining processes...")
+    
+    # Kill the specific process if we have it
+    if mining_process and mining_process.poll() is None:
+        try:
+            mining_process.terminate()
+            try:
+                mining_process.wait(timeout=5)  # Wait up to 5 seconds for graceful shutdown
+            except subprocess.TimeoutExpired:
+                mining_process.kill()  # Force kill if still running
+                mining_process.wait()  # Wait for completion
+            logger.info("✅ Managed mining process terminated")
+        except Exception as e:
+            logger.error(f"Error terminating managed process: {e}")
+    
+    # Find and kill any cryptominer processes
+    killed_processes = []
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = ' '.join(proc.info['cmdline'] or [])
+            if ('cryptominer' in cmdline and 'python' in cmdline) or \
+               ('uvicorn' in cmdline and 'server' in cmdline):
+                proc.terminate()
+                killed_processes.append(proc.info['pid'])
+                logger.info(f"Terminated process {proc.info['pid']}: {cmdline}")
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    
+    # Wait for processes to terminate, then force kill if needed
+    if killed_processes:
+        import time
+        time.sleep(2)  # Give processes time to terminate gracefully
+        
+        for pid in killed_processes:
+            try:
+                proc = psutil.Process(pid)
+                if proc.is_running():
+                    proc.kill()
+                    logger.info(f"Force killed process {pid}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass  # Process already gone
+    
+    mining_process = None
+    is_mining_active = False
+    
+    # Update stats to reflect stopped state
+    mining_stats.update({
+        "pool_connected": False,
+        "hashrate": 0,
+        "threads": 0,
+        "last_update": datetime.utcnow()
+    })
+    
+    return len(killed_processes)
+
+async def start_mining_process(config):
+    """Start the actual cryptominer.py process"""
+    global mining_process, is_mining_active
+    
+    try:
+        # Kill any existing processes first
+        killed_count = kill_mining_processes()
+        if killed_count > 0:
+            logger.info(f"Killed {killed_count} existing mining processes")
+        
+        # Prepare command
+        app_dir = Path(__file__).parent.parent  # Go up to /app directory
+        crypto_script = app_dir / "cryptominer.py"
+        
+        if not crypto_script.exists():
+            raise FileNotFoundError(f"cryptominer.py not found at {crypto_script}")
+        
+        # Build command arguments
+        cmd = [
+            "python3", str(crypto_script),
+            "--coin", config.get("coin", "LTC"),
+            "--wallet", config.get("wallet", "LTC_PLACEHOLDER_WALLET"),
+            "--pool", config.get("pool", "ltc.luckymonster.pro:4112"),
+            "--intensity", str(config.get("intensity", 80)),
+            "--threads", str(config.get("threads", 8)),
+            "--proxy-mode"  # Use proxy mode for better multi-threading
+        ]
+        
+        if config.get("password"):
+            cmd.extend(["--password", config.get("password")])
+        
+        logger.info(f"Starting mining process with command: {' '.join(cmd)}")
+        
+        # Start the process
+        mining_process = subprocess.Popen(
+            cmd,
+            cwd=str(app_dir),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        is_mining_active = True
+        
+        # Update stats to reflect started state
+        mining_stats.update({
+            "pool_connected": True,
+            "threads": config.get("threads", 8),
+            "intensity": config.get("intensity", 80),
+            "coin": config.get("coin", "LTC"),
+            "hashrate": config.get("threads", 8) * 150,  # Estimate initial hashrate
+            "last_update": datetime.utcnow()
+        })
+        
+        logger.info(f"✅ Mining process started with PID: {mining_process.pid}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to start mining process: {e}")
+        is_mining_active = False
+        return False
+
 # Define Models
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

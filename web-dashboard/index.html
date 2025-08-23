@@ -196,142 +196,6 @@
         .config-input input::placeholder {
             color: rgba(255, 255, 255, 0.6);
         }
-        
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-        }
-        
-        .modal-content {
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 15px;
-            width: 80%;
-            max-width: 800px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        .close:hover {
-            color: white;
-        }
-        
-        .algorithm-options {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .algo-option {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 20px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-        
-        .algo-option:hover {
-            border-color: #61dafb;
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-        }
-        
-        .algo-option h4 {
-            margin: 0 0 10px 0;
-            color: #61dafb;
-        }
-        
-        .algo-option p {
-            margin: 0 0 15px 0;
-            opacity: 0.8;
-        }
-        
-        .algo-stats {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .algo-stats span {
-            background: rgba(97, 218, 251, 0.2);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8em;
-            border: 1px solid rgba(97, 218, 251, 0.3);
-        }
-        
-        .ai-recommendation {
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-        
-        .ai-recommendation h4 {
-            margin: 0 0 10px 0;
-            color: #00ff88;
-        }
-        
-        .algorithm-comparison {
-            margin-top: 15px;
-        }
-        
-        .algo-comparison-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .algo-comparison-item:last-child {
-            border-bottom: none;
-        }
-        
-        .algo-name {
-            font-weight: bold;
-            color: #61dafb;
-            flex: 1;
-        }
-        
-        .algo-hashrate, .algo-efficiency {
-            font-family: 'Courier New', monospace;
-            color: #00ff88;
-            flex: 1;
-            text-align: right;
-        }
-        
-        .ai-recommendation-display {
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 15px;
-            text-align: center;
-        }
-        
-        #ai-recommended-algorithm {
-            color: #00ff88;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
@@ -346,48 +210,6 @@
             <button id="start-btn" class="btn btn-start" onclick="startMining()">▶️ Start Mining</button>
             <button id="stop-btn" class="btn btn-stop" onclick="stopMining()">⏹️ Stop Mining</button>
             <button id="restart-btn" class="btn btn-restart" onclick="restartMining()">🔄 Restart Mining</button>
-            <button id="switch-algo-btn" class="btn btn-restart" onclick="showAlgorithmSelector()">🔀 Switch Algorithm</button>
-        </div>
-        
-        <!-- Algorithm Selection Modal -->
-        <div id="algorithm-modal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <span class="close" onclick="hideAlgorithmSelector()">&times;</span>
-                <h3>🔀 Select Mining Algorithm</h3>
-                <div class="algorithm-options">
-                    <div class="algo-option" onclick="selectAlgorithm('RandomX', 'XMR')">
-                        <h4>RandomX (Monero)</h4>
-                        <p>CPU-optimized, ASIC-resistant, memory-hard algorithm</p>
-                        <div class="algo-stats">
-                            <span>💪 CPU Friendly</span>
-                            <span>🧠 Memory Hard</span>
-                            <span>🛡️ ASIC Resistant</span>
-                        </div>
-                    </div>
-                    <div class="algo-option" onclick="selectAlgorithm('Scrypt', 'LTC')">
-                        <h4>Scrypt (Litecoin)</h4>
-                        <p>Traditional Scrypt algorithm, good for legacy hardware</p>
-                        <div class="algo-stats">
-                            <span>⚡ Fast</span>
-                            <span>🔧 Established</span>
-                            <span>💰 Profitable</span>
-                        </div>
-                    </div>
-                    <div class="algo-option" onclick="selectAlgorithm('RandomX', 'AEON')">
-                        <h4>CryptoNight-Lite (Aeon)</h4>
-                        <p>Lightweight variant optimized for low-power devices</p>
-                        <div class="algo-stats">
-                            <span>💡 Low Power</span>
-                            <span>🔋 Efficient</span>
-                            <span>📱 Mobile Friendly</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="ai-recommendation" id="ai-recommendation">
-                    <h4>🤖 AI Recommendation</h4>
-                    <p id="ai-recommendation-text">Analyzing optimal algorithm...</p>
-                </div>
-            </div>
         </div>
         
         <div id="error-message" class="error" style="display: none;">
@@ -401,10 +223,6 @@
         <div class="dashboard">
             <div class="card">
                 <h3>⚡ Mining Status</h3>
-                <div class="stat">
-                    <span>Algorithm:</span>
-                    <span class="value" id="current-algorithm">RandomX</span>
-                </div>
                 <div class="stat">
                     <span>Hashrate:</span>
                     <span class="value" id="hashrate">0 H/s</span>
@@ -434,23 +252,8 @@
                 <div class="config-section">
                     <h4 style="margin: 0 0 10px 0; color: #61dafb;">⚙️ Quick Config</h4>
                     <div class="config-input">
-                        <span>Algorithm:</span>
-                        <select id="config-algorithm" onchange="updateCoinOptions()">
-                            <option value="RandomX">RandomX (CPU)</option>
-                            <option value="Scrypt">Scrypt (Legacy)</option>
-                            <option value="CryptoNight">CryptoNight (CPU)</option>
-                        </select>
-                    </div>
-                    <div class="config-input">
-                        <span>Coin:</span>
-                        <select id="config-coin">
-                            <option value="XMR">Monero (XMR)</option>
-                            <option value="AEON">Aeon (AEON)</option>
-                        </select>
-                    </div>
-                    <div class="config-input">
                         <span>Pool:</span>
-                        <input type="text" id="config-pool" placeholder="pool.supportxmr.com:3333">
+                        <input type="text" id="config-pool" placeholder="ltc.luckymonster.pro:4112">
                     </div>
                     <div class="config-input">
                         <span>Threads:</span>
@@ -459,10 +262,6 @@
                     <div class="config-input">
                         <span>Intensity:</span>
                         <input type="number" id="config-intensity" placeholder="80" min="1" max="100">
-                    </div>
-                    <div class="config-input">
-                        <span>Auto Switch:</span>
-                        <input type="checkbox" id="config-auto-switch" checked>
                     </div>
                 </div>
             </div>
@@ -507,38 +306,6 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="ai-optimization-bar" style="width: 0%"></div>
                 </div>
-                <div class="stat">
-                    <span>Predictive Success:</span>
-                    <span class="value" id="ai-prediction-rate">0%</span>
-                </div>
-                <div class="stat">
-                    <span>Database Size:</span>
-                    <span class="value" id="ai-database-size">0 MB</span>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>⚖️ Algorithm Comparison</h3>
-                <div id="algorithm-comparison">
-                    <div class="algo-comparison-item">
-                        <span class="algo-name">RandomX:</span>
-                        <span class="algo-hashrate" id="randomx-hashrate">- H/s</span>
-                        <span class="algo-efficiency" id="randomx-efficiency">- H/W</span>
-                    </div>
-                    <div class="algo-comparison-item">
-                        <span class="algo-name">Scrypt:</span>
-                        <span class="algo-hashrate" id="scrypt-hashrate">- H/s</span>
-                        <span class="algo-efficiency" id="scrypt-efficiency">- H/W</span>
-                    </div>
-                    <div class="algo-comparison-item">
-                        <span class="algo-name">CryptoNight:</span>
-                        <span class="algo-hashrate" id="cryptonight-hashrate">- H/s</span>
-                        <span class="algo-efficiency" id="cryptonight-efficiency">- H/W</span>
-                    </div>
-                </div>
-                <div class="ai-recommendation-display" id="current-ai-recommendation">
-                    <strong>🤖 AI Recommends:</strong> <span id="ai-recommended-algorithm">Analyzing...</span>
-                </div>
             </div>
         </div>
         
@@ -550,26 +317,6 @@
     <script>
         let isConnected = false;
         let isMining = false;
-        let selectedAlgorithm = 'RandomX';
-        let selectedCoin = 'XMR';
-        
-        // Get backend URL from environment or use localhost as fallback
-        const BACKEND_URL = window.REACT_APP_BACKEND_URL || 'https://cryptomine-central.preview.emergentagent.com' || 'http://localhost:8001';
-        
-        // Algorithm to coin mapping
-        const algorithmCoins = {
-            'RandomX': [
-                { value: 'XMR', text: 'Monero (XMR)', pool: 'pool.supportxmr.com:3333' },
-                { value: 'AEON', text: 'Aeon (AEON)', pool: 'mine.aeon-pool.com:3333' }
-            ],
-            'Scrypt': [
-                { value: 'LTC', text: 'Litecoin (LTC)', pool: 'ltc.luckymonster.pro:4112' },
-                { value: 'DOGE', text: 'Dogecoin (DOGE)', pool: 'doge.luckymonster.pro:4112' }
-            ],
-            'CryptoNight': [
-                { value: 'ETN', text: 'Electroneum (ETN)', pool: 'pool.electroneum.com:3333' }
-            ]
-        };
         
         function formatHashrate(hashrate) {
             if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;
@@ -608,124 +355,15 @@
             const startBtn = document.getElementById('start-btn');
             const stopBtn = document.getElementById('stop-btn');
             const restartBtn = document.getElementById('restart-btn');
-            const switchBtn = document.getElementById('switch-algo-btn');
             
             if (isMining) {
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
                 restartBtn.disabled = false;
-                switchBtn.disabled = false;
             } else {
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
                 restartBtn.disabled = true;
-                switchBtn.disabled = true;
-            }
-        }
-        
-        function updateCoinOptions() {
-            const algorithmSelect = document.getElementById('config-algorithm');
-            const coinSelect = document.getElementById('config-coin');
-            const poolInput = document.getElementById('config-pool');
-            
-            const selectedAlgo = algorithmSelect.value;
-            const coins = algorithmCoins[selectedAlgo] || [];
-            
-            // Clear existing options
-            coinSelect.innerHTML = '';
-            
-            // Add new options
-            coins.forEach(coin => {
-                const option = document.createElement('option');
-                option.value = coin.value;
-                option.textContent = coin.text;
-                coinSelect.appendChild(option);
-            });
-            
-            // Update pool placeholder
-            if (coins.length > 0) {
-                poolInput.placeholder = coins[0].pool;
-                poolInput.value = coins[0].pool;
-            }
-        }
-        
-        function showAlgorithmSelector() {
-            document.getElementById('algorithm-modal').style.display = 'block';
-            updateAIRecommendation();
-        }
-        
-        function hideAlgorithmSelector() {
-            document.getElementById('algorithm-modal').style.display = 'none';
-        }
-        
-        function selectAlgorithm(algorithm, coin) {
-            selectedAlgorithm = algorithm;
-            selectedCoin = coin;
-            
-            // Update UI
-            document.getElementById('config-algorithm').value = algorithm;
-            updateCoinOptions();
-            document.getElementById('config-coin').value = coin;
-            
-            hideAlgorithmSelector();
-            
-            // Switch algorithm if mining
-            if (isMining) {
-                switchToAlgorithm(algorithm, coin);
-            }
-        }
-        
-        async function switchToAlgorithm(algorithm, coin) {
-            try {
-                const pool = document.getElementById('config-pool').value || 
-                           algorithmCoins[algorithm][0].pool;
-                const threads = parseInt(document.getElementById('config-threads').value) || 8;
-                const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
-                
-                const config = {
-                    algorithm: algorithm,
-                    coin: coin,
-                    pool: pool,
-                    threads: threads,
-                    intensity: intensity,
-                    wallet: "PLACEHOLDER_WALLET_ADDRESS"
-                };
-                
-                const response = await fetch(`${BACKEND_URL}/api/mining/switch-algorithm`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',  
-                    },
-                    body: JSON.stringify(config)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const result = await response.json();
-                showMessage(`Switched to ${algorithm} (${coin})`);
-                
-                // Refresh stats after a short delay
-                setTimeout(fetchMiningStats, 2000);
-                
-            } catch (error) {
-                showMessage(`Failed to switch algorithm: ${error.message}`, true);
-            }
-        }
-        
-        async function updateAIRecommendation() {
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/mining/ai-recommendation`);
-                if (response.ok) {
-                    const recommendation = await response.json();
-                    document.getElementById('ai-recommendation-text').textContent = 
-                        `${recommendation.algorithm} for ${recommendation.coin} - ` +
-                        `Predicted: ${recommendation.hashrate} H/s (${recommendation.confidence}% confidence)`;
-                }
-            } catch (error) {
-                document.getElementById('ai-recommendation-text').textContent = 
-                    'Unable to get AI recommendation at this time.';
             }
         }
         
@@ -736,7 +374,7 @@
                     payload.config = config;
                 }
                 
-                const response = await fetch(`${BACKEND_URL}/api/mining/control`, {
+                const response = await fetch('http://localhost:8001/api/mining/control', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -759,31 +397,20 @@
                 }
                 updateButtonStates();
                 
-                // Refresh stats after a short delay
-                setTimeout(fetchMiningStats, 2000);
-                
             } catch (error) {
                 showMessage(`Failed to ${action} mining: ${error.message}`, true);
             }
         }
         
         async function startMining() {
-            const algorithm = document.getElementById('config-algorithm').value;
-            const coin = document.getElementById('config-coin').value;
-            const pool = document.getElementById('config-pool').value || 
-                        algorithmCoins[algorithm][0].pool;
+            const pool = document.getElementById('config-pool').value || 'ltc.luckymonster.pro:4112';
             const threads = parseInt(document.getElementById('config-threads').value) || 8;
             const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
-            const autoSwitch = document.getElementById('config-auto-switch').checked;
             
             const config = {
-                algorithm: algorithm,
-                coin: coin,
                 pool: pool,
                 threads: threads,
-                intensity: intensity,
-                auto_switch: autoSwitch,
-                wallet: "PLACEHOLDER_WALLET_ADDRESS"
+                intensity: intensity
             };
             
             await sendControlCommand('start', config);
@@ -794,46 +421,26 @@
         }
         
         async function restartMining() {
-            const algorithm = document.getElementById('config-algorithm').value;
-            const coin = document.getElementById('config-coin').value;
-            const pool = document.getElementById('config-pool').value || 
-                        algorithmCoins[algorithm][0].pool;
-            const threads = parseInt(document.getElementById('config-threads').value) || 8;
-            const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
-            const autoSwitch = document.getElementById('config-auto-switch').checked;
-            
-            const config = {
-                algorithm: algorithm,
-                coin: coin,
-                pool: pool,
-                threads: threads,
-                intensity: intensity,
-                auto_switch: autoSwitch,
-                wallet: "PLACEHOLDER_WALLET_ADDRESS"
-            };
-            
-            await sendControlCommand('restart', config);
+            await sendControlCommand('restart');
         }
         
         async function fetchMiningStats() {
             try {
-                const response = await fetch(`${BACKEND_URL}/api/mining/multi-stats`);
+                const response = await fetch('http://localhost:8001/api/mining/stats');
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
                 
                 const stats = await response.json();
                 
-                // Update basic mining stats
-                document.getElementById('current-algorithm').textContent = stats.current_algorithm || 'None';
-                document.getElementById('hashrate').textContent = formatHashrate(stats.current_stats?.hashrate || 0);
-                document.getElementById('threads').textContent = stats.current_stats?.threads || 0;
-                document.getElementById('intensity').textContent = `${stats.current_stats?.intensity || 0}%`;
-                document.getElementById('coin').textContent = stats.current_coin || '-';
-                document.getElementById('difficulty').textContent = stats.current_stats?.difficulty || 0;
+                document.getElementById('hashrate').textContent = formatHashrate(stats.hashrate || 0);
+                document.getElementById('threads').textContent = stats.threads || 0;
+                document.getElementById('intensity').textContent = `${stats.intensity || 0}%`;
+                document.getElementById('coin').textContent = stats.coin || 'LTC';
+                document.getElementById('difficulty').textContent = stats.difficulty || 0;
                 
                 const poolStatus = document.getElementById('pool-status');
-                if (stats.is_mining) {
+                if (stats.pool_connected) {
                     poolStatus.textContent = '✅ Connected';
                     poolStatus.className = 'value status-connected';
                     isMining = true;
@@ -845,9 +452,8 @@
                 
                 updateButtonStates();
                 
-                // Update share statistics
-                const accepted = stats.current_stats?.accepted_shares || 0;
-                const rejected = stats.current_stats?.rejected_shares || 0;
+                const accepted = stats.accepted_shares || 0;
+                const rejected = stats.rejected_shares || 0;
                 const total = accepted + rejected;
                 const acceptanceRate = total > 0 ? ((accepted / total) * 100).toFixed(1) : 0;
                 
@@ -855,44 +461,15 @@
                 document.getElementById('rejected-shares').textContent = rejected;
                 document.getElementById('total-shares').textContent = total;
                 document.getElementById('acceptance-rate').textContent = `${acceptanceRate}%`;
-                document.getElementById('uptime').textContent = formatUptime(stats.total_uptime || 0);
+                document.getElementById('uptime').textContent = formatUptime(stats.uptime || 0);
                 
-                // Update AI statistics
-                const aiStats = stats.ai_stats || {};
-                const aiLearning = aiStats.learning_progress || 0;
-                const aiOptimization = aiStats.optimization_progress || 0;
-                const predictionRate = (aiStats.predictive_success_rate || 0) * 100;
-                const dbSize = aiStats.database_size_mb || 0;
+                const aiLearning = stats.ai_learning || 0;
+                const aiOptimization = stats.ai_optimization || 0;
                 
                 document.getElementById('ai-learning').textContent = `${aiLearning.toFixed(1)}%`;
                 document.getElementById('ai-optimization').textContent = `${aiOptimization.toFixed(1)}%`;
-                document.getElementById('ai-prediction-rate').textContent = `${predictionRate.toFixed(1)}%`;
-                document.getElementById('ai-database-size').textContent = `${dbSize.toFixed(1)} MB`;
-                
                 document.getElementById('ai-learning-bar').style.width = `${Math.min(aiLearning, 100)}%`;
                 document.getElementById('ai-optimization-bar').style.width = `${Math.min(aiOptimization, 100)}%`;
-                
-                // Update algorithm comparison
-                const algoComparison = stats.algorithm_comparison || {};
-                
-                Object.keys(algoComparison).forEach(algo => {
-                    const algoData = algoComparison[algo];
-                    const algoKey = algo.toLowerCase().replace(/[^a-z]/g, '');
-                    
-                    const hashrateEl = document.getElementById(`${algoKey}-hashrate`);
-                    const efficiencyEl = document.getElementById(`${algoKey}-efficiency`);
-                    
-                    if (hashrateEl) hashrateEl.textContent = formatHashrate(algoData.hashrate || 0);
-                    if (efficiencyEl) efficiencyEl.textContent = `${(algoData.efficiency || 0).toFixed(2)} H/W`;
-                });
-                
-                // Update AI recommendation
-                if (stats.ai_stats?.recommended_algorithm) {
-                    document.getElementById('ai-recommended-algorithm').textContent = 
-                        stats.ai_stats.recommended_algorithm;
-                } else {
-                    document.getElementById('ai-recommended-algorithm').textContent = 'Analyzing...';
-                }
                 
                 document.getElementById('last-update').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
                 
@@ -901,7 +478,6 @@
                 
             } catch (error) {
                 console.error('Failed to fetch mining stats:', error);
-                document.getElementById('error-message').innerHTML = `❌ Cannot connect to mining API at ${BACKEND_URL}. Make sure the backend is running.`;
                 document.getElementById('error-message').style.display = 'block';
                 isConnected = false;
                 isMining = false;
@@ -909,29 +485,15 @@
             }
         }
         
-        // Initialize the interface
-        document.addEventListener('DOMContentLoaded', function() {
-            updateCoinOptions();
-            fetchMiningStats();
-            setInterval(fetchMiningStats, 5000);
-            
-            setInterval(() => {
-                document.title = isConnected ? '🚀 CryptoMiner Pro V30 - Connected' : '❌ CryptoMiner Pro V30 - Disconnected';
-            }, 1000);
-            
-            updateButtonStates();
-            
-            // Show current backend URL in console for debugging
-            console.log(`Backend URL: ${BACKEND_URL}`);
-        });
+        fetchMiningStats();
+        setInterval(fetchMiningStats, 5000);
         
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('algorithm-modal');
-            if (event.target === modal) {
-                hideAlgorithmSelector();
-            }
-        }
+        setInterval(() => {
+            document.title = isConnected ? '🚀 CryptoMiner Pro V30 - Connected' : '❌ CryptoMiner Pro V30 - Disconnected';
+        }, 1000);
+        
+        // Initialize button states
+        updateButtonStates();
     </script>
 </body>
 </html>

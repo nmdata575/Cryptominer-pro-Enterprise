@@ -35,8 +35,8 @@ log_error() {
 cleanup() {
     log_info "Shutting down all services..."
     
-    # Kill backend server
-    if [[ -n "$BACKEND_PID" ]] && kill -0 "$BACKEND_PID" 2>/dev/null; then
+    # Stop backend server gracefully
+    if [[ -n "$BACKEND_PID" ]]; then
         log_info "Stopping backend server (PID: $BACKEND_PID)..."
         kill -TERM "$BACKEND_PID" 2>/dev/null || true
         sleep 2
@@ -44,8 +44,17 @@ cleanup() {
         kill -9 "$BACKEND_PID" 2>/dev/null || true
     fi
     
+    # Stop dashboard server gracefully
+    if [[ -n "$DASHBOARD_PID" ]]; then
+        log_info "Stopping web dashboard (PID: $DASHBOARD_PID)..."
+        kill -TERM "$DASHBOARD_PID" 2>/dev/null || true
+        sleep 2
+        # Force kill if still running
+        kill -9 "$DASHBOARD_PID" 2>/dev/null || true
+    fi
+    
     # Force kill any remaining processes
-    log_info "Force stopping all CryptoMiner processes..."
+    log_info "Force stopping all CryptoMiner V21 processes..."
     pkill -9 -f "uvicorn.*server:app" 2>/dev/null || true
     pkill -9 -f "python3.*cryptominer" 2>/dev/null || true
     pkill -9 -f "http.server" 2>/dev/null || true

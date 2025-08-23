@@ -249,6 +249,18 @@ backend:
         agent: "testing"
         comment: "✅ Live RandomX Mining Pool Connection WORKING! Comprehensive testing verified: ✅ Live pool connection to stratum+tcp://us.fastpool.xyz:10055 established ✅ RandomX mining process successfully connects to us.fastpool.xyz:10055 ✅ Real-time stats collection working (hashrate: 1200.5 H/s, XMR coin detection) ✅ POST /api/mining/update-stats receives RandomX mining data ✅ GET /api/mining/stats returns RandomX-specific data ✅ AI integration with RandomX mining data (87% confidence recommendation) ✅ Process lifecycle management (start/stop/restart) working ✅ Mining control log properly tracks RandomX operations ✅ Multi-algorithm stats endpoint includes RandomX data. Live pool integration is fully functional with real mining data flow."
 
+  - task: "RandomX Web Dashboard Integration"
+    implemented: true
+    working: false
+    file: "web-dashboard/index.html"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to test web dashboard displays RandomX mining stats correctly, shows live hashrate/shares from us.fastpool.xyz:10055 connection, and mining control buttons work with RandomX processes. Backend integration confirmed working, now need frontend verification."
+
 frontend:
   - task: "Mining dashboard UI"
     implemented: true

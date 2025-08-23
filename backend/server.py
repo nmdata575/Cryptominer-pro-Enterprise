@@ -594,6 +594,8 @@ async def get_ai_recommendation():
             "confidence": 50,
             "reason": "Default recommendation due to system error"
         }
+
+@api_router.get("/mining/control-log")
 async def get_control_log(limit: int = 50):
     """Get mining control action log"""
     log_entries = await db.mining_control_log.find().sort("timestamp", -1).limit(limit).to_list(limit)

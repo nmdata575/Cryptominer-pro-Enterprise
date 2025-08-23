@@ -114,11 +114,12 @@ AI_SCALER_FILE = 'ai_scaler.pkl'
 # Banner and Display
 BANNER = """
 ╔══════════════════════════════════════════════════════════╗
-║              🚀 CryptoMiner V21 🚀                      ║
-║           Compact Terminal Mining Application            ║
+║                   🚀 CryptoMiner V21 🚀                 ║
+║         Advanced Multi-Algorithm CPU Mining             ║
 ║                                                         ║
 ║  ⚡ Enterprise Mining Engine    🤖 AI Optimization     ║
-║  🔗 Pool & Solo Support         📊 Web Monitoring      ║
+║  🔀 Multi-Algorithm Support    📊 Performance Tracking ║
+║  🧠 Machine Learning           ⚙️ Advanced Controls    ║
 ╚══════════════════════════════════════════════════════════╝
 """
 

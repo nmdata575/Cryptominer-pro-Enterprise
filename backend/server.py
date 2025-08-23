@@ -192,14 +192,14 @@ async def start_mining_process(config):
         if not crypto_script.exists():
             raise FileNotFoundError(f"cryptominer.py not found at {crypto_script}")
         
-        # Build command arguments
+        # Build command arguments using the loaded default config as fallbacks
         cmd = [
             "python3", str(crypto_script),
-            "--coin", config.get("coin", "LTC"),
-            "--wallet", config.get("wallet", "LTC_PLACEHOLDER_WALLET"),
-            "--pool", config.get("pool", "ltc.luckymonster.pro:4112"),
-            "--intensity", str(config.get("intensity", 80)),
-            "--threads", str(config.get("threads", 8)),
+            "--coin", config.get("coin", default_mining_config.get("coin", "XMR")),
+            "--wallet", config.get("wallet", default_mining_config.get("wallet", "XMR_PLACEHOLDER_WALLET")),
+            "--pool", config.get("pool", default_mining_config.get("pool", "stratum+tcp://us.fastpool.xyz:10055")),
+            "--intensity", str(config.get("intensity", default_mining_config.get("intensity", 80))),
+            "--threads", str(config.get("threads", default_mining_config.get("threads", "auto"))),
             "--proxy-mode"  # Use proxy mode for better multi-threading
         ]
         

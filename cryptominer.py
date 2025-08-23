@@ -49,11 +49,16 @@ class CryptoMinerPro:
     def __init__(self):
         self.mining_engine = None
         self.ai_optimizer = None
+        self.randomx_miner = None
         self.web_server_task = None
         self.web_server_thread = None
         self.backend_process = None
         self.running = False
         self.shutdown_event = asyncio.Event()
+        
+        # Web monitoring configuration
+        self.web_enabled = True
+        self.web_port = 8001
         
         # Setup signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self._signal_handler)

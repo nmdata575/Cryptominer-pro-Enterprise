@@ -218,7 +218,7 @@ class MiningConfig(BaseModel):
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
-    return {"message": "CryptoMiner Pro V30 API", "status": "running"}
+    return {"message": "CryptoMiner V21 API", "status": "running"}
 
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):

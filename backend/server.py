@@ -283,6 +283,11 @@ async def get_status_checks():
     return [StatusCheck(**status_check) for status_check in status_checks]
 
 # CryptoMiner Pro V30 API endpoints
+@api_router.get("/mining/config-debug")
+async def get_mining_config_debug():
+    """Debug endpoint to see raw mining config"""
+    return {"default_mining_config": default_mining_config}
+
 @api_router.get("/mining/stats-debug")
 async def get_mining_stats_debug():
     """Debug endpoint to see raw mining stats"""

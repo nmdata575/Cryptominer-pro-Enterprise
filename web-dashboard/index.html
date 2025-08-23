@@ -318,8 +318,8 @@
         let isConnected = false;
         let isMining = false;
         
-        // Get backend URL from environment or use production URL as fallback
-        const BACKEND_URL = 'https://cryptomine-central.preview.emergentagent.com' || 'http://localhost:8001';
+        // Get backend URL - localhost for individual use
+        const BACKEND_URL = 'http://localhost:8001';
         
         function formatHashrate(hashrate) {
             if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;

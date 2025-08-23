@@ -660,6 +660,26 @@ class CryptoMinerAPITester:
         except Exception as e:
             print(f"❌ Process management sequence failed: {e}")
 
+        # Test new multi-algorithm endpoints
+        print("\n🧠 PHASE 4: Multi-Algorithm & AI Enhanced Features")
+        print("-" * 50)
+        multi_algorithm_tests = [
+            self.test_multi_algorithm_stats,
+            self.test_ai_recommendation,
+            self.test_algorithm_switching_randomx,
+            self.test_algorithm_switching_scrypt,
+            self.test_algorithm_switching_cryptonight,
+            self.test_algorithm_switching_invalid,
+            self.test_enhanced_mining_control_integration
+        ]
+
+        for test_method in multi_algorithm_tests:
+            try:
+                test_method()
+                time.sleep(1)  # Pause between algorithm tests
+            except Exception as e:
+                print(f"❌ Test method {test_method.__name__} failed: {e}")
+
         # Print final results
         print("\n" + "=" * 60)
         print("📊 TEST RESULTS SUMMARY")

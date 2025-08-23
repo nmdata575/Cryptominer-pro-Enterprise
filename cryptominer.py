@@ -775,8 +775,113 @@ AI_ENABLED=true
             await self.start_mining(coin, wallet, pool, password, intensity, threads, proxy_mode=False)
 
     async def start_mining(self, coin, wallet, pool, password=None, intensity=80, threads=None, proxy_mode=False):
-        """Start the mining operation"""
+        """Start the mining operation with proper algorithm detection"""
         self.running = True
+        
+        # Algorithm detection based on coin
+        algorithm_map = {
+            'XMR': 'RandomX',
+            'AEON': 'RandomX', 
+            'LTC': 'Scrypt',
+            'DOGE': 'Scrypt',
+            'ETN': 'CryptoNight'
+        }
+        
+        algorithm = algorithm_map.get(coin.upper(), 'Scrypt')  # Default to Scrypt for unknown coins
+        logger.info(f"🔍 Detected algorithm: {algorithm} for coin {coin}")
+        
+        try:
+            if algorithm == 'RandomX':
+                # Use RandomX miner for XMR and other RandomX coins
+                logger.info("🚀 Initializing RandomX CPU mining for Monero-based coin")
+                await self._start_randomx_mining(coin, wallet, pool, password, intensity, threads)
+                
+            elif algorithm == 'Scrypt':
+                # Use traditional Scrypt mining for LTC, DOGE, etc.
+                logger.info("⚡ Initializing Scrypt mining")
+                await self._start_scrypt_mining(coin, wallet, pool, password, intensity, threads, proxy_mode)
+                
+            else:
+                logger.warning(f"⚠️ Algorithm {algorithm} not yet implemented, falling back to Scrypt")
+                await self._start_scrypt_mining(coin, wallet, pool, password, intensity, threads, proxy_mode)
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to start mining: {e}")
+            self.running = False
+            raise
+    
+    async def _start_randomx_mining(self, coin, wallet, pool, password, intensity, threads):
+        """Start RandomX mining for XMR/AEON"""
+        try:
+            from randomx_miner import RandomXMiner, RandomXConfig
+            
+            # Initialize Advanced AI optimizer
+            self.ai_optimizer = AdvancedAIMiningOptimizer()
+            if not self.ai_optimizer.initialize_ai_systems():
+                logger.warning("⚠️ AI systems initialization failed, using basic optimization")
+                self.ai_optimizer = AIOptimizer()
+            
+            # Configure RandomX miner
+            randomx_config = RandomXConfig(
+                coin=coin,
+                pool_url=pool,
+                wallet_address=wallet,
+                password=password or 'cryptominer-v21',
+                threads=threads or 0,  # 0 = auto-detect
+                cpu_priority=1
+            )
+            
+            logger.info(f"🔧 RandomX Configuration:")
+            logger.info(f"   Coin: {coin}")
+            logger.info(f"   Pool: {pool}")
+            logger.info(f"   Threads: {threads or 'auto-detect'}")
+            logger.info(f"   Intensity: {intensity}%")
+            
+            # Initialize RandomX miner
+            self.randomx_miner = RandomXMiner(randomx_config)
+            
+            # Start mining
+            if self.randomx_miner.start():
+                logger.info("✅ RandomX mining started successfully")
+                
+                # Start AI optimization and monitoring
+                await self._start_ai_monitoring('RandomX')
+                
+                # Keep mining running
+                while self.running:
+                    await asyncio.sleep(10)
+                    
+                    # Get and log stats
+                    stats = self.randomx_miner.get_stats()
+                    if stats.get('hashrate', 0) > 0:
+                        logger.info(f"⚡ RandomX: {stats['hashrate']:.1f} H/s | Shares: {stats.get('shares_good', 0)} | Threads: {stats.get('threads', 0)}")
+                    
+                    # Feed data to AI
+                    if hasattr(self.ai_optimizer, 'store_mining_session'):
+                        session_data = {
+                            'algorithm': 'RandomX',
+                            'coin': coin,
+                            'hashrate': stats.get('hashrate', 0),
+                            'threads': stats.get('threads', 0),
+                            'shares_found': stats.get('shares_good', 0),
+                            'duration': stats.get('uptime', 0),
+                            'temperature': 65.0,  # Estimate
+                            'started_at': datetime.now(),
+                            'ended_at': datetime.now()
+                        }
+                        self.ai_optimizer.store_mining_session(session_data)
+            else:
+                raise Exception("Failed to start RandomX miner")
+                
+        except ImportError:
+            logger.error("❌ RandomX miner not available. Please install RandomX dependencies.")
+            raise
+        except Exception as e:
+            logger.error(f"❌ RandomX mining error: {e}")
+            raise
+    
+    async def _start_scrypt_mining(self, coin, wallet, pool, password, intensity, threads, proxy_mode):
+        """Start traditional Scrypt mining"""
         
         logger.info(f"🚀 Starting CryptoMiner Pro V30")
         logger.info(f"Coin: {coin}")

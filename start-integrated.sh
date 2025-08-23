@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# CryptoMiner Pro V30 - Integrated Startup Script
+# CryptoMiner V21 - Integrated Startup Script
 # Starts mining with automatic web dashboard integration and backend API
 
 set -e
 
-echo "🚀 CryptoMiner Pro V30 - Integrated Startup"
-echo "==========================================="
+echo "🚀 CryptoMiner V21 - Integrated Startup"
+echo "======================================="
 
 # Colors for output
 GREEN='\033[0;32m'

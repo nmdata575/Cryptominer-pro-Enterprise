@@ -999,8 +999,15 @@ class CryptoMinerAPITester:
 
 def main():
     """Main entry point"""
-    tester = CryptoMinerAPITester()
-    return tester.run_comprehensive_test()
+    import sys
+    
+    # Check if RandomX focused testing is requested
+    if len(sys.argv) > 1 and sys.argv[1] == "--randomx":
+        tester = CryptoMinerAPITester()
+        return tester.run_randomx_focused_test()
+    else:
+        tester = CryptoMinerAPITester()
+        return tester.run_comprehensive_test()
 
 if __name__ == "__main__":
     sys.exit(main())

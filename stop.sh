@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# CryptoMiner Pro V30 - Stop Script
-# Forcefully stops all CryptoMiner Pro V30 processes
+# CryptoMiner V21 - Stop Script
+# Forcefully stops all CryptoMiner V21 processes
 
-echo "🛑 Stopping CryptoMiner Pro V30..."
+echo "🛑 Stopping CryptoMiner V21..."
 
 # First try graceful shutdown
 echo "Attempting graceful shutdown..."

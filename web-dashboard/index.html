@@ -266,6 +266,10 @@
             <div class="card">
                 <h3>⚡ Mining Status</h3>
                 <div class="stat">
+                    <span>Algorithm:</span>
+                    <span class="value" id="current-algorithm">RandomX</span>
+                </div>
+                <div class="stat">
                     <span>Hashrate:</span>
                     <span class="value" id="hashrate">0 H/s</span>
                 </div>
@@ -294,8 +298,23 @@
                 <div class="config-section">
                     <h4 style="margin: 0 0 10px 0; color: #61dafb;">⚙️ Quick Config</h4>
                     <div class="config-input">
+                        <span>Algorithm:</span>
+                        <select id="config-algorithm" onchange="updateCoinOptions()">
+                            <option value="RandomX">RandomX (CPU)</option>
+                            <option value="Scrypt">Scrypt (Legacy)</option>
+                            <option value="CryptoNight">CryptoNight (CPU)</option>
+                        </select>
+                    </div>
+                    <div class="config-input">
+                        <span>Coin:</span>
+                        <select id="config-coin">
+                            <option value="XMR">Monero (XMR)</option>
+                            <option value="AEON">Aeon (AEON)</option>
+                        </select>
+                    </div>
+                    <div class="config-input">
                         <span>Pool:</span>
-                        <input type="text" id="config-pool" placeholder="ltc.luckymonster.pro:4112">
+                        <input type="text" id="config-pool" placeholder="pool.supportxmr.com:3333">
                     </div>
                     <div class="config-input">
                         <span>Threads:</span>
@@ -304,6 +323,10 @@
                     <div class="config-input">
                         <span>Intensity:</span>
                         <input type="number" id="config-intensity" placeholder="80" min="1" max="100">
+                    </div>
+                    <div class="config-input">
+                        <span>Auto Switch:</span>
+                        <input type="checkbox" id="config-auto-switch" checked>
                     </div>
                 </div>
             </div>

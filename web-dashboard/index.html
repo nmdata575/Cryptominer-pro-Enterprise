@@ -210,6 +210,48 @@
             <button id="start-btn" class="btn btn-start" onclick="startMining()">▶️ Start Mining</button>
             <button id="stop-btn" class="btn btn-stop" onclick="stopMining()">⏹️ Stop Mining</button>
             <button id="restart-btn" class="btn btn-restart" onclick="restartMining()">🔄 Restart Mining</button>
+            <button id="switch-algo-btn" class="btn btn-restart" onclick="showAlgorithmSelector()">🔀 Switch Algorithm</button>
+        </div>
+        
+        <!-- Algorithm Selection Modal -->
+        <div id="algorithm-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close" onclick="hideAlgorithmSelector()">&times;</span>
+                <h3>🔀 Select Mining Algorithm</h3>
+                <div class="algorithm-options">
+                    <div class="algo-option" onclick="selectAlgorithm('RandomX', 'XMR')">
+                        <h4>RandomX (Monero)</h4>
+                        <p>CPU-optimized, ASIC-resistant, memory-hard algorithm</p>
+                        <div class="algo-stats">
+                            <span>💪 CPU Friendly</span>
+                            <span>🧠 Memory Hard</span>
+                            <span>🛡️ ASIC Resistant</span>
+                        </div>
+                    </div>
+                    <div class="algo-option" onclick="selectAlgorithm('Scrypt', 'LTC')">
+                        <h4>Scrypt (Litecoin)</h4>
+                        <p>Traditional Scrypt algorithm, good for legacy hardware</p>
+                        <div class="algo-stats">
+                            <span>⚡ Fast</span>
+                            <span>🔧 Established</span>
+                            <span>💰 Profitable</span>
+                        </div>
+                    </div>
+                    <div class="algo-option" onclick="selectAlgorithm('RandomX', 'AEON')">
+                        <h4>CryptoNight-Lite (Aeon)</h4>
+                        <p>Lightweight variant optimized for low-power devices</p>
+                        <div class="algo-stats">
+                            <span>💡 Low Power</span>
+                            <span>🔋 Efficient</span>
+                            <span>📱 Mobile Friendly</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ai-recommendation" id="ai-recommendation">
+                    <h4>🤖 AI Recommendation</h4>
+                    <p id="ai-recommendation-text">Analyzing optimal algorithm...</p>
+                </div>
+            </div>
         </div>
         
         <div id="error-message" class="error" style="display: none;">

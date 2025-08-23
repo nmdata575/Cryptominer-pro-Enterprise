@@ -20,6 +20,52 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+def load_mining_config():
+    """Load mining configuration from mining_config.env file"""
+    config_file = Path("/app/mining_config.env")
+    mining_config = {}
+    
+    if config_file.exists():
+        # Load the mining config file
+        load_dotenv(str(config_file))
+        
+        mining_config = {
+            "coin": os.getenv("COIN", "XMR"),
+            "wallet": os.getenv("WALLET", "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"),
+            "pool": os.getenv("POOL", "stratum+tcp://us.fastpool.xyz:10055"),
+            "password": os.getenv("PASSWORD", "x"),
+            "intensity": int(os.getenv("INTENSITY", "80")),
+            "threads": os.getenv("THREADS", "auto"),
+            "web_enabled": os.getenv("WEB_ENABLED", "true").lower() == "true",
+            "ai_enabled": os.getenv("AI_ENABLED", "true").lower() == "true",
+            "ai_learning_rate": float(os.getenv("AI_LEARNING_RATE", "1.0"))
+        }
+        
+        logger.info(f"📁 Loaded mining config from {config_file}")
+        logger.info(f"   Coin: {mining_config['coin']}")
+        logger.info(f"   Pool: {mining_config['pool']}")
+        logger.info(f"   Intensity: {mining_config['intensity']}%")
+        logger.info(f"   Threads: {mining_config['threads']}")
+    else:
+        logger.warning(f"⚠️ Mining config file not found: {config_file}")
+        # Use default XMR configuration
+        mining_config = {
+            "coin": "XMR",
+            "wallet": "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
+            "pool": "stratum+tcp://us.fastpool.xyz:10055",
+            "password": "x",
+            "intensity": 80,
+            "threads": "auto",
+            "web_enabled": True,
+            "ai_enabled": True,
+            "ai_learning_rate": 1.0
+        }
+    
+    return mining_config
+
+# Global variable for mining configuration
+default_mining_config = load_mining_config()
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)

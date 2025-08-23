@@ -196,6 +196,142 @@
         .config-input input::placeholder {
             color: rgba(255, 255, 255, 0.6);
         }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 800px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: white;
+        }
+        
+        .algorithm-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .algo-option {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .algo-option:hover {
+            border-color: #61dafb;
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .algo-option h4 {
+            margin: 0 0 10px 0;
+            color: #61dafb;
+        }
+        
+        .algo-option p {
+            margin: 0 0 15px 0;
+            opacity: 0.8;
+        }
+        
+        .algo-stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .algo-stats span {
+            background: rgba(97, 218, 251, 0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            border: 1px solid rgba(97, 218, 251, 0.3);
+        }
+        
+        .ai-recommendation {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .ai-recommendation h4 {
+            margin: 0 0 10px 0;
+            color: #00ff88;
+        }
+        
+        .algorithm-comparison {
+            margin-top: 15px;
+        }
+        
+        .algo-comparison-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .algo-comparison-item:last-child {
+            border-bottom: none;
+        }
+        
+        .algo-name {
+            font-weight: bold;
+            color: #61dafb;
+            flex: 1;
+        }
+        
+        .algo-hashrate, .algo-efficiency {
+            font-family: 'Courier New', monospace;
+            color: #00ff88;
+            flex: 1;
+            text-align: right;
+        }
+        
+        .ai-recommendation-display {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        #ai-recommended-algorithm {
+            color: #00ff88;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>

@@ -1000,6 +1000,67 @@ AI_ENABLED=true
             except Exception as e:
                 logger.error(f"❌ AI optimization loop error: {e}")
                 await asyncio.sleep(30)
+    
+    async def _update_web_monitoring(self, mining_stats, coin, pool):
+        """Update web monitoring system with mining stats"""
+        try:
+            # Convert RandomX stats to web monitoring format
+            web_stats = {
+                'hashrate': mining_stats.get('hashrate', 0),
+                'threads': mining_stats.get('threads', 0),
+                'intensity': 80,  # From config
+                'coin': coin,
+                'pool_connected': mining_stats.get('is_running', False),
+                'accepted_shares': mining_stats.get('shares_good', 0),
+                'rejected_shares': 0,  # RandomX miner doesn't separate this yet
+                'uptime': mining_stats.get('uptime', 0),
+                'difficulty': 1000000,  # XMR difficulty estimate
+                'ai_learning': self._get_ai_learning_progress(),
+                'ai_optimization': self._get_ai_optimization_progress()
+            }
+            
+            # Send to backend API for web dashboard
+            if hasattr(self, 'web_enabled') and self.web_enabled:
+                await self._send_stats_to_backend(web_stats)
+                
+        except Exception as e:
+            logger.error(f"❌ Web monitoring update error: {e}")
+    
+    async def _send_stats_to_backend(self, stats):
+        """Send mining stats to backend API"""
+        try:
+            import aiohttp
+            
+            async with aiohttp.ClientSession() as session:
+                url = f"http://localhost:{self.web_port}/api/mining/update-stats"
+                async with session.post(url, json=stats) as response:
+                    if response.status == 200:
+                        logger.debug("✅ Stats updated to web dashboard successfully")
+                    else:
+                        logger.warning(f"⚠️ Web dashboard update failed: {response.status}")
+                        
+        except Exception as e:
+            logger.debug(f"Web dashboard update error: {e}")
+    
+    def _get_ai_learning_progress(self):
+        """Get AI learning progress percentage"""
+        try:
+            if hasattr(self.ai_optimizer, 'get_ai_stats'):
+                ai_stats = self.ai_optimizer.get_ai_stats()
+                return ai_stats.get('learning_progress', 0)
+            return 0
+        except:
+            return 0
+    
+    def _get_ai_optimization_progress(self):
+        """Get AI optimization progress percentage"""
+        try:
+            if hasattr(self.ai_optimizer, 'get_ai_stats'):
+                ai_stats = self.ai_optimizer.get_ai_stats()
+                return ai_stats.get('optimization_progress', 0)
+            return 0
+        except:
+            return 0
 
     async def start_web_server(self):
         """Start the web monitoring server and data updates"""

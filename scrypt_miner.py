@@ -1,5 +1,6 @@
 """
-Scrypt Miner - Low-level Scrypt mining logic and Stratum protocol communication
+Scrypt Miner - CryptoMiner V21
+Low-level Scrypt mining logic and Stratum protocol communication
 Handles work processing, share submission, and pool communication
 """
 

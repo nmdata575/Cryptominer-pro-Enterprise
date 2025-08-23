@@ -26,7 +26,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
-app = FastAPI(title="CryptoMiner Pro V30 API", description="Enterprise Mining Platform API")
+app = FastAPI(title="CryptoMiner V21 API", description="Advanced Multi-Algorithm CPU Mining Platform API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")

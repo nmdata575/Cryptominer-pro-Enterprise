@@ -243,7 +243,7 @@ const MiningDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <p className="text-gray-400">
-              CryptoMiner Pro V30 - Enterprise Mining Platform
+              CryptoMiner V21 - Advanced Multi-Algorithm CPU Mining Platform
             </p>
             <p className="text-gray-500 text-sm">
               Last updated: {stats?.last_update ? new Date(stats.last_update).toLocaleTimeString() : 'Never'}

@@ -5,7 +5,7 @@ Centralized location for all constants used throughout the application
 
 # Application Information
 APP_NAME = "CryptoMiner V21"
-APP_VERSION = "3.0.0"
+APP_VERSION = "21.0.0"
 APP_DESCRIPTION = "Enterprise-scale distributed mining platform"
 
 # Mining Constants

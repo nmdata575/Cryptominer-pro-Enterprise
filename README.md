@@ -40,6 +40,23 @@ chmod +x start-integrated.sh
 - **Backend API**: http://localhost:8001  
 - **Features**: Real-time mining control, statistics, AI optimization
 
+### **Frontend Management**
+CryptoMiner V21 includes scripts to ensure proper V21 branding:
+
+```bash
+# Switch to HTML dashboard (recommended for V21 branding)
+./switch-frontend.sh html
+
+# Switch to React frontend (may show cached V30)
+./switch-frontend.sh react
+
+# Check current frontend status
+./switch-frontend.sh status
+
+# Complete V21 setup (stops services, switches to HTML, shows status)
+./setup-v21.sh
+```
+
 ### **Configuration**
 Edit `mining_config.env` with your settings:
 ```env

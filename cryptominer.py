@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 try:
     from mining_engine import MiningEngine
     from ai_optimizer import AIOptimizer
+    from ai_mining_optimizer import AdvancedAIMiningOptimizer, MiningEnvironment
 except ImportError as e:
     logger.error(f"Failed to import mining components: {e}")
     sys.exit(1)

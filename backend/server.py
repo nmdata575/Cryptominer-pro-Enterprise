@@ -81,8 +81,8 @@ api_router = APIRouter(prefix="/api")
 mining_stats = {
     "hashrate": 0.0,
     "threads": 0,
-    "intensity": 80,
-    "coin": "XMR",
+    "intensity": default_mining_config.get("intensity", 80),
+    "coin": default_mining_config.get("coin", "XMR"),
     "pool_connected": False,
     "accepted_shares": 0,
     "rejected_shares": 0,

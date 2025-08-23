@@ -847,7 +847,7 @@ AI_ENABLED=true
                 # Start AI optimization and monitoring
                 await self._start_ai_monitoring('RandomX')
                 
-                # Keep mining running
+                # Keep mining running and update web monitoring
                 while self.running:
                     await asyncio.sleep(10)
                     
@@ -855,6 +855,9 @@ AI_ENABLED=true
                     stats = self.randomx_miner.get_stats()
                     if stats.get('hashrate', 0) > 0:
                         logger.info(f"⚡ RandomX: {stats['hashrate']:.1f} H/s | Shares: {stats.get('shares_good', 0)} | Threads: {stats.get('threads', 0)}")
+                    
+                    # Update web monitoring with RandomX stats
+                    await self._update_web_monitoring(stats, coin, pool)
                     
                     # Feed data to AI
                     if hasattr(self.ai_optimizer, 'store_mining_session'):

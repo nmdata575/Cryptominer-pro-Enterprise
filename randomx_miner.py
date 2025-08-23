@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RandomX CPU Miner Implementation
+RandomX CPU Miner Implementation - CryptoMiner V21
 Advanced CPU mining engine for Monero (XMR) and other RandomX-based coins
 """
 

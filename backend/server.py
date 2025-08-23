@@ -360,21 +360,17 @@ async def control_mining(request: Dict[str, Any]):
         if is_mining_active and mining_process and mining_process.poll() is None:
             return {"status": "error", "message": "Mining is already running"}
         
-        # Add default values if not provided
-        if not config.get("wallet"):
-            config["wallet"] = "LTC_PLACEHOLDER_WALLET_ADDRESS"
-        if not config.get("coin"):
-            config["coin"] = "LTC"
-        if not config.get("pool"):
-            config["pool"] = "ltc.luckymonster.pro:4112"
+        # Use configuration from mining_config.env file
+        merged_config = default_mining_config.copy()
+        merged_config.update(config)  # Override with any provided config
         
-        success = await start_mining_process(config)
+        success = await start_mining_process(merged_config)
         
         if success:
             # Log the control action
             await db.mining_control_log.insert_one({
                 "action": "start",
-                "config": config,
+                "config": merged_config,
                 "timestamp": datetime.utcnow(),
                 "status": "executed",
                 "process_id": mining_process.pid if mining_process else None
@@ -383,7 +379,7 @@ async def control_mining(request: Dict[str, Any]):
             return {
                 "status": "success", 
                 "message": f"Mining started successfully (PID: {mining_process.pid})", 
-                "config": config
+                "config": merged_config
             }
         else:
             return {"status": "error", "message": "Failed to start mining process"}
@@ -413,22 +409,18 @@ async def control_mining(request: Dict[str, Any]):
             killed_count = await kill_mining_processes()
             logger.info(f"Restart: killed {killed_count} processes")
         
-        # Add default values if not provided
-        if not config.get("wallet"):
-            config["wallet"] = "LTC_PLACEHOLDER_WALLET_ADDRESS"
-        if not config.get("coin"):
-            config["coin"] = "LTC"
-        if not config.get("pool"):
-            config["pool"] = "ltc.luckymonster.pro:4112"
+        # Use configuration from mining_config.env file
+        merged_config = default_mining_config.copy()
+        merged_config.update(config)  # Override with any provided config
         
-        # Start with current or provided config
-        success = await start_mining_process(config)
+        # Start with merged config
+        success = await start_mining_process(merged_config)
         
         if success:
             # Log the control action
             await db.mining_control_log.insert_one({
                 "action": "restart",
-                "config": config,
+                "config": merged_config,
                 "timestamp": datetime.utcnow(),
                 "status": "executed",
                 "process_id": mining_process.pid if mining_process else None
@@ -437,7 +429,7 @@ async def control_mining(request: Dict[str, Any]):
             return {
                 "status": "success", 
                 "message": f"Mining restarted successfully (PID: {mining_process.pid})", 
-                "config": config
+                "config": merged_config
             }
         else:
             return {"status": "error", "message": "Failed to restart mining process"}

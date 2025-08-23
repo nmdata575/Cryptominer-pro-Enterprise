@@ -1,10 +1,8 @@
-# CryptoMiner Pro V30 - Enterprise Mining Platform
+# 🚀 CryptoMiner V21
 
-🚀 **Compact Terminal Mining Application with Optional Web Monitoring**
+**Advanced Multi-Algorithm CPU Mining Platform with AI Optimization**
 
-## Overview
-
-CryptoMiner Pro V30 is an enterprise-scale distributed mining platform designed for 250,000+ CPU cores, featuring centralized database support, remote mining rate aggregation, and AI-driven optimization.
+CryptoMiner V21 is an enterprise-grade distributed mining solution supporting 250,000+ CPU cores with intelligent algorithm switching and AI-driven performance optimization.
 
 ### Key Features
 

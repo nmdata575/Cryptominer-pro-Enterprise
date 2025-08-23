@@ -1,5 +1,6 @@
 """
-Mining Engine - Core mining orchestration and thread management
+Mining Engine - CryptoMiner V21
+Core mining orchestration and thread management
 Handles high-level mining control and coordinates with scrypt_miner and AI optimizer
 """
 

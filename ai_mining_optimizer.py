@@ -91,7 +91,7 @@ class PredictiveShare:
 class AIDatabase:
     """Advanced AI database with 15GB capacity"""
     
-    def __init__(self, db_path: str = "/app/ai_mining_data.db", max_size_gb: int = 15):
+    def __init__(self, db_path: str = "ai_mining_data.db", max_size_gb: int = 15):
         self.db_path = db_path
         self.max_size_bytes = max_size_gb * 1024 * 1024 * 1024  # 15GB
         self.connection = None

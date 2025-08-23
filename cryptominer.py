@@ -808,8 +808,11 @@ AI_ENABLED=true
                 logger.info("🔗 Initializing direct connection mining engine")
                 from mining_engine import MiningEngine
                 
-                # Initialize AI optimizer
-                self.ai_optimizer = AIOptimizer()
+                # Initialize Advanced AI optimizer with 15GB database
+                self.ai_optimizer = AdvancedAIMiningOptimizer()
+                if not self.ai_optimizer.initialize_ai_systems():
+                    logger.warning("⚠️ AI systems initialization failed, using basic optimization")
+                    self.ai_optimizer = AIOptimizer()  # Fallback to basic AI
                 
                 # Initialize traditional mining engine
                 self.mining_engine = MiningEngine(

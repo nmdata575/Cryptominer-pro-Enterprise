@@ -6,7 +6,7 @@ Centralized location for all constants used throughout the application
 # Application Information
 APP_NAME = "CryptoMiner V21"
 APP_VERSION = "21.0.0"
-APP_DESCRIPTION = "Enterprise-scale distributed mining platform"
+APP_DESCRIPTION = "Advanced Multi-Algorithm CPU Mining Platform with AI Optimization"
 
 # Mining Constants
 DEFAULT_INTENSITY = 80

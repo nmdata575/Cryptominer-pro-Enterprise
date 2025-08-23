@@ -893,16 +893,23 @@ AI_ENABLED=true
         
         try:
             if proxy_mode:
-                logger.info("🔄 Initializing proxy connection manager")
+                logger.info("🔗 Initializing proxy connection mining engine")
                 from proxy_mining_engine import ProxyMiningEngine
                 
-                # Initialize proxy mining engine  
+                # Initialize Advanced AI optimizer
+                self.ai_optimizer = AdvancedAIMiningOptimizer()
+                if not self.ai_optimizer.initialize_ai_systems():
+                    logger.warning("⚠️ AI systems initialization failed, using basic optimization")
+                    self.ai_optimizer = AIOptimizer()
+                
+                # Initialize proxy mining engine
                 self.mining_engine = ProxyMiningEngine(
                     coin=coin,
                     wallet=wallet,
-                    pool_url=pool,
-                    password=password or "x",
-                    intensity=intensity
+                    pool=pool,
+                    password=password,
+                    intensity=intensity,
+                    ai_optimizer=self.ai_optimizer
                 )
                 
                 # Set thread count if specified
@@ -913,11 +920,11 @@ AI_ENABLED=true
                 logger.info("🔗 Initializing direct connection mining engine")
                 from mining_engine import MiningEngine
                 
-                # Initialize Advanced AI optimizer with 15GB database
+                # Initialize Advanced AI optimizer
                 self.ai_optimizer = AdvancedAIMiningOptimizer()
                 if not self.ai_optimizer.initialize_ai_systems():
                     logger.warning("⚠️ AI systems initialization failed, using basic optimization")
-                    self.ai_optimizer = AIOptimizer()  # Fallback to basic AI
+                    self.ai_optimizer = AIOptimizer()
                 
                 # Initialize traditional mining engine
                 self.mining_engine = MiningEngine(
@@ -933,50 +940,63 @@ AI_ENABLED=true
                 if threads:
                     self.mining_engine.set_thread_count(threads)
             
-            # Start web dashboard
-            dashboard_dir = self.create_web_dashboard()
-            self.start_web_dashboard(dashboard_dir)
+            # Start Scrypt mining
+            logger.info("🚀 Starting Scrypt mining...")
+            await self.mining_engine.start_mining()
             
-            # Start web monitoring server
-            self.web_server_task = asyncio.create_task(self.start_web_server())
+            # Start AI monitoring
+            await self._start_ai_monitoring('Scrypt')
             
-            # Start mining in background task
-            mining_task = asyncio.create_task(self.mining_engine.start())
-            
-            # Run both tasks concurrently and wait for shutdown signal
-            try:
-                while self.running:
-                    # Check if mining engine is still running
-                    if mining_task.done():
-                        logger.warning("Mining engine stopped unexpectedly")
-                        break
-                    
-                    # Check if web monitoring is still running
-                    if self.web_server_task.done():
-                        logger.warning("Web monitoring stopped unexpectedly")
-                        # Restart web monitoring
-                        self.web_server_task = asyncio.create_task(self.start_web_server())
-                    
-                    # Wait for shutdown signal or brief sleep
-                    try:
-                        await asyncio.wait_for(self.shutdown_event.wait(), timeout=1.0)
-                        break  # Shutdown signal received
-                    except asyncio.TimeoutError:
-                        continue  # Normal operation, continue loop
-                        
-            except asyncio.CancelledError:
-                logger.info("Mining tasks cancelled")
-            except Exception as e:
-                logger.error(f"Task execution error: {e}")
-                    
-        except KeyboardInterrupt:
-            logger.info("Received keyboard interrupt")
         except Exception as e:
-            logger.error(f"Mining error: {e}")
-        finally:
-            # Ensure clean shutdown
-            if self.running:
-                await self.shutdown()
+            logger.error(f"❌ Scrypt mining error: {e}")
+            raise
+    
+    async def _start_ai_monitoring(self, algorithm):
+        """Start AI monitoring and optimization"""
+        try:
+            logger.info("🤖 Starting AI monitoring and optimization...")
+            
+            # Start AI optimization loop
+            asyncio.create_task(self._ai_optimization_loop(algorithm))
+            
+        except Exception as e:
+            logger.error(f"❌ AI monitoring error: {e}")
+    
+    async def _ai_optimization_loop(self, algorithm):
+        """AI optimization background loop"""
+        while self.running:
+            try:
+                await asyncio.sleep(60)  # Run every minute
+                
+                # Get current mining stats
+                if hasattr(self, 'randomx_miner') and self.randomx_miner:
+                    stats = self.randomx_miner.get_stats()
+                elif hasattr(self, 'mining_engine') and self.mining_engine:
+                    stats = self.mining_engine.get_stats()
+                else:
+                    continue
+                
+                # Feed data to advanced AI optimizer
+                if hasattr(self.ai_optimizer, 'store_performance_metrics'):
+                    metrics = {
+                        'hashrate': stats.get('hashrate', 0),
+                        'cpu_usage': stats.get('cpu_usage', 0),
+                        'memory_usage': stats.get('memory_usage', 0),
+                        'temperature': 65.0,  # Estimate
+                        'power_draw': 150.0,  # Estimate
+                        'shares_per_minute': stats.get('shares_good', 0) / max(1, stats.get('uptime', 1) / 60),
+                        'rejected_shares': stats.get('rejected_shares', 0),
+                        'latency': 50.0  # Estimate
+                    }
+                    
+                    session_id = f"session_{algorithm}_{int(time.time())}"
+                    self.ai_optimizer.store_performance_metrics(session_id, metrics)
+                    
+                logger.debug(f"🤖 AI optimization cycle completed for {algorithm}")
+                
+            except Exception as e:
+                logger.error(f"❌ AI optimization loop error: {e}")
+                await asyncio.sleep(30)
 
     async def start_web_server(self):
         """Start the web monitoring server and data updates"""

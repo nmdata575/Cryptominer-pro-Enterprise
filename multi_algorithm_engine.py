@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Multi-Algorithm Mining Engine
+Multi-Algorithm Mining Engine - CryptoMiner V21
 Advanced mining system supporting RandomX, Scrypt, and other CPU-friendly algorithms
 """
 

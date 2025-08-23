@@ -606,7 +606,7 @@ class PredictiveShareEngine:
 class AdvancedAIMiningOptimizer:
     """Main AI Mining Optimizer with advanced capabilities"""
     
-    def __init__(self, db_path: str = "/app/ai_mining_data.db"):
+    def __init__(self, db_path: str = "ai_mining_data.db"):
         self.ai_db = AIDatabase(db_path)
         self.hardware_profile = HardwareDetector.detect_hardware()
         self.predictive_engine = PredictiveShareEngine(self.ai_db)

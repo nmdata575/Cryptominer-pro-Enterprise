@@ -1,21 +1,17 @@
 #!/bin/bash
 
-# CryptoMiner Pro V30 - Comprehensive Installation Script
-# This script handles all dependencies and setup for the mining application
+# CryptoMiner V21 - Installation Script
+# Automatically installs all dependencies and sets up the mining environment
 
-set -e  # Exit on any error
-
-echo "🚀 CryptoMiner Pro V30 - Installation Script"
-echo "============================================="
+set -e
 
 # Colors for output
 RED='\033[0;31m'
-GREEN='\033[0;32m'
+GREEN='\033[0;32m' 
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -31,6 +27,9 @@ log_warning() {
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
+echo "🚀 CryptoMiner V21 Installation Script"
+echo "======================================"
 
 # Check if running as root
 check_root() {

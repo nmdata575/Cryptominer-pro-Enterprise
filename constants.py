@@ -1,5 +1,5 @@
 """
-CryptoMiner Pro V30 - Constants and Configuration Values
+CryptoMiner V21 - Constants and Configuration Values
 Centralized location for all constants used throughout the application
 """
 

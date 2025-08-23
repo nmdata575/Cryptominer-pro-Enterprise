@@ -266,13 +266,13 @@ install_mongodb() {
                 sudo systemctl enable mongod
                 ;;
             "centos")
-                cat > /etc/yum.repos.d/mongodb-org-6.0.repo << EOF
-[mongodb-org-6.0]
+                cat > /etc/yum.repos.d/mongodb-org-8.0.repo << EOF
+[mongodb-org-8.0]
 name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/6.0/x86_64/
+baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/8.0/x86_64/
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc
+gpgkey=https://www.mongodb.org/static/pgp/server-8.0.asc
 EOF
                 sudo yum install -y mongodb-org
                 sudo systemctl start mongod

@@ -371,6 +371,38 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="ai-optimization-bar" style="width: 0%"></div>
                 </div>
+                <div class="stat">
+                    <span>Predictive Success:</span>
+                    <span class="value" id="ai-prediction-rate">0%</span>
+                </div>
+                <div class="stat">
+                    <span>Database Size:</span>
+                    <span class="value" id="ai-database-size">0 MB</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>⚖️ Algorithm Comparison</h3>
+                <div id="algorithm-comparison">
+                    <div class="algo-comparison-item">
+                        <span class="algo-name">RandomX:</span>
+                        <span class="algo-hashrate" id="randomx-hashrate">- H/s</span>
+                        <span class="algo-efficiency" id="randomx-efficiency">- H/W</span>
+                    </div>
+                    <div class="algo-comparison-item">
+                        <span class="algo-name">Scrypt:</span>
+                        <span class="algo-hashrate" id="scrypt-hashrate">- H/s</span>
+                        <span class="algo-efficiency" id="scrypt-efficiency">- H/W</span>
+                    </div>
+                    <div class="algo-comparison-item">
+                        <span class="algo-name">CryptoNight:</span>
+                        <span class="algo-hashrate" id="cryptonight-hashrate">- H/s</span>
+                        <span class="algo-efficiency" id="cryptonight-efficiency">- H/W</span>
+                    </div>
+                </div>
+                <div class="ai-recommendation-display" id="current-ai-recommendation">
+                    <strong>🤖 AI Recommends:</strong> <span id="ai-recommended-algorithm">Analyzing...</span>
+                </div>
             </div>
         </div>
         

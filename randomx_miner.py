@@ -1,0 +1,443 @@
+#!/usr/bin/env python3
+"""
+RandomX CPU Miner Implementation
+Advanced CPU mining engine for Monero (XMR) and other RandomX-based coins
+"""
+
+import hashlib
+import struct
+import threading
+import time
+import json
+import os
+import psutil
+import logging
+from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, Future
+import asyncio
+import socket
+import random
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@dataclass
+class RandomXConfig:
+    """Configuration for RandomX mining"""
+    coin: str = "XMR"
+    pool_url: str = ""
+    wallet_address: str = ""
+    password: str = "x"
+    threads: int = 0  # 0 = auto-detect
+    huge_pages: bool = True
+    cpu_priority: int = 0  # -1 to 5, higher = more priority
+    cache_qr: int = 8  # Cache quantum resistance
+    scratchpad_l3: int = 2097152  # L3 cache size
+    memory_pool: int = 4  # Memory pool in GB
+    jit_compiler: bool = True
+    hardware_aes: bool = True
+    randomx_flags: int = 0
+
+@dataclass
+class MiningStats:
+    """RandomX mining statistics"""
+    hashrate: float = 0.0
+    hashrate_10s: float = 0.0
+    hashrate_60s: float = 0.0
+    hashrate_15m: float = 0.0
+    hashes_total: int = 0
+    shares_good: int = 0
+    shares_total: int = 0
+    avg_time: float = 0.0
+    max_diff: int = 0
+    cpu_usage: float = 0.0
+    memory_usage: float = 0.0
+    temperature: float = 0.0
+    power_consumption: float = 0.0
+    efficiency: float = 0.0  # hashes per watt
+
+class RandomXDataset:
+    """RandomX dataset management"""
+    
+    def __init__(self, config: RandomXConfig):
+        self.config = config
+        self.dataset = None
+        self.cache = None
+        self.is_initialized = False
+        self.dataset_size = 2 * 1024 * 1024 * 1024  # 2GB default
+        self.cache_size = 256 * 1024 * 1024  # 256MB default
+        
+    def initialize(self) -> bool:
+        """Initialize RandomX dataset and cache"""
+        try:
+            logger.info(f"🔄 Initializing RandomX dataset ({self.dataset_size // (1024*1024)} MB)...")
+            
+            # Simulate dataset initialization (in real implementation, use RandomX library)
+            # This would call: randomx_create_dataset(), randomx_init_dataset()
+            self.dataset = bytearray(self.dataset_size)
+            self.cache = bytearray(self.cache_size)
+            
+            # Fill with pseudo-random data for simulation
+            for i in range(0, self.dataset_size, 8):
+                data = struct.pack('<Q', hash(i) & 0xFFFFFFFFFFFFFFFF)
+                self.dataset[i:i+8] = data[:min(8, self.dataset_size - i)]
+            
+            self.is_initialized = True
+            logger.info("✅ RandomX dataset initialized successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize RandomX dataset: {e}")
+            return False
+    
+    def release(self):
+        """Release dataset memory"""
+        if self.dataset:
+            self.dataset = None
+        if self.cache:
+            self.cache = None
+        self.is_initialized = False
+        logger.info("🗑️ RandomX dataset released")
+
+class RandomXVirtualMachine:
+    """RandomX Virtual Machine implementation"""
+    
+    def __init__(self, dataset: RandomXDataset, thread_id: int):
+        self.dataset = dataset
+        self.thread_id = thread_id
+        self.vm_memory = bytearray(2048)  # VM memory
+        self.registers = [0] * 8  # VM registers
+        self.is_initialized = False
+        
+    def initialize(self) -> bool:
+        """Initialize the VM"""
+        try:
+            if not self.dataset.is_initialized:
+                logger.error("Dataset not initialized")
+                return False
+                
+            # Initialize VM state (in real implementation: randomx_create_vm)
+            self.vm_memory = bytearray(2048)
+            self.registers = [random.randint(0, 2**64-1) for _ in range(8)]
+            self.is_initialized = True
+            
+            logger.debug(f"✅ RandomX VM {self.thread_id} initialized")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize RandomX VM {self.thread_id}: {e}")
+            return False
+    
+    def calculate_hash(self, input_data: bytes) -> bytes:
+        """Calculate RandomX hash"""
+        try:
+            if not self.is_initialized:
+                raise Exception("VM not initialized")
+            
+            # Simulate RandomX hash calculation
+            # In real implementation: randomx_calculate_hash()
+            
+            # This is a simplified simulation - real RandomX would:
+            # 1. Initialize program from input
+            # 2. Execute random program instructions
+            # 3. Perform memory-hard operations
+            # 4. Return final hash
+            
+            # For simulation, use a complex hash combination
+            hash1 = hashlib.blake2b(input_data, digest_size=32).digest()
+            hash2 = hashlib.sha3_256(hash1 + input_data).digest()
+            
+            # Simulate memory-hard operations
+            for i in range(1000):  # Reduced for simulation
+                idx = struct.unpack('<I', hash2[i % 32:(i % 32) + 4])[0] % len(self.vm_memory)
+                self.vm_memory[idx] ^= hash1[i % 32]
+            
+            # Final hash
+            final_hash = hashlib.blake2b(
+                hash2 + bytes(self.vm_memory[:64]), 
+                digest_size=32
+            ).digest()
+            
+            return final_hash
+            
+        except Exception as e:
+            logger.error(f"Hash calculation error in VM {self.thread_id}: {e}")
+            return b'\x00' * 32
+
+class RandomXMinerThread:
+    """Individual RandomX mining thread"""
+    
+    def __init__(self, thread_id: int, config: RandomXConfig, dataset: RandomXDataset):
+        self.thread_id = thread_id
+        self.config = config
+        self.dataset = dataset
+        self.vm = RandomXVirtualMachine(dataset, thread_id)
+        self.is_running = False
+        self.stats = MiningStats()
+        self.thread = None
+        
+        # Mining state
+        self.current_job = None
+        self.nonce = 0
+        self.hashes_done = 0
+        self.start_time = time.time()
+        
+    def start(self):
+        """Start mining thread"""
+        if self.is_running:
+            return
+            
+        if not self.vm.initialize():
+            logger.error(f"Failed to initialize VM for thread {self.thread_id}")
+            return
+            
+        self.is_running = True
+        self.thread = threading.Thread(target=self._mining_loop, daemon=True)
+        self.thread.start()
+        logger.info(f"🚀 RandomX mining thread {self.thread_id} started")
+    
+    def stop(self):
+        """Stop mining thread"""
+        self.is_running = False
+        if self.thread:
+            self.thread.join(timeout=5)
+        logger.info(f"🛑 RandomX mining thread {self.thread_id} stopped")
+    
+    def set_job(self, job_data: Dict[str, Any]):
+        """Set new mining job"""
+        self.current_job = job_data
+        self.nonce = random.randint(0, 2**32-1)  # Random starting nonce
+    
+    def _mining_loop(self):
+        """Main mining loop"""
+        logger.info(f"⚡ Mining loop started for thread {self.thread_id}")
+        
+        while self.is_running:
+            try:
+                if not self.current_job:
+                    time.sleep(0.1)
+                    continue
+                
+                # Create input for hash calculation
+                input_data = self._create_mining_input()
+                
+                # Calculate RandomX hash
+                hash_result = self.vm.calculate_hash(input_data)
+                
+                # Check if hash meets difficulty target
+                if self._check_difficulty(hash_result):
+                    logger.info(f"🎯 Share found by thread {self.thread_id}!")
+                    self.stats.shares_good += 1
+                    # Submit share (would be implemented with pool communication)
+                
+                self.nonce += 1
+                self.hashes_done += 1
+                self.stats.hashes_total += 1
+                self.stats.shares_total += 1
+                
+                # Update hashrate every 1000 hashes
+                if self.hashes_done % 1000 == 0:
+                    self._update_hashrate()
+                
+                # Small delay to prevent 100% CPU usage in simulation
+                time.sleep(0.001)
+                
+            except Exception as e:
+                logger.error(f"Mining error in thread {self.thread_id}: {e}")
+                time.sleep(1)
+    
+    def _create_mining_input(self) -> bytes:
+        """Create input data for mining"""
+        if not self.current_job:
+            return b'\x00' * 76
+        
+        # Simulate mining input creation (block header + nonce)
+        block_header = self.current_job.get('blob', '0' * 152)  # 76 bytes hex
+        nonce_bytes = struct.pack('<I', self.nonce)
+        
+        # Convert hex string to bytes and append nonce
+        header_bytes = bytes.fromhex(block_header)
+        return header_bytes + nonce_bytes
+    
+    def _check_difficulty(self, hash_result: bytes) -> bool:
+        """Check if hash meets difficulty target"""
+        if not self.current_job:
+            return False
+        
+        target = self.current_job.get('target', '0' * 8)
+        target_int = int(target, 16) if isinstance(target, str) else target
+        
+        # Compare hash as integer with target
+        hash_int = struct.unpack('<Q', hash_result[:8])[0]
+        return hash_int < target_int
+    
+    def _update_hashrate(self):
+        """Update hashrate statistics"""
+        current_time = time.time()
+        elapsed = current_time - self.start_time
+        
+        if elapsed > 0:
+            self.stats.hashrate = self.hashes_done / elapsed
+            
+            # Reset counters periodically
+            if elapsed > 60:  # Reset every minute
+                self.start_time = current_time
+                self.hashes_done = 0
+
+class RandomXMiner:
+    """Main RandomX Miner class"""
+    
+    def __init__(self, config: RandomXConfig):
+        self.config = config
+        self.dataset = RandomXDataset(config)
+        self.threads: List[RandomXMinerThread] = []
+        self.is_running = False
+        self.total_stats = MiningStats()
+        
+        # Auto-detect thread count if not specified
+        if self.config.threads <= 0:
+            self.config.threads = max(1, psutil.cpu_count() - 1)
+        
+        logger.info(f"🔧 RandomX Miner configured with {self.config.threads} threads")
+    
+    def start(self) -> bool:
+        """Start RandomX mining"""
+        try:
+            logger.info("🚀 Starting RandomX CPU Miner...")
+            
+            # Initialize dataset
+            if not self.dataset.initialize():
+                return False
+            
+            # Create and start mining threads
+            for i in range(self.config.threads):
+                thread = RandomXMinerThread(i, self.config, self.dataset)
+                self.threads.append(thread)
+                thread.start()
+            
+            self.is_running = True
+            logger.info(f"✅ RandomX miner started with {len(self.threads)} threads")
+            
+            # Start statistics monitoring
+            threading.Thread(target=self._stats_monitor, daemon=True).start()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to start RandomX miner: {e}")
+            return False
+    
+    def stop(self):
+        """Stop RandomX mining"""
+        logger.info("🛑 Stopping RandomX miner...")
+        
+        self.is_running = False
+        
+        # Stop all threads
+        for thread in self.threads:
+            thread.stop()
+        
+        # Release dataset
+        self.dataset.release()
+        
+        self.threads.clear()
+        logger.info("✅ RandomX miner stopped")
+    
+    def set_job(self, job_data: Dict[str, Any]):
+        """Set mining job for all threads"""
+        for thread in self.threads:
+            thread.set_job(job_data)
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get comprehensive mining statistics"""
+        total_hashrate = sum(t.stats.hashrate for t in self.threads)
+        total_hashes = sum(t.stats.hashes_total for t in self.threads)
+        total_shares = sum(t.stats.shares_good for t in self.threads)
+        
+        # System statistics
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        
+        return {
+            'algorithm': 'RandomX',
+            'coin': self.config.coin,
+            'hashrate': total_hashrate,
+            'hashes_total': total_hashes,
+            'shares_good': total_shares,
+            'threads': len(self.threads),
+            'uptime': time.time() - (self.threads[0].start_time if self.threads else time.time()),
+            'cpu_usage': cpu_percent,
+            'memory_usage': memory.percent,
+            'memory_total': memory.total,
+            'memory_available': memory.available,
+            'is_running': self.is_running,
+            'thread_stats': [
+                {
+                    'id': t.thread_id,
+                    'hashrate': t.stats.hashrate,
+                    'hashes': t.stats.hashes_total,
+                    'shares': t.stats.shares_good
+                }
+                for t in self.threads
+            ]
+        }
+    
+    def _stats_monitor(self):
+        """Monitor and log statistics"""
+        while self.is_running:
+            try:
+                stats = self.get_stats()
+                
+                if stats['hashrate'] > 0:
+                    logger.info(
+                        f"⚡ RandomX: {stats['hashrate']:.1f} H/s | "
+                        f"Shares: {stats['shares_good']} | "
+                        f"CPU: {stats['cpu_usage']:.1f}% | "
+                        f"RAM: {stats['memory_usage']:.1f}%"
+                    )
+                
+                time.sleep(30)  # Update every 30 seconds
+                
+            except Exception as e:
+                logger.error(f"Stats monitor error: {e}")
+                time.sleep(10)
+
+# Example usage and testing
+if __name__ == "__main__":
+    # Example configuration for Monero mining
+    config = RandomXConfig(
+        coin="XMR",
+        pool_url="pool.supportxmr.com:3333",
+        wallet_address="48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD",
+        password="x",
+        threads=2,  # Use 2 threads for testing
+        memory_pool=2  # 2GB memory pool
+    )
+    
+    miner = RandomXMiner(config)
+    
+    # Test job data (simulated)
+    test_job = {
+        'blob': '0606e4a0c05a0e80b40c0e49e02e6b90f8b3b9c4e1d9a3a9e7a1f7a0e5a0e4a0c05a0e80b40c0e49e02e6b90f8b3b9c4e1d9a3a9e7a1f7a0e5a0',
+        'target': 'b88d0600'
+    }
+    
+    try:
+        if miner.start():
+            miner.set_job(test_job)
+            
+            # Run for testing
+            time.sleep(60)  # Mine for 1 minute
+            
+            # Print final stats
+            final_stats = miner.get_stats()
+            print(f"\n📊 Final Statistics:")
+            print(f"   Total Hashrate: {final_stats['hashrate']:.2f} H/s")
+            print(f"   Total Hashes: {final_stats['hashes_total']}")
+            print(f"   Shares Found: {final_stats['shares_good']}")
+            print(f"   CPU Usage: {final_stats['cpu_usage']:.1f}%")
+            
+    finally:
+        miner.stop()

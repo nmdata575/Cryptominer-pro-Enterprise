@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚀 CryptoMiner V21 Dashboard</title>
+    <title>🚀 CryptoMiner Pro V30 Dashboard</title>
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -201,7 +201,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 CryptoMiner V21 Dashboard</h1>
+            <h1>🚀 CryptoMiner Pro V30</h1>
             <p>Enterprise Mining Dashboard</p>
         </div>
         
@@ -253,7 +253,7 @@
                     <h4 style="margin: 0 0 10px 0; color: #61dafb;">⚙️ Quick Config</h4>
                     <div class="config-input">
                         <span>Pool:</span>
-                        <input type="text" id="config-pool" placeholder="pool.supportxmr.com:3333">
+                        <input type="text" id="config-pool" placeholder="ltc.luckymonster.pro:4112">
                     </div>
                     <div class="config-input">
                         <span>Threads:</span>
@@ -318,9 +318,6 @@
         let isConnected = false;
         let isMining = false;
         
-        // Get backend URL - localhost for individual use
-        const BACKEND_URL = 'http://localhost:8001';
-        
         function formatHashrate(hashrate) {
             if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;
             if (hashrate >= 1000) return `${(hashrate / 1000).toFixed(2)} KH/s`;
@@ -377,7 +374,7 @@
                     payload.config = config;
                 }
                 
-                const response = await fetch(`${BACKEND_URL}/api/mining/control`, {
+                const response = await fetch('http://localhost:8001/api/mining/control', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -400,25 +397,20 @@
                 }
                 updateButtonStates();
                 
-                // Refresh stats after a short delay
-                setTimeout(fetchMiningStats, 2000);
-                
             } catch (error) {
                 showMessage(`Failed to ${action} mining: ${error.message}`, true);
             }
         }
         
         async function startMining() {
-            const pool = document.getElementById('config-pool').value || 'pool.supportxmr.com:3333';
+            const pool = document.getElementById('config-pool').value || 'ltc.luckymonster.pro:4112';
             const threads = parseInt(document.getElementById('config-threads').value) || 8;
             const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
             
             const config = {
                 pool: pool,
                 threads: threads,
-                intensity: intensity,
-                coin: "XMR",
-                wallet: "4793krzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"
+                intensity: intensity
             };
             
             await sendControlCommand('start', config);
@@ -429,24 +421,12 @@
         }
         
         async function restartMining() {
-            const pool = document.getElementById('config-pool').value || 'pool.supportxmr.com:3333';
-            const threads = parseInt(document.getElementById('config-threads').value) || 8;
-            const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
-            
-            const config = {
-                pool: pool,
-                threads: threads,
-                intensity: intensity,
-                coin: "XMR",
-                wallet: "4793krzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"
-            };
-            
-            await sendControlCommand('restart', config);
+            await sendControlCommand('restart');
         }
         
         async function fetchMiningStats() {
             try {
-                const response = await fetch(`${BACKEND_URL}/api/mining/stats`);
+                const response = await fetch('http://localhost:8001/api/mining/stats');
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
@@ -456,7 +436,7 @@
                 document.getElementById('hashrate').textContent = formatHashrate(stats.hashrate || 0);
                 document.getElementById('threads').textContent = stats.threads || 0;
                 document.getElementById('intensity').textContent = `${stats.intensity || 0}%`;
-                document.getElementById('coin').textContent = stats.coin || 'XMR';
+                document.getElementById('coin').textContent = stats.coin || 'LTC';
                 document.getElementById('difficulty').textContent = stats.difficulty || 0;
                 
                 const poolStatus = document.getElementById('pool-status');
@@ -498,7 +478,6 @@
                 
             } catch (error) {
                 console.error('Failed to fetch mining stats:', error);
-                document.getElementById('error-message').innerHTML = `❌ Cannot connect to CryptoMiner V21 API at ${BACKEND_URL}. Make sure the backend is running.`;
                 document.getElementById('error-message').style.display = 'block';
                 isConnected = false;
                 isMining = false;
@@ -510,14 +489,11 @@
         setInterval(fetchMiningStats, 5000);
         
         setInterval(() => {
-            document.title = isConnected ? '🚀 CryptoMiner V21 - Connected' : '❌ CryptoMiner V21 - Disconnected';
+            document.title = isConnected ? '🚀 CryptoMiner Pro V30 - Connected' : '❌ CryptoMiner Pro V30 - Disconnected';
         }, 1000);
         
         // Initialize button states
         updateButtonStates();
-        
-        // Show current backend URL in console for debugging
-        console.log(`CryptoMiner V21 Backend URL: ${BACKEND_URL}`);
     </script>
 </body>
 </html>

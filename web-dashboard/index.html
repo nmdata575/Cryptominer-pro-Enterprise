@@ -318,6 +318,9 @@
         let isConnected = false;
         let isMining = false;
         
+        // Get backend URL from environment or use production URL as fallback
+        const BACKEND_URL = 'https://cryptomine-central.preview.emergentagent.com' || 'http://localhost:8001';
+        
         function formatHashrate(hashrate) {
             if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;
             if (hashrate >= 1000) return `${(hashrate / 1000).toFixed(2)} KH/s`;
@@ -374,7 +377,7 @@
                     payload.config = config;
                 }
                 
-                const response = await fetch('http://localhost:8001/api/mining/control', {
+                const response = await fetch(`${BACKEND_URL}/api/mining/control`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -397,20 +400,25 @@
                 }
                 updateButtonStates();
                 
+                // Refresh stats after a short delay
+                setTimeout(fetchMiningStats, 2000);
+                
             } catch (error) {
                 showMessage(`Failed to ${action} mining: ${error.message}`, true);
             }
         }
         
         async function startMining() {
-            const pool = document.getElementById('config-pool').value || 'ltc.luckymonster.pro:4112';
+            const pool = document.getElementById('config-pool').value || 'pool.supportxmr.com:3333';
             const threads = parseInt(document.getElementById('config-threads').value) || 8;
             const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
             
             const config = {
                 pool: pool,
                 threads: threads,
-                intensity: intensity
+                intensity: intensity,
+                coin: "XMR",
+                wallet: "4793krzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"
             };
             
             await sendControlCommand('start', config);
@@ -421,12 +429,24 @@
         }
         
         async function restartMining() {
-            await sendControlCommand('restart');
+            const pool = document.getElementById('config-pool').value || 'pool.supportxmr.com:3333';
+            const threads = parseInt(document.getElementById('config-threads').value) || 8;
+            const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
+            
+            const config = {
+                pool: pool,
+                threads: threads,
+                intensity: intensity,
+                coin: "XMR",
+                wallet: "4793krzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"
+            };
+            
+            await sendControlCommand('restart', config);
         }
         
         async function fetchMiningStats() {
             try {
-                const response = await fetch('http://localhost:8001/api/mining/stats');
+                const response = await fetch(`${BACKEND_URL}/api/mining/stats`);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
@@ -436,7 +456,7 @@
                 document.getElementById('hashrate').textContent = formatHashrate(stats.hashrate || 0);
                 document.getElementById('threads').textContent = stats.threads || 0;
                 document.getElementById('intensity').textContent = `${stats.intensity || 0}%`;
-                document.getElementById('coin').textContent = stats.coin || 'LTC';
+                document.getElementById('coin').textContent = stats.coin || 'XMR';
                 document.getElementById('difficulty').textContent = stats.difficulty || 0;
                 
                 const poolStatus = document.getElementById('pool-status');
@@ -478,6 +498,7 @@
                 
             } catch (error) {
                 console.error('Failed to fetch mining stats:', error);
+                document.getElementById('error-message').innerHTML = `❌ Cannot connect to CryptoMiner V21 API at ${BACKEND_URL}. Make sure the backend is running.`;
                 document.getElementById('error-message').style.display = 'block';
                 isConnected = false;
                 isMining = false;
@@ -494,6 +515,9 @@
         
         // Initialize button states
         updateButtonStates();
+        
+        // Show current backend URL in console for debugging
+        console.log(`CryptoMiner V21 Backend URL: ${BACKEND_URL}`);
     </script>
 </body>
 </html>

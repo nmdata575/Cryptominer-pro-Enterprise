@@ -66,11 +66,11 @@ if [[ ! -f "mining_config.env" ]]; then
         log_success "Created mining_config.env from template"
     else
         cat > mining_config.env << EOF
-# CryptoMiner Pro V30 Configuration
-COIN=LTC
-WALLET=ltc1qqvz2zw9hqd804a03xg95m4594p7v7thk25sztl
-POOL=ltc.luckymonster.pro:4112
-PASSWORD=_d=128
+# CryptoMiner V21 Configuration
+COIN=XMR
+WALLET=your_monero_wallet_address_here
+POOL=pool.supportxmr.com:3333
+PASSWORD=cryptominer-v21
 INTENSITY=80
 THREADS=8
 WEB_PORT=8001

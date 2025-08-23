@@ -33,17 +33,17 @@ api_router = APIRouter(prefix="/api")
 
 # Global mining stats storage (in production this would be in MongoDB)
 mining_stats = {
-    "hashrate": 0,
+    "hashrate": 0.0,
     "threads": 0,
     "intensity": 80,
     "coin": "XMR",
     "pool_connected": False,
     "accepted_shares": 0,
     "rejected_shares": 0,
-    "uptime": 0,
-    "difficulty": 1,
-    "ai_learning": 0,
-    "ai_optimization": 0,
+    "uptime": 0.0,
+    "difficulty": 1.0,
+    "ai_learning": 0.0,
+    "ai_optimization": 0.0,
     "last_update": datetime.utcnow()
 }
 

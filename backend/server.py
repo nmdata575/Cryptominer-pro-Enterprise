@@ -36,7 +36,7 @@ mining_stats = {
     "hashrate": 0,
     "threads": 0,
     "intensity": 80,
-    "coin": "LTC",
+    "coin": "XMR",
     "pool_connected": False,
     "accepted_shares": 0,
     "rejected_shares": 0,

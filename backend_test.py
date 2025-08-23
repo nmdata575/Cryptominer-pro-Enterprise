@@ -331,6 +331,203 @@ class CryptoMinerAPITester:
             200
         )
 
+    def test_multi_algorithm_stats(self):
+        """Test multi-algorithm statistics endpoint"""
+        success, response = self.run_test(
+            "Multi-Algorithm Statistics",
+            "GET",
+            "mining/multi-stats",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            # Verify required fields are present
+            required_fields = [
+                'current_algorithm', 'current_coin', 'is_mining', 'total_uptime',
+                'current_stats', 'algorithm_comparison', 'ai_stats', 
+                'supported_algorithms', 'supported_coins', 'auto_switching'
+            ]
+            
+            missing_fields = [field for field in required_fields if field not in response]
+            if missing_fields:
+                print(f"   ⚠️  Missing fields: {missing_fields}")
+            else:
+                print("   ✅ All required fields present")
+                
+            # Verify AI stats structure
+            if 'ai_stats' in response:
+                ai_stats = response['ai_stats']
+                ai_required = ['learning_progress', 'optimization_progress', 'predictive_success_rate']
+                ai_missing = [field for field in ai_required if field not in ai_stats]
+                if ai_missing:
+                    print(f"   ⚠️  Missing AI stats fields: {ai_missing}")
+                else:
+                    print("   ✅ AI statistics structure verified")
+                    
+            # Verify algorithm comparison
+            if 'algorithm_comparison' in response:
+                algorithms = response['algorithm_comparison']
+                expected_algorithms = ['RandomX', 'Scrypt', 'CryptoNight']
+                found_algorithms = [alg for alg in expected_algorithms if alg in algorithms]
+                print(f"   ✅ Found algorithms: {found_algorithms}")
+        
+        return success, response
+
+    def test_algorithm_switching_randomx(self):
+        """Test switching to RandomX algorithm"""
+        switch_data = {
+            "algorithm": "RandomX",
+            "coin": "XMR",
+            "pool": "pool.supportxmr.com:3333",
+            "threads": 8,
+            "intensity": 80
+        }
+        success, response = self.run_test(
+            "Algorithm Switch - RandomX",
+            "POST",
+            "mining/switch-algorithm",
+            200,
+            data=switch_data
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get("status") == "success":
+                print(f"   ✅ Successfully switched to {response.get('algorithm')} for {response.get('coin')}")
+            else:
+                print(f"   ⚠️  Switch response: {response.get('message', 'Unknown')}")
+        
+        return success, response
+
+    def test_algorithm_switching_scrypt(self):
+        """Test switching to Scrypt algorithm with LTC"""
+        switch_data = {
+            "algorithm": "Scrypt",
+            "coin": "LTC",
+            "pool": "ltc.luckymonster.pro:4112",
+            "threads": 6,
+            "intensity": 85
+        }
+        success, response = self.run_test(
+            "Algorithm Switch - Scrypt (LTC)",
+            "POST",
+            "mining/switch-algorithm",
+            200,
+            data=switch_data
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get("status") == "success":
+                print(f"   ✅ Successfully switched to {response.get('algorithm')} for {response.get('coin')}")
+            else:
+                print(f"   ⚠️  Switch response: {response.get('message', 'Unknown')}")
+        
+        return success, response
+
+    def test_algorithm_switching_cryptonight(self):
+        """Test switching to CryptoNight algorithm"""
+        switch_data = {
+            "algorithm": "CryptoNight",
+            "coin": "AEON",
+            "pool": "aeon.luckymonster.pro:4112",
+            "threads": 4,
+            "intensity": 75
+        }
+        success, response = self.run_test(
+            "Algorithm Switch - CryptoNight",
+            "POST",
+            "mining/switch-algorithm",
+            200,
+            data=switch_data
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get("status") == "success":
+                print(f"   ✅ Successfully switched to {response.get('algorithm')} for {response.get('coin')}")
+            else:
+                print(f"   ⚠️  Switch response: {response.get('message', 'Unknown')}")
+        
+        return success, response
+
+    def test_algorithm_switching_invalid(self):
+        """Test switching to invalid algorithm"""
+        switch_data = {
+            "algorithm": "InvalidAlgorithm",
+            "coin": "INVALID",
+            "pool": "invalid.pool.com:1234",
+            "threads": 2,
+            "intensity": 50
+        }
+        success, response = self.run_test(
+            "Algorithm Switch - Invalid Algorithm",
+            "POST",
+            "mining/switch-algorithm",
+            200,
+            data=switch_data
+        )
+        
+        # Note: The current implementation doesn't validate algorithms, so this might still succeed
+        if success and isinstance(response, dict):
+            print(f"   Response status: {response.get('status')}")
+            print(f"   Response message: {response.get('message', 'No message')}")
+        
+        return success, response
+
+    def test_ai_recommendation(self):
+        """Test AI algorithm recommendation endpoint"""
+        success, response = self.run_test(
+            "AI Algorithm Recommendation",
+            "GET",
+            "mining/ai-recommendation",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            # Verify required recommendation fields
+            required_fields = ['algorithm', 'coin', 'hashrate', 'efficiency', 'confidence', 'reason']
+            missing_fields = [field for field in required_fields if field not in response]
+            
+            if missing_fields:
+                print(f"   ⚠️  Missing recommendation fields: {missing_fields}")
+            else:
+                print("   ✅ All recommendation fields present")
+                print(f"   Recommended: {response.get('algorithm')} for {response.get('coin')}")
+                print(f"   Confidence: {response.get('confidence')}%")
+                print(f"   Reason: {response.get('reason', 'No reason provided')[:50]}...")
+        
+        return success, response
+
+    def test_enhanced_mining_control_integration(self):
+        """Test enhanced mining control with algorithm parameters"""
+        control_data = {
+            "action": "start",
+            "config": {
+                "coin": "XMR",
+                "algorithm": "RandomX",
+                "wallet": "XMR_TEST_WALLET_ADDRESS_123456789ABCDEF",
+                "pool": "pool.supportxmr.com:3333",
+                "intensity": 80,
+                "threads": 6,
+                "auto_switch": True
+            }
+        }
+        success, response = self.run_test(
+            "Enhanced Mining Control - Start with Algorithm",
+            "POST",
+            "mining/control",
+            200,
+            data=control_data
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get("status") == "success":
+                print("   ✅ Enhanced mining control with algorithm parameters working")
+                config = response.get("config", {})
+                print(f"   Started with: {config.get('algorithm', 'Unknown')} algorithm")
+            else:
+                print(f"   ⚠️  Enhanced control response: {response.get('message', 'Unknown')}")
+        
+        return success, response
+
     def test_mining_process_management_sequence(self):
         """Test complete mining process management sequence"""
         print("\n🔄 Testing Complete Mining Process Management Sequence...")

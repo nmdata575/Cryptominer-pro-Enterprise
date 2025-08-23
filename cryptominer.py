@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-🚀 CryptoMiner Pro V30 🚀
-Enterprise-scale distributed mining platform
-Consolidated terminal-based mining application with optional web monitoring
+🚀 CryptoMiner V21
+Advanced Multi-Algorithm CPU Mining Platform with AI Optimization
+Enterprise-grade distributed mining solution supporting 250,000+ cores
 """
 
 import argparse

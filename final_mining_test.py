@@ -29,7 +29,7 @@ def test_endpoint(name, method, url, data=None):
         return False, {}
 
 def main():
-    base_url = "https://ai-mining-hub.preview.emergentagent.com/api"
+    base_url = "https://cryptominer-v21.preview.emergentagent.com/api"
     
     print("⚡ CryptoMiner Pro V30 - Final Mining Control Test")
     print("=" * 60)

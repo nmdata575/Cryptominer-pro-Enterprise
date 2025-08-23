@@ -597,9 +597,310 @@ class CryptoMinerAPITester:
         
         print("   🏁 Process management sequence completed")
 
+    def test_randomx_mining_control_start(self):
+        """Test RandomX mining control with live XMR configuration"""
+        control_data = {
+            "action": "start",
+            "config": {
+                "coin": "XMR",
+                "wallet": "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
+                "pool": "stratum+tcp://us.fastpool.xyz:10055",
+                "password": "x",
+                "intensity": 80,
+                "threads": "auto",
+                "algorithm": "RandomX"
+            }
+        }
+        success, response = self.run_test(
+            "RandomX Mining Control - Start with Live XMR Config",
+            "POST",
+            "mining/control",
+            200,
+            data=control_data
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get("status") == "success":
+                print("   ✅ RandomX mining started with live XMR configuration")
+                config = response.get("config", {})
+                print(f"   Coin: {config.get('coin')}")
+                print(f"   Pool: {config.get('pool')}")
+                print(f"   Algorithm: {config.get('algorithm', 'Not specified')}")
+            else:
+                print(f"   ❌ RandomX mining start failed: {response.get('message', 'Unknown error')}")
+        
+        return success, response
+
+    def test_randomx_stats_collection(self):
+        """Test RandomX-specific mining stats collection"""
+        success, response = self.run_test(
+            "RandomX Stats Collection",
+            "GET",
+            "mining/stats",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            # Check for RandomX-specific fields
+            coin = response.get("coin")
+            hashrate = response.get("hashrate", 0)
+            pool_connected = response.get("pool_connected", False)
+            
+            print(f"   Current coin: {coin}")
+            print(f"   Hashrate: {hashrate}")
+            print(f"   Pool connected: {pool_connected}")
+            
+            if coin == "XMR":
+                print("   ✅ RandomX (XMR) mining stats detected")
+            else:
+                print(f"   ⚠️  Expected XMR, got {coin}")
+        
+        return success, response
+
+    def test_randomx_update_stats(self):
+        """Test updating RandomX mining statistics"""
+        randomx_stats = {
+            "hashrate": 1200.5,
+            "threads": 8,
+            "intensity": 80,
+            "coin": "XMR",
+            "algorithm": "RandomX",
+            "pool_connected": True,
+            "accepted_shares": 15,
+            "rejected_shares": 1,
+            "uptime": 1800,
+            "difficulty": 250000,
+            "ai_learning": 85.2,
+            "ai_optimization": 72.8,
+            "temperature": 68.5,
+            "power_consumption": 120.0,
+            "efficiency": 10.0
+        }
+        success, response = self.run_test(
+            "Update RandomX Mining Statistics",
+            "POST",
+            "mining/update-stats",
+            200,
+            data=randomx_stats
+        )
+        
+        if success:
+            print("   ✅ RandomX stats updated successfully")
+            # Verify stats were stored
+            time.sleep(1)
+            stats_success, stats_response = self.test_randomx_stats_collection()
+            if stats_success and isinstance(stats_response, dict):
+                updated_hashrate = stats_response.get("hashrate", 0)
+                if abs(updated_hashrate - randomx_stats["hashrate"]) < 0.1:
+                    print("   ✅ RandomX stats persistence verified")
+                else:
+                    print(f"   ⚠️  Stats may not have persisted correctly")
+        
+        return success, response
+
+    def test_randomx_process_management(self):
+        """Test complete RandomX process management lifecycle"""
+        print("\n🔄 Testing RandomX Process Management Lifecycle...")
+        
+        # 1. Stop any existing processes
+        print("   Step 1: Clean up any existing mining processes")
+        self.run_test("Stop Existing Processes", "POST", "mining/control", 200, {"action": "stop"})
+        time.sleep(2)
+        
+        # 2. Start RandomX mining with live config
+        print("   Step 2: Start RandomX mining with live XMR configuration")
+        success, start_response = self.test_randomx_mining_control_start()
+        
+        if success and start_response.get("status") == "success":
+            print("   ✅ RandomX mining process started")
+            time.sleep(5)  # Wait for process initialization
+            
+            # 3. Check mining status
+            print("   Step 3: Verify RandomX mining status")
+            success, status_response = self.run_test("RandomX Mining Status", "GET", "mining/status", 200)
+            if success:
+                is_active = status_response.get("is_active", False)
+                process_id = status_response.get("process_id")
+                print(f"   Mining active: {is_active}, PID: {process_id}")
+                
+                if is_active and process_id:
+                    print("   ✅ RandomX mining process is active")
+                    
+                    # 4. Test stats collection during mining
+                    print("   Step 4: Test RandomX stats collection during active mining")
+                    self.test_randomx_stats_collection()
+                    
+                    # 5. Test stats update
+                    print("   Step 5: Test RandomX stats update")
+                    self.test_randomx_update_stats()
+                    
+                    # 6. Test restart with different intensity
+                    print("   Step 6: Test RandomX mining restart")
+                    restart_config = {
+                        "action": "restart",
+                        "config": {
+                            "coin": "XMR",
+                            "wallet": "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
+                            "pool": "stratum+tcp://us.fastpool.xyz:10055",
+                            "password": "x",
+                            "intensity": 90,
+                            "threads": 6,
+                            "algorithm": "RandomX"
+                        }
+                    }
+                    restart_success, restart_response = self.run_test(
+                        "RandomX Mining Restart", "POST", "mining/control", 200, restart_config
+                    )
+                    
+                    if restart_success and restart_response.get("status") == "success":
+                        print("   ✅ RandomX mining restarted successfully")
+                        time.sleep(3)
+                    
+                else:
+                    print("   ⚠️  RandomX mining process may not be fully active")
+            
+            # 7. Final cleanup
+            print("   Step 7: Stop RandomX mining (cleanup)")
+            self.run_test("Stop RandomX Mining", "POST", "mining/control", 200, {"action": "stop"})
+            time.sleep(2)
+            
+            # 8. Verify stopped
+            print("   Step 8: Verify RandomX mining stopped")
+            final_success, final_status = self.run_test("Final Status Check", "GET", "mining/status", 200)
+            if final_success:
+                final_active = final_status.get("is_active", False)
+                if not final_active:
+                    print("   ✅ RandomX mining successfully stopped")
+                else:
+                    print("   ⚠️  RandomX mining may still be running")
+        
+        print("   🏁 RandomX process management lifecycle completed")
+
+    def test_ai_integration_with_randomx(self):
+        """Test AI integration with RandomX mining data"""
+        print("\n🧠 Testing AI Integration with RandomX Mining...")
+        
+        # Test AI recommendation for RandomX
+        success, ai_response = self.run_test(
+            "AI Recommendation for RandomX",
+            "GET",
+            "mining/ai-recommendation",
+            200
+        )
+        
+        if success and isinstance(ai_response, dict):
+            recommended_algorithm = ai_response.get("algorithm")
+            recommended_coin = ai_response.get("coin")
+            confidence = ai_response.get("confidence", 0)
+            
+            print(f"   AI Recommended: {recommended_algorithm} for {recommended_coin}")
+            print(f"   Confidence: {confidence}%")
+            
+            if recommended_algorithm == "RandomX" and recommended_coin == "XMR":
+                print("   ✅ AI correctly recommends RandomX for XMR")
+            else:
+                print(f"   ⚠️  AI recommendation: {recommended_algorithm} for {recommended_coin}")
+        
+        # Test multi-algorithm stats with RandomX focus
+        success, multi_stats = self.run_test(
+            "Multi-Algorithm Stats with RandomX",
+            "GET",
+            "mining/multi-stats",
+            200
+        )
+        
+        if success and isinstance(multi_stats, dict):
+            current_algorithm = multi_stats.get("current_algorithm")
+            ai_stats = multi_stats.get("ai_stats", {})
+            algorithm_comparison = multi_stats.get("algorithm_comparison", {})
+            
+            print(f"   Current algorithm: {current_algorithm}")
+            
+            if "RandomX" in algorithm_comparison:
+                randomx_data = algorithm_comparison["RandomX"]
+                print(f"   RandomX hashrate: {randomx_data.get('hashrate', 0)}")
+                print(f"   RandomX efficiency: {randomx_data.get('efficiency', 0)}")
+                print("   ✅ RandomX data found in algorithm comparison")
+            
+            if ai_stats:
+                learning_progress = ai_stats.get("learning_progress", 0)
+                optimization_progress = ai_stats.get("optimization_progress", 0)
+                print(f"   AI Learning: {learning_progress}%")
+                print(f"   AI Optimization: {optimization_progress}%")
+                print("   ✅ AI stats integration working")
+
+    def run_randomx_focused_test(self):
+        """Run RandomX-focused testing for Phase 2"""
+        print("🚀 Starting CryptoMiner V21 RandomX Integration Testing")
+        print("=" * 70)
+        print(f"Base URL: {self.base_url}")
+        print(f"API URL: {self.api_url}")
+        print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 70)
+        print("🎯 FOCUS: RandomX (Monero) Mining Integration with Live Pool")
+        print("📋 Configuration: XMR mining on us.fastpool.xyz:10055")
+        print("=" * 70)
+
+        # Test basic API health first
+        print("\n📋 PHASE 1: Basic API Health Check")
+        print("-" * 50)
+        try:
+            self.test_basic_api_health()
+        except Exception as e:
+            print(f"❌ Basic API health check failed: {e}")
+            return 1
+
+        # Test RandomX-specific functionality
+        print("\n⚡ PHASE 2: RandomX Mining Control Integration")
+        print("-" * 50)
+        randomx_tests = [
+            self.test_randomx_mining_control_start,
+            self.test_randomx_stats_collection,
+            self.test_randomx_update_stats,
+        ]
+
+        for test_method in randomx_tests:
+            try:
+                test_method()
+                time.sleep(1)
+            except Exception as e:
+                print(f"❌ Test method {test_method.__name__} failed: {e}")
+
+        # Test complete RandomX process management
+        print("\n🔄 PHASE 3: RandomX Process Management Lifecycle")
+        print("-" * 50)
+        try:
+            self.test_randomx_process_management()
+        except Exception as e:
+            print(f"❌ RandomX process management failed: {e}")
+
+        # Test AI integration with RandomX
+        print("\n🧠 PHASE 4: AI Integration with RandomX Mining")
+        print("-" * 50)
+        try:
+            self.test_ai_integration_with_randomx()
+        except Exception as e:
+            print(f"❌ AI integration testing failed: {e}")
+
+        # Print final results
+        print("\n" + "=" * 70)
+        print("📊 RANDOMX INTEGRATION TEST RESULTS")
+        print("=" * 70)
+        print(f"Tests Run: {self.tests_run}")
+        print(f"Tests Passed: {self.tests_passed}")
+        print(f"Tests Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 ALL RANDOMX TESTS PASSED!")
+            return 0
+        else:
+            print("⚠️  SOME RANDOMX TESTS FAILED!")
+            return 1
+
     def run_comprehensive_test(self):
         """Run all API tests"""
-        print("🚀 Starting CryptoMiner Pro V30 API Testing")
+        print("🚀 Starting CryptoMiner V21 API Testing")
         print("=" * 60)
         print(f"Base URL: {self.base_url}")
         print(f"API URL: {self.api_url}")

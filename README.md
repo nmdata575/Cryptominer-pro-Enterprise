@@ -4,6 +4,53 @@
 
 CryptoMiner V21 is an enterprise-grade distributed mining solution supporting 250,000+ CPU cores with intelligent algorithm switching and AI-driven performance optimization.
 
+## 📥 **Quick Start (Individual Use)**
+
+### **Prerequisites**
+- Ubuntu 24.04+ / Debian 12+ / Similar Linux distributions  
+- Python 3.11+
+- Node.js 20.x (for React frontend)
+- MongoDB 8.0+ (for AI database and statistics)
+- 4GB+ RAM (8GB recommended)
+- Multi-core CPU (more cores = better performance)
+
+### **Installation**
+```bash
+# 1. Extract the archive
+tar -xzf cryptominer-v21.tar.gz
+cd cryptominer-v21
+
+# 2. Install Python dependencies
+pip install -r requirements.txt
+
+# 3. Install MongoDB 8.0 (if not already installed)
+./install.sh
+
+# 4. Configure your mining settings
+cp mining_config.template mining_config.env
+# Edit mining_config.env with your wallet addresses and preferred pools
+
+# 5. Start the integrated system
+chmod +x start-integrated.sh
+./start-integrated.sh
+```
+
+### **Web Interface**
+- **Dashboard URL**: http://localhost:3000
+- **Backend API**: http://localhost:8001  
+- **Features**: Real-time mining control, statistics, AI optimization
+
+### **Configuration**
+Edit `mining_config.env` with your settings:
+```env
+COIN=XMR
+WALLET=your_monero_wallet_address_here
+POOL=pool.supportxmr.com:3333
+PASSWORD=your_worker_name
+INTENSITY=80
+THREADS=8
+```
+
 ### Key Features
 
 - ⚡ **Enterprise Mining Engine** - High-performance multi-threaded mining

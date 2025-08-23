@@ -1,6 +1,7 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "cryptominer-v21-frontend",
+  "version": "21.0.0",
+  "description": "CryptoMiner V21 - Advanced Multi-Algorithm CPU Mining Platform Frontend",
   "private": true,
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

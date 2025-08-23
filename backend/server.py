@@ -20,6 +20,10 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 def load_mining_config():
     """Load mining configuration from mining_config.env file"""
     config_file = Path("/app/mining_config.env")

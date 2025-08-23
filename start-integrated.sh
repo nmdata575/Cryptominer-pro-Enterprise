@@ -160,8 +160,42 @@ else
     BACKEND_PID=""
 fi
 
+# Stop any React frontend and start HTML dashboard
+log_info "Setting up web dashboard..."
+if command -v supervisorctl &> /dev/null; then
+    sudo supervisorctl stop frontend 2>/dev/null || true
+    log_info "Stopped React frontend (if running)"
+fi
+
+# Stop any existing HTTP server on port 3000
+lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+sleep 1
+
+# Start HTML dashboard server
+if [[ -f "web-dashboard/index.html" ]]; then
+    log_info "Starting CryptoMiner V21 web dashboard..."
+    cd web-dashboard
+    python3 -m http.server 3000 > /dev/null 2>&1 &
+    DASHBOARD_PID=$!
+    cd ..
+    
+    # Wait a moment for dashboard to start
+    sleep 2
+    
+    # Check if dashboard started successfully
+    if kill -0 "$DASHBOARD_PID" 2>/dev/null; then
+        log_success "Web Dashboard started (PID: $DASHBOARD_PID) - http://localhost:3000"
+    else
+        log_error "Failed to start web dashboard"
+        exit 1
+    fi
+else
+    log_warning "web-dashboard/index.html not found. Web dashboard not started."
+    DASHBOARD_PID=""
+fi
+
 # Start the integrated mining application
-log_info "Starting CryptoMiner Pro V30 with integrated web dashboard..."
+log_info "Starting CryptoMiner V21 with integrated web dashboard..."
 log_info ""
 log_success "🌐 Web Dashboard: http://localhost:3000"
 log_success "🔧 Backend API: http://localhost:8001"

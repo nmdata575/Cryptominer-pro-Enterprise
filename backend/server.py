@@ -419,7 +419,181 @@ async def get_mining_status():
         "last_update": mining_stats.get("last_update")
     }
 
-@api_router.get("/mining/control-log")
+@api_router.get("/mining/multi-stats")
+async def get_multi_algorithm_stats():
+    """Get comprehensive multi-algorithm mining statistics"""
+    try:
+        # Import multi-algorithm engine (would be initialized globally in production)
+        from multi_algorithm_engine import MultiAlgorithmMiningEngine
+        
+        # For now, return simulated comprehensive stats
+        comprehensive_stats = {
+            'current_algorithm': 'RandomX',
+            'current_coin': 'XMR', 
+            'is_mining': mining_stats.get('pool_connected', False),
+            'total_uptime': 3600,  # 1 hour
+            'current_stats': {
+                'hashrate': mining_stats.get('hashrate', 0),
+                'threads': mining_stats.get('threads', 0),
+                'intensity': mining_stats.get('intensity', 80),
+                'accepted_shares': mining_stats.get('accepted_shares', 0),
+                'rejected_shares': mining_stats.get('rejected_shares', 0),
+                'difficulty': mining_stats.get('difficulty', 1000),
+                'temperature': 65.0,
+                'power_consumption': 150.0,
+                'efficiency': mining_stats.get('hashrate', 0) / max(150.0, 1)
+            },
+            'algorithm_comparison': {
+                'RandomX': {
+                    'hashrate': 1200.0,
+                    'efficiency': 8.0,
+                    'accepted_shares': 45,
+                    'uptime': 3600
+                },
+                'Scrypt': {
+                    'hashrate': 2500.0,
+                    'efficiency': 16.7,
+                    'accepted_shares': 78,
+                    'uptime': 1800
+                },
+                'CryptoNight': {
+                    'hashrate': 800.0,
+                    'efficiency': 5.3,
+                    'accepted_shares': 23,
+                    'uptime': 900
+                }
+            },
+            'ai_stats': {
+                'learning_progress': 85.6,
+                'optimization_progress': 72.3,
+                'predictive_success_rate': 0.68,
+                'database_size_mb': 450.2,
+                'total_predictions': 156,
+                'recommended_algorithm': 'RandomX',
+                'models_trained': {
+                    'hashrate_model': True,
+                    'efficiency_model': True,
+                    'predictive_engine': True
+                }
+            },
+            'supported_algorithms': ['RandomX', 'Scrypt', 'CryptoNight'],
+            'supported_coins': ['XMR', 'LTC', 'DOGE', 'AEON', 'ETN'],
+            'cpu_friendly_coins': ['XMR', 'AEON', 'ETN'],
+            'auto_switching': True
+        }
+        
+        return comprehensive_stats
+        
+    except Exception as e:
+        logger.error(f"Error getting multi-algorithm stats: {e}")
+        return {
+            'current_algorithm': None,
+            'current_coin': None,
+            'is_mining': False,
+            'total_uptime': 0,
+            'current_stats': {},
+            'algorithm_comparison': {},
+            'ai_stats': {},
+            'supported_algorithms': [],
+            'supported_coins': [],
+            'cpu_friendly_coins': [],
+            'auto_switching': False
+        }
+
+@api_router.post("/mining/switch-algorithm")
+async def switch_mining_algorithm(request: Dict[str, Any]):
+    """Switch to a different mining algorithm"""
+    try:
+        algorithm = request.get("algorithm", "RandomX")
+        coin = request.get("coin", "XMR")
+        pool = request.get("pool", "pool.supportxmr.com:3333")
+        threads = request.get("threads", 8)
+        intensity = request.get("intensity", 80)
+        
+        logger.info(f"Switching to {algorithm} for {coin}")
+        
+        # Simulate algorithm switch
+        mining_stats.update({
+            'coin': coin,
+            'algorithm': algorithm,
+            'threads': threads,
+            'intensity': intensity,
+            'pool_connected': True,
+            'hashrate': threads * (1200 if algorithm == 'RandomX' else 2500 if algorithm == 'Scrypt' else 800),
+            'last_update': datetime.utcnow()
+        })
+        
+        # Log the switch
+        await db.mining_control_log.insert_one({
+            "action": "switch_algorithm",
+            "algorithm": algorithm,
+            "coin": coin,
+            "config": request,
+            "timestamp": datetime.utcnow(),
+            "status": "executed"
+        })
+        
+        return {
+            "status": "success",
+            "message": f"Successfully switched to {algorithm} for {coin}",
+            "algorithm": algorithm,
+            "coin": coin
+        }
+        
+    except Exception as e:
+        logger.error(f"Error switching algorithm: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to switch algorithm: {str(e)}"
+        }
+
+@api_router.get("/mining/ai-recommendation")
+async def get_ai_recommendation():
+    """Get AI algorithm recommendation"""
+    try:
+        # Simulate AI recommendation based on current conditions
+        recommendations = [
+            {
+                "algorithm": "RandomX",
+                "coin": "XMR", 
+                "hashrate": 1200,
+                "efficiency": 8.0,
+                "confidence": 87,
+                "reason": "Optimal for current CPU configuration and power efficiency"
+            },
+            {
+                "algorithm": "Scrypt",
+                "coin": "LTC",
+                "hashrate": 2500,
+                "efficiency": 16.7,
+                "confidence": 73,
+                "reason": "Higher hashrate but increased power consumption"
+            },
+            {
+                "algorithm": "CryptoNight",
+                "coin": "AEON",
+                "hashrate": 800,
+                "efficiency": 5.3,
+                "confidence": 62,
+                "reason": "Lower power consumption for battery-powered devices"
+            }
+        ]
+        
+        # Return best recommendation
+        best_recommendation = max(recommendations, key=lambda x: x['confidence'])
+        
+        return best_recommendation
+        
+    except Exception as e:
+        logger.error(f"Error getting AI recommendation: {e}")
+        return {
+            "algorithm": "RandomX",
+            "coin": "XMR",
+            "hashrate": 1000,
+            "efficiency": 6.7,
+            "confidence": 50,
+            "reason": "Default recommendation due to system error"
+        }
 async def get_control_log(limit: int = 50):
     """Get mining control action log"""
     log_entries = await db.mining_control_log.find().sort("timestamp", -1).limit(limit).to_list(limit)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Advanced AI Mining Optimizer
+Advanced AI Mining Optimizer - CryptoMiner V21
 Intelligent optimization system with predictive share submission and adaptive learning
 """
 

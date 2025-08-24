@@ -301,6 +301,18 @@ frontend:
         agent: "main"
         comment: "✅ Web mining control buttons fully functional. Updated HTML dashboard to use proper backend URL (supporting both environment variable and fallback), enhanced JavaScript with better config handling, proper error/success messaging, automatic stats refresh after control actions, and improved button state management. Successfully tested dashboard loading and UI responsiveness."
 
+  - task: "CryptoMiner V21 Frontend Dashboard Integration"
+    implemented: true
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "ISSUE IDENTIFIED: Frontend dashboard displays correctly with proper CryptoMiner V21 branding, XMR coin detection, and all UI components functional. Mining control API integration works (POST /api/mining/control successfully starts processes with confirmed PIDs). However, mining processes start but hashrate remains at 0.00 H/s on frontend display despite successful process creation. Pool connection shows 'Connected' but mining stats are not updating from actual mining process execution. There appears to be a disconnect between mining process execution and stats reporting to the web interface. All UI components and API integrations are working correctly, but real-time mining data is not flowing from the mining engine to the frontend display."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"

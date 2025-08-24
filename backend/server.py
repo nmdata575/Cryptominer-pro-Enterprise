@@ -353,65 +353,15 @@ async def update_mining_stats(stats: Dict[str, Any]):
     """Update mining statistics from the mining engine"""
     global mining_stats
     
-    # Sanitize incoming stats to ensure proper data types
-    sanitized_stats = {}
-    
-    for key, value in stats.items():
-        if key == "hashrate":
-            try:
-                # Ensure hashrate is always a float
-                if isinstance(value, str):
-                    # If it's a corrupted string, reset to 0
-                    if "auto" in str(value).lower() or len(str(value)) > 20:
-                        sanitized_stats[key] = 0.0
-                    else:
-                        sanitized_stats[key] = float(value) if value else 0.0
-                else:
-                    sanitized_stats[key] = float(value) if value is not None else 0.0
-            except (ValueError, TypeError):
-                sanitized_stats[key] = 0.0
-        elif key == "threads":
-            try:
-                # Handle "auto" threads by converting to a reasonable default
-                if str(value).lower() == "auto":
-                    sanitized_stats[key] = 8  # Default to 8 threads
-                else:
-                    sanitized_stats[key] = int(value) if value is not None else 0
-            except (ValueError, TypeError):
-                sanitized_stats[key] = 0
-        elif key == "intensity":
-            try:
-                sanitized_stats[key] = int(value) if value is not None else 80
-            except (ValueError, TypeError):
-                sanitized_stats[key] = 80
-        elif key in ["uptime", "difficulty", "ai_learning", "ai_optimization"]:
-            try:
-                sanitized_stats[key] = float(value) if value is not None else 0.0
-            except (ValueError, TypeError):
-                sanitized_stats[key] = 0.0
-        elif key in ["accepted_shares", "rejected_shares"]:
-            try:
-                sanitized_stats[key] = int(value) if value is not None else 0
-            except (ValueError, TypeError):
-                sanitized_stats[key] = 0
-        elif key == "pool_connected":
-            sanitized_stats[key] = bool(value) if value is not None else False
-        elif key == "coin":
-            sanitized_stats[key] = str(value) if value is not None else "XMR"
-        else:
-            sanitized_stats[key] = value
-    
-    # Update stats with sanitized data
-    mining_stats.update(sanitized_stats)
-    mining_stats["last_update"] = datetime.utcnow()
-    
-    # Store in MongoDB for history
-    await db.mining_stats.insert_one({
-        **stats,
-        "timestamp": datetime.utcnow()
-    })
-    
-    return {"status": "updated"}
+    try:
+        # Use the same sanitization function
+        cleaned_stats = sanitize_stats_data(stats)
+        mining_stats.update(cleaned_stats)
+        
+        return {"status": "success", "message": "Stats updated successfully"}
+    except Exception as e:
+        logger.error(f"Error updating mining stats: {e}")
+        return {"status": "error", "message": str(e)}
 
 @api_router.get("/mining/config")
 async def get_mining_config():

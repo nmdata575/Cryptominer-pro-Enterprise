@@ -160,15 +160,15 @@ python3 cryptominer.py \
 
 ```bash
 # Get mining statistics
-curl http://localhost:8001/api/mining/stats
+curl http://localhost:3333/api/mining/stats
 
 # Start mining via API
-curl -X POST http://localhost:8001/api/mining/control \
+curl -X POST http://localhost:3333/api/mining/control \
   -H "Content-Type: application/json" \
   -d '{"action": "start", "config": {"coin": "XMR", "threads": 4}}'
 
 # Stop mining
-curl -X POST http://localhost:8001/api/mining/control \
+curl -X POST http://localhost:3333/api/mining/control \
   -H "Content-Type: application/json" \
   -d '{"action": "stop"}'
 ```

@@ -415,7 +415,7 @@ show_config() {
         echo "Password: ${PASSWORD:+***}"
         echo "Intensity: ${INTENSITY:-80}%"
         echo "Threads: ${THREADS:-auto}"
-        echo "Web Port: ${WEB_PORT:-8001}"
+        echo "Web Port: ${WEB_PORT:-3333}"
         echo "Web Enabled: ${WEB_ENABLED:-true}"
         echo "AI Enabled: ${AI_ENABLED:-true}"
         echo "Log Level: ${LOG_LEVEL:-INFO}"

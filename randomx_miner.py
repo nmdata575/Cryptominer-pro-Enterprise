@@ -166,21 +166,218 @@ class RandomXVirtualMachine:
             logger.error(f"Hash calculation error in VM {self.thread_id}: {e}")
             return b'\x00' * 32
 
-class RandomXMinerThread:
-    """Individual RandomX mining thread"""
+class StratumConnection:
+    """Handles Stratum protocol connection to mining pool"""
     
-    def __init__(self, thread_id: int, config: RandomXConfig, dataset: RandomXDataset):
+    def __init__(self, pool_url: str, wallet: str, password: str = "x"):
+        self.pool_url = pool_url
+        self.wallet = wallet
+        self.password = password
+        self.socket = None
+        self.connected = False
+        self.authorized = False
+        
+        # Parse pool URL
+        self._parse_pool_url()
+        
+        # Stratum state
+        self.job_id = None
+        self.extranonce1 = None
+        self.extranonce2_size = 4
+        self.difficulty = 65536  # Default XMR difficulty
+        self.current_job = None
+        self.target = None
+        
+    def _parse_pool_url(self):
+        """Parse pool URL to extract host and port"""
+        url = self.pool_url
+        if "://" in url:
+            url = url.split("://")[1]
+        
+        if ":" in url:
+            self.host, port_str = url.split(":")
+            self.port = int(port_str)
+        else:
+            self.host = url
+            self.port = 3333  # Default Monero port
+            
+        logger.info(f"🌐 Parsed pool: {self.host}:{self.port}")
+    
+    def connect(self) -> bool:
+        """Connect to mining pool"""
+        try:
+            logger.info(f"🔗 Connecting to {self.host}:{self.port}...")
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.settimeout(10)
+            self.socket.connect((self.host, self.port))
+            self.connected = True
+            logger.info(f"✅ Connected to {self.host}:{self.port}")
+            
+            # Start Stratum handshake
+            if self._subscribe() and self._authorize():
+                logger.info("✅ Pool connection established and authorized")
+                return True
+            else:
+                logger.error("❌ Failed to complete Stratum handshake")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Pool connection failed: {e}")
+            self.connected = False
+            return False
+    
+    def _subscribe(self) -> bool:
+        """Subscribe to mining notifications"""
+        try:
+            subscribe_msg = {
+                "id": 1,
+                "method": "mining.subscribe",
+                "params": ["CryptoMiner V21", None]
+            }
+            
+            response = self._send_receive(subscribe_msg)
+            if response and 'result' in response:
+                result = response['result']
+                if len(result) >= 2:
+                    # Extract subscription details
+                    self.extranonce1 = result[1]
+                    if len(result) > 2:
+                        self.extranonce2_size = result[2]
+                    
+                    logger.info(f"📡 Subscribed: extranonce1={self.extranonce1}, extranonce2_size={self.extranonce2_size}")
+                    return True
+            
+            logger.error("❌ Subscription failed")
+            return False
+            
+        except Exception as e:
+            logger.error(f"❌ Subscription error: {e}")
+            return False
+    
+    def _authorize(self) -> bool:
+        """Authorize with mining pool"""
+        try:
+            auth_msg = {
+                "id": 2,
+                "method": "mining.authorize",
+                "params": [self.wallet, self.password]
+            }
+            
+            response = self._send_receive(auth_msg)
+            if response and response.get('result') is True:
+                self.authorized = True
+                logger.info("✅ Authorized with pool")
+                return True
+            else:
+                error = response.get('error', 'Unknown error') if response else 'No response'
+                logger.error(f"❌ Authorization failed: {error}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Authorization error: {e}")
+            return False
+    
+    def _send_receive(self, message: Dict) -> Optional[Dict]:
+        """Send message and receive response"""
+        try:
+            # Send message
+            json_msg = json.dumps(message) + '\n'
+            self.socket.send(json_msg.encode('utf-8'))
+            
+            # Receive response
+            response_data = self._read_line()
+            if response_data:
+                return json.loads(response_data.decode('utf-8'))
+                
+        except Exception as e:
+            logger.error(f"❌ Send/receive error: {e}")
+        
+        return None
+    
+    def _read_line(self) -> Optional[bytes]:
+        """Read line from socket"""
+        try:
+            buffer = b''
+            while b'\n' not in buffer:
+                data = self.socket.recv(1024)
+                if not data:
+                    break
+                buffer += data
+            
+            if b'\n' in buffer:
+                line, _ = buffer.split(b'\n', 1)
+                return line.strip()
+                
+        except Exception as e:
+            logger.error(f"❌ Socket read error: {e}")
+        
+        return None
+    
+    def get_work(self) -> Optional[Dict]:
+        """Get current mining work"""
+        try:
+            # For now, create a simplified work template
+            # In a real implementation, this would listen for mining.notify messages
+            if self.authorized and self.extranonce1:
+                return {
+                    'job_id': f"job_{int(time.time())}",
+                    'extranonce1': self.extranonce1,
+                    'extranonce2_size': self.extranonce2_size,
+                    'difficulty': self.difficulty,
+                    'blob': '0' * 152,  # Placeholder - would come from pool
+                    'target': f"{(2**256 // self.difficulty):064x}"
+                }
+        except Exception as e:
+            logger.error(f"❌ Get work error: {e}")
+        
+        return None
+    
+    def submit_share(self, job_id: str, nonce: str, result: str) -> bool:
+        """Submit mining share to pool"""
+        try:
+            submit_msg = {
+                "id": 3,
+                "method": "mining.submit",
+                "params": [self.wallet, job_id, nonce, result]
+            }
+            
+            response = self._send_receive(submit_msg)
+            if response and response.get('result') is True:
+                logger.info("✅ Share accepted by pool")
+                return True
+            else:
+                error = response.get('error', 'Unknown error') if response else 'No response'
+                logger.warning(f"❌ Share rejected: {error}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Share submission error: {e}")
+            return False
+    
+    def close(self):
+        """Close connection"""
+        if self.socket:
+            try:
+                self.socket.close()
+            except:
+                pass
+        self.connected = False
+        self.authorized = False
+
+class RandomXMinerThread:
+    """Individual RandomX mining thread with real pool connection"""
+    
+    def __init__(self, thread_id: int, config: RandomXConfig, stratum_connection: StratumConnection):
         self.thread_id = thread_id
         self.config = config
-        self.dataset = dataset
-        self.vm = RandomXVirtualMachine(dataset, thread_id)
+        self.stratum = stratum_connection
         self.is_running = False
         self.stats = MiningStats()
         self.thread = None
         
         # Mining state
         self.current_job = None
-        self.nonce = 0
+        self.nonce = thread_id * 1000000  # Starting nonce based on thread ID
         self.hashes_done = 0
         self.start_time = time.time()
         

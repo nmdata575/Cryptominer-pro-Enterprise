@@ -1,0 +1,133 @@
+{
+  "summary": {
+    "passed": 5,
+    "total": 9,
+    "success_rate": 55.55555555555556,
+    "timestamp": "2025-08-24T04:15:28.755567"
+  },
+  "detailed_results": [
+    {
+      "test": "API Health Check",
+      "success": true,
+      "message": "Backend API is accessible and responding",
+      "timestamp": "2025-08-24T04:14:52.634839",
+      "details": {}
+    },
+    {
+      "test": "Initial Mining Status",
+      "success": true,
+      "message": "Status retrieved - Active: False",
+      "timestamp": "2025-08-24T04:14:54.648709",
+      "details": {
+        "is_active": false,
+        "process_id": null,
+        "pool_connected": false,
+        "last_update": "2025-08-24T04:13:17.305666"
+      }
+    },
+    {
+      "test": "Start XMR Mining",
+      "success": true,
+      "message": "Mining started successfully with PID: N/A",
+      "timestamp": "2025-08-24T04:14:58.691506",
+      "details": {
+        "status": "success",
+        "message": "Mining started successfully (PID: 15713)",
+        "config": {
+          "coin": "XMR",
+          "wallet": "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
+          "pool": "stratum+tcp://pool.supportxmr.com:3333",
+          "password": "x",
+          "intensity": 80,
+          "threads": 4,
+          "web_enabled": true,
+          "ai_enabled": true,
+          "ai_learning_rate": 1.0
+        }
+      }
+    },
+    {
+      "test": "Mining Status After Start",
+      "success": false,
+      "message": "Mining not properly active - Active: False, PID: None",
+      "timestamp": "2025-08-24T04:15:03.701519",
+      "details": {
+        "is_active": false,
+        "process_id": null,
+        "pool_connected": true,
+        "last_update": "2025-08-24T04:14:58.659450"
+      }
+    },
+    {
+      "test": "Mining Stats Collection",
+      "success": true,
+      "message": "Stats collected - Coin: XMR, Threads: 4, Hashrate: 600.0 H/s, Pool: True",
+      "timestamp": "2025-08-24T04:15:10.712400",
+      "details": {
+        "hashrate": 600.0,
+        "threads": 4,
+        "intensity": 80,
+        "coin": "XMR",
+        "pool_connected": true,
+        "accepted_shares": 0,
+        "rejected_shares": 0,
+        "uptime": 0.0,
+        "difficulty": 1.0,
+        "ai_learning": 0.0,
+        "ai_optimization": 0.0,
+        "last_update": "2025-08-24T04:14:58.659450"
+      }
+    },
+    {
+      "test": "Stats Update Endpoint",
+      "success": true,
+      "message": "Successfully updated mining stats from engine",
+      "timestamp": "2025-08-24T04:15:12.721572",
+      "details": {
+        "status": "success",
+        "message": "Stats updated successfully"
+      }
+    },
+    {
+      "test": "RandomX Algorithm Detection",
+      "success": false,
+      "message": "Algorithm detection issue - Coin: None, Algorithm: None",
+      "timestamp": "2025-08-24T04:15:14.735391",
+      "details": {
+        "current_algorithm": null,
+        "current_coin": null,
+        "is_mining": false,
+        "total_uptime": 0,
+        "current_stats": {},
+        "algorithm_comparison": {},
+        "ai_stats": {},
+        "supported_algorithms": [],
+        "supported_coins": [],
+        "cpu_friendly_coins": [],
+        "auto_switching": false
+      }
+    },
+    {
+      "test": "Pool Connection Status",
+      "success": false,
+      "message": "Mining not active, cannot verify pool connection",
+      "timestamp": "2025-08-24T04:15:24.745969",
+      "details": {
+        "is_active": false,
+        "process_id": null,
+        "pool_connected": true,
+        "last_update": "2025-08-24T04:15:12.712550"
+      }
+    },
+    {
+      "test": "Stop Mining",
+      "success": false,
+      "message": "Stop failed: Mining is not currently running",
+      "timestamp": "2025-08-24T04:15:26.755261",
+      "details": {
+        "status": "error",
+        "message": "Mining is not currently running"
+      }
+    }
+  ]
+}

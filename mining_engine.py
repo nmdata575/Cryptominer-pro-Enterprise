@@ -358,72 +358,45 @@ class StratumConnection:
         return None
     
     def submit_share(self, job_id: str, nonce: str, result: str) -> bool:
-        """Submit mining share to Monero pool"""
+        """Submit mining share to Monero pool with proper format"""
         try:
-            # Monero pools often expect simple parameters array for share submission
-            submit_formats = [
-                # Format 1: Array-based parameters (most common for Monero)
-                {
-                    "id": int(time.time()),
-                    "method": "submit",
-                    "params": [job_id, nonce, result]
-                },
-                # Format 2: Object-based with job_id
-                {
-                    "id": int(time.time()),
-                    "method": "submit",
-                    "params": {
-                        "job_id": job_id,
-                        "nonce": nonce,
-                        "result": result
-                    }
-                },
-                # Format 3: Include id field
-                {
-                    "id": int(time.time()),
-                    "method": "submit",
-                    "params": {
-                        "id": job_id,
-                        "nonce": nonce,
-                        "result": result
-                    }
-                },
-            ]
+            # For Monero, we need to use the exact job format from the pool
+            # Most Monero pools expect array format: [job_id, nonce, result]
+            submit_msg = {
+                "id": int(time.time()),
+                "method": "submit",
+                "params": [job_id, nonce, result]
+            }
             
-            for i, submit_msg in enumerate(submit_formats):
-                try:
-                    logger.info(f"📤 Trying share submission format {i+1}: {submit_msg['params']}")
-                    response = self._send_receive_with_timeout(submit_msg, timeout=8)
-                    if response:
-                        logger.info(f"📥 Pool share response: {response}")
-                        
-                        if (response.get('result') == 'OK' or 
-                            response.get('result') is True or
-                            response.get('status') == 'OK'):
-                            logger.info("✅ Share accepted by Monero pool")
-                            return True
-                        elif 'error' in response:
-                            error = response.get('error')
-                            if isinstance(error, dict):
-                                error_msg = error.get('message', error)
-                            else:
-                                error_msg = error
-                            logger.warning(f"❌ Share format {i+1} failed: {error_msg}")
-                            # Try next format
-                            continue
-                        else:
-                            logger.warning(f"Unexpected response format {i+1}: {response}")
-                            continue
+            logger.debug(f"📤 Submitting share: job_id={job_id}, nonce={nonce}, result={result[:16]}...")
+            response = self._send_receive_with_timeout(submit_msg, timeout=8)
+            
+            if response:
+                logger.debug(f"📥 Pool response: {response}")
+                
+                if 'result' in response:
+                    result_value = response['result']
+                    if result_value == 'OK' or result_value is True:
+                        logger.info("✅ Share accepted by Monero pool")
+                        return True
+                    elif result_value is False or result_value is None:
+                        error = response.get('error', 'Share rejected')
+                        logger.warning(f"❌ Share rejected: {error}")
+                        return False
+                elif 'error' in response:
+                    error = response['error']
+                    if isinstance(error, dict):
+                        error_msg = error.get('message', str(error))
                     else:
-                        logger.warning(f"No response from pool for format {i+1}")
-                        continue
-                        
-                except Exception as e:
-                    logger.warning(f"Share submission format {i+1} failed: {e}")
-                    continue
-            
-            logger.warning("❌ All share submission formats failed")
-            return False
+                        error_msg = str(error)
+                    logger.warning(f"❌ Share error: {error_msg}")
+                    return False
+                else:
+                    logger.warning(f"❌ Unexpected response: {response}")
+                    return False
+            else:
+                logger.warning("❌ No response from pool")
+                return False
                 
         except Exception as e:
             logger.error(f"❌ Share submission error: {e}")

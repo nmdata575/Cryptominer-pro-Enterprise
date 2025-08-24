@@ -295,18 +295,28 @@ class StratumConnection:
         return None
     
     def _read_line(self) -> Optional[bytes]:
-        """Read line from socket"""
+        """Read line from socket with improved buffering"""
         try:
             buffer = b''
+            self.socket.settimeout(15)  # Longer timeout for reading response
+            
             while b'\n' not in buffer:
-                data = self.socket.recv(1024)
-                if not data:
+                try:
+                    data = self.socket.recv(1024)
+                    if not data:
+                        logger.warning("❌ Socket closed by remote host")
+                        break
+                    buffer += data
+                    logger.debug(f"📥 Received data: {data}")
+                except socket.timeout:
+                    logger.warning("⏱️ Socket read timeout")
                     break
-                buffer += data
             
             if b'\n' in buffer:
                 line, _ = buffer.split(b'\n', 1)
-                return line.strip()
+                response = line.strip()
+                logger.debug(f"📥 Complete line received: {response}")
+                return response
                 
         except Exception as e:
             logger.error(f"❌ Socket read error: {e}")

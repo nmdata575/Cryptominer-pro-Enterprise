@@ -146,11 +146,15 @@ class PoolConnectionProxy:
             self.submission_thread = threading.Thread(target=self._share_submission_worker, daemon=True)
             self.submission_thread.start()
             
+            # Start job listener thread immediately after authentication
+            job_listener_thread = threading.Thread(target=self._job_listener_worker, daemon=True)
+            job_listener_thread.start()
+            
             # Start keepalive thread
             keepalive_thread = threading.Thread(target=self._keepalive_worker, daemon=True)
             keepalive_thread.start()
             
-            protocol_logger.info("✅ Connection proxy started successfully")
+            protocol_logger.info("✅ Connection proxy started successfully with job listener")
             return True
         else:
             protocol_logger.error("❌ Failed to start connection proxy")

@@ -1,0 +1,95 @@
+{
+  "summary": {
+    "passed": 2,
+    "total": 7,
+    "success_rate": 28.57142857142857,
+    "timestamp": "2025-08-24T16:46:51.650913",
+    "test_duration": "60+ seconds",
+    "focus": "zeropool.io connection proxy debugging"
+  },
+  "detailed_results": [
+    {
+      "test": "API Health Check",
+      "success": true,
+      "message": "Backend API is accessible and responding",
+      "timestamp": "2025-08-24T16:44:31.533649",
+      "details": {}
+    },
+    {
+      "test": "Start XMR Mining (Zeropool)",
+      "success": true,
+      "message": "Mining started successfully with PID: N/A",
+      "timestamp": "2025-08-24T16:44:43.562131",
+      "details": {
+        "status": "success",
+        "message": "Mining started successfully (PID: 60715)",
+        "config": {
+          "coin": "XMR",
+          "wallet": "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
+          "pool": "stratum+tcp://xmr.zeropool.io:3333",
+          "password": "x",
+          "intensity": 80,
+          "threads": 4,
+          "web_enabled": true,
+          "ai_enabled": true
+        }
+      }
+    },
+    {
+      "test": "Login Response Analysis",
+      "success": false,
+      "message": "No LOGIN RESPONSE ANALYSIS messages found in logs",
+      "timestamp": "2025-08-24T16:45:58.562509",
+      "details": {}
+    },
+    {
+      "test": "Job Listener Verification",
+      "success": false,
+      "message": "Job listener active: False, RECV messages: False, Notifications: False",
+      "timestamp": "2025-08-24T16:46:08.562864",
+      "details": {
+        "job_listener_started": false,
+        "job_recv_messages": false,
+        "new_job_notifications": false
+      }
+    },
+    {
+      "test": "Real vs Local Jobs Analysis",
+      "success": false,
+      "message": "Share analysis: 0 total, 0 local jobs, 0 real jobs",
+      "timestamp": "2025-08-24T16:46:33.563222",
+      "details": {
+        "total_share_submissions": 0,
+        "local_job_count": 0,
+        "real_job_count": 0,
+        "local_job_samples": [],
+        "real_job_samples": []
+      }
+    },
+    {
+      "test": "Protocol Message Flow",
+      "success": false,
+      "message": "Protocol flow: 0 SEND messages, 0 RECV messages",
+      "timestamp": "2025-08-24T16:46:38.563542",
+      "details": {
+        "send_message_count": 0,
+        "recv_message_count": 0,
+        "send_samples": [],
+        "recv_samples": []
+      }
+    },
+    {
+      "test": "Connection Diagnostics",
+      "success": false,
+      "message": "Connection stable: False, Active: False, Pool: True, Hashrate: 600.0",
+      "timestamp": "2025-08-24T16:46:43.582412",
+      "details": {
+        "is_active": false,
+        "pool_connected": true,
+        "hashrate": 600.0,
+        "connection_stable": false
+      }
+    }
+  ],
+  "debug_logs": []
+}

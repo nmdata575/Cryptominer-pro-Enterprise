@@ -174,7 +174,8 @@ class StratumConnection:
                     "params": {
                         "login": self.wallet,
                         "pass": self.password,
-                        "agent": "xmrig/6.21.0"  # Mimic xmrig user agent
+                        "agent": "xmrig/6.24.0",  # Latest xmrig version
+                        "keepalive": True
                     }
                 },
                 # Method 2: Simple array format (backup)

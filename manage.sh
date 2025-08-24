@@ -239,7 +239,7 @@ start_mining() {
         sleep 2
         if kill -0 "$pid" 2>/dev/null; then
             print_color $GREEN "✅ Mining started successfully (PID: $pid)"
-            print_color $CYAN "📊 Web dashboard: http://localhost:${WEB_PORT:-8001}"
+            print_color $CYAN "📊 Web dashboard: http://localhost:${WEB_PORT:-3333}"
             print_color $CYAN "📋 Logs: tail -f $LOG_FILE"
         else
             print_color $RED "❌ Failed to start mining process"

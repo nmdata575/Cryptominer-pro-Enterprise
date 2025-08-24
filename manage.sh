@@ -259,7 +259,7 @@ start_mining() {
         if command -v supervisorctl &> /dev/null; then
             supervisorctl start backend 2>/dev/null || {
                 print_color $YELLOW "⚠️  Supervisor not configured, starting backend manually"
-                cd backend && nohup python3 -m uvicorn server:app --host 0.0.0.0 --port ${WEB_PORT:-8001} >> "../$LOG_FILE" 2>&1 &
+                cd backend && nohup python3 -m uvicorn server:app --host 0.0.0.0 --port ${WEB_PORT:-3333} >> "../$LOG_FILE" 2>&1 &
                 cd ..
             }
         else

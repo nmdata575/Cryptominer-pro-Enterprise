@@ -309,7 +309,15 @@ async def update_mining_stats(stats: Dict[str, Any]):
     for key, value in stats.items():
         if key == "hashrate":
             try:
-                sanitized_stats[key] = float(value) if value is not None else 0.0
+                # Ensure hashrate is always a float
+                if isinstance(value, str):
+                    # If it's a corrupted string, reset to 0
+                    if "auto" in str(value).lower() or len(str(value)) > 20:
+                        sanitized_stats[key] = 0.0
+                    else:
+                        sanitized_stats[key] = float(value) if value else 0.0
+                else:
+                    sanitized_stats[key] = float(value) if value is not None else 0.0
             except (ValueError, TypeError):
                 sanitized_stats[key] = 0.0
         elif key == "threads":

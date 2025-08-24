@@ -521,6 +521,7 @@ class RandomXMiner:
         self.threads: List[RandomXMinerThread] = []
         self.is_running = False
         self.total_stats = MiningStats()
+        self.offline_mode = False  # Add offline mode support
         
         # Auto-detect thread count if not specified
         if self.config.threads is None or self.config.threads <= 0:
@@ -555,11 +556,14 @@ class RandomXMiner:
             logger.info(f"⚡ Starting {self.config.threads} mining threads...")
             for i in range(self.config.threads):
                 thread = RandomXMinerThread(i, self.config, self.stratum_connection)
+                thread.offline_mode = self.offline_mode  # Pass offline mode to threads
                 self.threads.append(thread)
                 thread.start()
             
             self.is_running = True
             logger.info(f"✅ RandomX miner started with {len(self.threads)} threads")
+            if self.offline_mode:
+                logger.info("🔄 Running in offline mining mode - local hash calculations only")
             
             # Start statistics monitoring
             threading.Thread(target=self._stats_monitor, daemon=True).start()

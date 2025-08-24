@@ -468,8 +468,8 @@ show_help() {
     echo "  requirements.txt   # Python dependencies"
     echo
     print_color $YELLOW "WEB INTERFACE:"
-    echo "  Dashboard: http://localhost:8001"
-    echo "  API: http://localhost:8001/api"
+    echo "  Dashboard: http://localhost:3333"
+    echo "  API: http://localhost:3333/api"
 }
 
 # Main script logic

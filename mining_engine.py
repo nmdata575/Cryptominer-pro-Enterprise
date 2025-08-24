@@ -328,18 +328,29 @@ class StratumConnection:
         return None
     
     def get_work(self) -> Optional[Dict]:
-        """Get current mining work"""
+        """Get current mining work from Monero pool"""
         try:
-            # For now, create a simplified work template
-            # In a real implementation, this would listen for mining.notify messages
-            if self.connected and self.extranonce1:
+            # For Monero, work typically comes with the login response or via job notifications
+            if self.connected and self.authorized and self.current_job:
+                # Use actual job data from pool
+                job = self.current_job
                 return {
-                    'job_id': f"job_{int(time.time())}",
-                    'extranonce1': self.extranonce1,
-                    'extranonce2_size': self.extranonce2_size,
+                    'job_id': job.get('job_id', f"job_{int(time.time())}"),
+                    'blob': job.get('blob', '0' * 152),  # Monero blob format
+                    'target': job.get('target', f"{(2**256 // self.difficulty):064x}"),
+                    'height': job.get('height', 0),
+                    'seed_hash': job.get('seed_hash', ''),
                     'difficulty': self.difficulty,
-                    'blob': '0' * 152,  # Placeholder - would come from pool
-                    'target': f"{(2**256 // self.difficulty):064x}"
+                }
+            elif self.connected:
+                # Fallback work template for offline mining
+                return {
+                    'job_id': f"offline_job_{int(time.time())}",
+                    'blob': '0' * 152,  # Placeholder blob
+                    'target': f"{(2**256 // self.difficulty):064x}",
+                    'height': 0,
+                    'seed_hash': '',
+                    'difficulty': self.difficulty,
                 }
         except Exception as e:
             logger.error(f"❌ Get work error: {e}")

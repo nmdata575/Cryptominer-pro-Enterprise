@@ -522,16 +522,17 @@ class RandomXMinerThread:
         
         while self.is_running:
             try:
-                # Get work from pool (or generate local work if pool protocol failed)
-                if not self.current_job or time.time() - self.current_job.get('received_at', 0) > 30:
-                    self.current_job = self.stratum.get_work()
-                    if not self.current_job:
-                        # Create local work template if pool doesn't provide work
+                # Get work from pool (always get fresh work to avoid stale jobs)
+                if not self.current_job or time.time() - self.current_job.get('received_at', 0) > 10:
+                    # Get fresh work from stratum connection every 10 seconds or if no job
+                    fresh_work = self.stratum.get_work()
+                    if fresh_work:
+                        self.current_job = fresh_work
+                        logger.debug(f"Thread {self.thread_id} got fresh work: {fresh_work.get('job_id', 'N/A')}")
+                    elif not self.current_job:
+                        # Create local work template if no work available
                         self.current_job = self._create_local_work()
-                    
-                    if self.current_job:
-                        self.current_job['received_at'] = time.time()
-                        logger.debug(f"Thread {self.thread_id} received work")
+                        logger.debug(f"Thread {self.thread_id} using local work")
                 
                 if not self.current_job:
                     time.sleep(1)

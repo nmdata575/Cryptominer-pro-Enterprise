@@ -142,44 +142,84 @@ class StratumConnection:
             return False
     
     def _try_stratum_handshake(self) -> bool:
-        """Attempt Stratum handshake, return False if protocol not supported"""
+        """Attempt Stratum handshake using Monero-specific protocol"""
         try:
-            # Try multiple Stratum message formats
-            message_formats = [
+            # Monero uses "login" method instead of mining.subscribe/authorize
+            # Try multiple login message formats for different Monero pools
+            login_formats = [
+                {
+                    "id": 1,
+                    "method": "login",
+                    "params": {
+                        "login": self.wallet,
+                        "pass": self.password,
+                        "agent": "CryptoMiner V21/1.0"
+                    }
+                },
+                # Some pools expect params as array
+                {
+                    "id": 1,
+                    "method": "login",
+                    "params": [self.wallet, self.password, "CryptoMiner V21/1.0"]
+                },
+                # Fallback to standard Bitcoin-style for compatibility
                 {"id": 1, "method": "mining.subscribe", "params": ["CryptoMiner V21"]},
-                {"id": 1, "method": "mining.subscribe", "params": ["CryptoMiner V21", None]},
-                {"jsonrpc": "2.0", "id": 1, "method": "mining.subscribe", "params": ["CryptoMiner V21"]},
             ]
             
-            for msg_format in message_formats:
+            for msg_format in login_formats:
                 try:
-                    response = self._send_receive_with_timeout(msg_format, timeout=3)
-                    if response and ('result' in response or 'error' in response):
+                    logger.info(f"🔐 Trying login format: {msg_format['method']}")
+                    response = self._send_receive_with_timeout(msg_format, timeout=5)
+                    
+                    if response:
                         logger.debug(f"📡 Pool responded: {response}")
                         
                         if 'result' in response and response['result']:
-                            # Successful subscription
                             result = response['result']
-                            if len(result) >= 2:
-                                self.extranonce1 = result[1]
-                                if len(result) > 2:
-                                    self.extranonce2_size = result[2]
-                                logger.info(f"📡 Subscribed: extranonce1={self.extranonce1}")
-                                
-                                # Try authorization
-                                return self._try_authorization()
+                            
+                            # Handle Monero login response
+                            if msg_format['method'] == 'login':
+                                if isinstance(result, dict):
+                                    # Modern Monero pools return job info
+                                    self.current_job = result.get('job', {})
+                                    logger.info(f"✅ Monero login successful, got job: {self.current_job.get('job_id', 'N/A')}")
+                                    self.authorized = True
+                                    return True
+                                elif isinstance(result, bool) and result:
+                                    logger.info("✅ Monero login successful")
+                                    self.authorized = True
+                                    return True
+                            
+                            # Handle Bitcoin-style response
+                            elif msg_format['method'] == 'mining.subscribe':
+                                if isinstance(result, list) and len(result) >= 2:
+                                    self.extranonce1 = result[1]
+                                    if len(result) > 2:
+                                        self.extranonce2_size = result[2]
+                                    logger.info(f"📡 Subscribed: extranonce1={self.extranonce1}")
+                                    return self._try_authorization()
+                        
                         elif 'error' in response:
-                            logger.debug(f"Pool error: {response['error']}")
+                            error_msg = response['error']
+                            logger.warning(f"Pool login error: {error_msg}")
+                            # Continue to try other formats
+                            continue
+                        else:
+                            logger.debug(f"Unexpected response format: {response}")
                             continue
                             
+                except socket.timeout:
+                    logger.debug(f"Timeout with {msg_format['method']} format")
+                    continue
                 except Exception as e:
-                    logger.debug(f"Handshake attempt failed: {e}")
+                    logger.debug(f"Login attempt with {msg_format['method']} failed: {e}")
                     continue
             
+            logger.warning("⚠️ All login formats failed")
             return False
             
         except Exception as e:
-            logger.debug(f"Stratum handshake error: {e}")
+            logger.error(f"❌ Stratum handshake error: {e}")
             return False
     
     def _try_authorization(self) -> bool:

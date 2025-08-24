@@ -406,8 +406,15 @@ class StratumConnection:
         return None
     
     def submit_share(self, job_id: str, nonce: str, result: str) -> bool:
-        """Submit mining share to pool with proper format for zeropool/xmrig compatibility"""
+        """Submit mining share to pool with proper format and authentication handling"""
         try:
+            # Check if we're still authenticated
+            if not self.authorized:
+                logger.warning("⚠️ Not authenticated, attempting to re-authenticate")
+                if not self._try_stratum_handshake():
+                    logger.error("❌ Re-authentication failed")
+                    return False
+            
             # For zeropool.io and most Monero pools, use simple array format like xmrig
             submit_msg = {
                 "id": int(time.time() * 1000),  # Use millisecond timestamp like xmrig
@@ -439,10 +446,26 @@ class StratumConnection:
                     error = response['error']
                     if isinstance(error, dict):
                         error_msg = error.get('message', str(error))
+                        error_code = error.get('code', 0)
                     else:
                         error_msg = str(error)
-                    logger.warning(f"❌ Share error: {error_msg}")
-                    return False
+                        error_code = 0
+                    
+                    # Handle authentication errors specifically
+                    if 'unauthenticated' in error_msg.lower() or error_code == -1:
+                        logger.warning(f"🔐 Authentication issue: {error_msg}")
+                        # Mark as unauthenticated and try to re-authenticate
+                        self.authorized = False
+                        if self._try_stratum_handshake():
+                            logger.info("✅ Re-authenticated successfully, retrying share submission")
+                            # Retry the share submission once after re-authentication
+                            return self.submit_share(job_id, nonce, result)
+                        else:
+                            logger.error("❌ Re-authentication failed")
+                            return False
+                    else:
+                        logger.warning(f"❌ Share error: {error_msg}")
+                        return False
                 else:
                     logger.warning(f"❌ Unexpected response: {response}")
                     return False

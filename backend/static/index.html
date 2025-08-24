@@ -387,6 +387,7 @@
         async function startMining() {
             try {
                 document.getElementById('start-btn').disabled = true;
+                showMessage('⏳ Starting mining...', false);
                 
                 const result = await makeRequest(`${API_BASE}/mining/control`, {
                     method: 'POST',
@@ -395,19 +396,29 @@
                     })
                 });
                 
-                showMessage('✅ Mining started successfully');
-                updateStats(); // Immediate update
+                if (result.status === 'success') {
+                    showMessage('✅ Mining started successfully');
+                } else {
+                    showMessage(`⚠️ Mining start result: ${result.message}`, true);
+                }
+                
+                // Wait a moment then update stats
+                setTimeout(updateStats, 2000);
                 
             } catch (error) {
-                showMessage(`❌ Failed to start mining: ${error.message}`, true);
+                console.error('Start mining error:', error);
+                showMessage(`❌ Failed to start mining: ${error.message || 'Unknown error'}`, true);
             } finally {
-                document.getElementById('start-btn').disabled = false;
+                setTimeout(() => {
+                    document.getElementById('start-btn').disabled = false;
+                }, 1000);
             }
         }
         
         async function stopMining() {
             try {
                 document.getElementById('stop-btn').disabled = true;
+                showMessage('⏳ Stopping mining...', false);
                 
                 const result = await makeRequest(`${API_BASE}/mining/control`, {
                     method: 'POST',
@@ -416,8 +427,14 @@
                     })
                 });
                 
-                showMessage('✅ Mining stopped successfully');
-                updateStats(); // Immediate update
+                if (result.status === 'success') {
+                    showMessage('✅ Mining stopped successfully');
+                } else {
+                    showMessage(`⚠️ Mining stop result: ${result.message}`, true);
+                }
+                
+                // Wait a moment then update stats
+                setTimeout(updateStats, 2000);
                 
             } catch (error) {
                 showMessage(`❌ Failed to stop mining: ${error.message}`, true);

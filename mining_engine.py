@@ -542,10 +542,13 @@ class RandomXMiner:
                 self.config.password
             )
             
-            # Connect to pool
+            # Connect to pool (with offline fallback)
             if not self.stratum_connection.connect():
-                logger.error("❌ Failed to connect to mining pool")
-                return False
+                logger.warning("⚠️ Pool connection failed, enabling offline mining mode")
+                self.offline_mode = True
+            else:
+                logger.info("✅ Pool connection successful")
+                self.offline_mode = False
             
             # Create and start mining threads
             logger.info(f"⚡ Starting {self.config.threads} mining threads...")

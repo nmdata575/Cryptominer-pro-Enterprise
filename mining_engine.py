@@ -1329,19 +1329,22 @@ class RandomXMiner:
         }
     
     def _stats_monitor(self):
-        """Monitor and log statistics"""
+        """Monitor and log statistics with proxy information"""
         while self.is_running:
             try:
                 stats = self.get_stats()
                 
-                if stats['hashrate'] > 0 or stats['pool_connected']:
+                if stats['hashrate'] > 0:
                     pool_status = "🟢 Connected" if stats['pool_connected'] else "🔴 Disconnected"
+                    queue_info = f"Queue: {stats['queue_size']}" if stats['queue_size'] > 0 else ""
+                    
                     logger.info(
                         f"⚡ RandomX: {stats['hashrate']:.1f} H/s | "
                         f"Shares: {stats['shares_good']} | "
+                        f"Accepted: {stats.get('shares_accepted', 0)} | "
                         f"Threads: {stats['threads']} | "
                         f"Pool: {pool_status} | "
-                        f"CPU: {stats['cpu_usage']:.1f}%"
+                        f"CPU: {stats['cpu_usage']:.1f}% {queue_info}"
                     )
                 
                 time.sleep(30)  # Update every 30 seconds

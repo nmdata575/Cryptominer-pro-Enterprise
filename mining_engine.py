@@ -332,25 +332,32 @@ class StratumConnection:
         try:
             # For Monero, work typically comes with the login response or via job notifications
             if self.connected and self.authorized and self.current_job:
-                # Use actual job data from pool
-                job = self.current_job
+                # Check if job is still fresh (within last 2 minutes)
+                job_age = time.time() - self.current_job.get('received_at', 0)
+                if job_age < 120:  # Use job if less than 2 minutes old
+                    job = self.current_job
+                    return {
+                        'job_id': job.get('job_id', f"job_{int(time.time())}"),
+                        'blob': job.get('blob', '0' * 152),
+                        'target': job.get('target', f"{(2**256 // self.difficulty):064x}"),
+                        'height': job.get('height', 0),
+                        'seed_hash': job.get('seed_hash', ''),
+                        'difficulty': self.difficulty,
+                        'received_at': job.get('received_at', time.time())
+                    }
+                else:
+                    logger.debug(f"⏰ Job expired ({job_age:.1f}s old), using fallback")
+            
+            # Fallback work template when no fresh job available
+            if self.connected:
                 return {
-                    'job_id': job.get('job_id', f"job_{int(time.time())}"),
-                    'blob': job.get('blob', '0' * 152),  # Monero blob format
-                    'target': job.get('target', f"{(2**256 // self.difficulty):064x}"),
-                    'height': job.get('height', 0),
-                    'seed_hash': job.get('seed_hash', ''),
-                    'difficulty': self.difficulty,
-                }
-            elif self.connected:
-                # Fallback work template for offline mining
-                return {
-                    'job_id': f"offline_job_{int(time.time())}",
+                    'job_id': f"local_{int(time.time())}",
                     'blob': '0' * 152,  # Placeholder blob
                     'target': f"{(2**256 // self.difficulty):064x}",
                     'height': 0,
                     'seed_hash': '',
                     'difficulty': self.difficulty,
+                    'received_at': time.time()
                 }
         except Exception as e:
             logger.error(f"❌ Get work error: {e}")

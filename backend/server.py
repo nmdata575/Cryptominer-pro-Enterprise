@@ -741,6 +741,22 @@ async def get_system_info():
 # Include the router in the main app
 app.include_router(api_router)
 
+# Serve static files
+static_dir = ROOT_DIR / "static"
+static_dir.mkdir(exist_ok=True)
+
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+# Root route to serve the dashboard
+@app.get("/")
+async def read_dashboard():
+    """Serve the main dashboard"""
+    dashboard_path = static_dir / "index.html"
+    if dashboard_path.exists():
+        return FileResponse(str(dashboard_path))
+    else:
+        return {"message": "CryptoMiner V21 Dashboard", "status": "Dashboard file not found"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

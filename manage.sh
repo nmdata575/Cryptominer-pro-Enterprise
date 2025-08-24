@@ -357,7 +357,7 @@ show_status() {
         
         # Check backend API
         if command -v curl &> /dev/null; then
-            local api_port=${WEB_PORT:-8001}
+            local api_port=${WEB_PORT:-3333}
             if curl -s "http://localhost:$api_port/api/" &> /dev/null; then
                 print_color $GREEN "Backend API: 🟢 RUNNING (Port: $api_port)"
             else

@@ -419,9 +419,12 @@ async def control_mining(request: Dict[str, Any]):
     web_config = request.get("config", {})
     
     if action == "start":
-        if is_mining_active and mining_process and mining_process.poll() is None:
-            return {"status": "error", "message": "Mining is already running"}
-        
+        # Always kill any existing mining processes first to prevent conflicts
+        if is_mining_active or mining_process:
+            logger.info("🛑 Killing existing mining processes before starting new one")
+            killed_count = await kill_mining_processes()
+            logger.info(f"🛑 Killed {killed_count} existing processes")
+            
         # ALWAYS use configuration from mining_config.env file as primary source
         # Only allow web interface to override non-critical settings like threads/intensity
         file_config = load_mining_config()  # Fresh load to get latest values

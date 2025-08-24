@@ -1,0 +1,111 @@
+{
+  "test_focus": "Connection Proxy Architecture",
+  "target_pool": "xmr.zeropool.io:3333",
+  "summary": {
+    "passed": 3,
+    "total": 7,
+    "success_rate": 42.857142857142854,
+    "timestamp": "2025-08-24T15:58:25.794877"
+  },
+  "detailed_results": [
+    {
+      "test": "Single Connection Proxy Start",
+      "success": true,
+      "message": "Mining started with PoolConnectionProxy (PID: N/A)",
+      "timestamp": "2025-08-24T15:56:24.594029",
+      "details": {
+        "status": "success",
+        "message": "Mining started successfully (PID: 28053)",
+        "config": {
+          "coin": "XMR",
+          "wallet": "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
+          "pool": "stratum+tcp://xmr.zeropool.io:3333",
+          "password": "x",
+          "intensity": 90,
+          "threads": 4,
+          "web_enabled": true,
+          "ai_enabled": true
+        }
+      }
+    },
+    {
+      "test": "Single Connection Verification",
+      "success": false,
+      "message": "Mining not active - Active: False, PID: None",
+      "timestamp": "2025-08-24T15:56:32.601734",
+      "details": {
+        "is_active": false,
+        "process_id": null,
+        "pool_connected": true,
+        "last_update": "2025-08-24T15:56:24.590625"
+      }
+    },
+    {
+      "test": "Enhanced Statistics API",
+      "success": false,
+      "message": "Missing proxy fields: ['shares_accepted', 'shares_submitted', 'queue_size', 'last_share_time'], Found: []",
+      "timestamp": "2025-08-24T15:56:43.610280",
+      "details": {
+        "hashrate": 600.0,
+        "threads": 4,
+        "intensity": 90,
+        "coin": "XMR",
+        "pool_connected": true,
+        "accepted_shares": 28,
+        "rejected_shares": 2,
+        "uptime": 17.785359144210815,
+        "difficulty": 420000.0,
+        "ai_learning": 88.5,
+        "ai_optimization": 82.3,
+        "last_update": "2025-08-24T15:56:24.590625"
+      }
+    },
+    {
+      "test": "Enhanced Stats Update",
+      "success": true,
+      "message": "Successfully updated stats with enhanced proxy format",
+      "timestamp": "2025-08-24T15:56:46.617203",
+      "details": {
+        "status": "success",
+        "message": "Stats updated successfully"
+      }
+    },
+    {
+      "test": "Protocol Logging Verification",
+      "success": false,
+      "message": "Process timeout during log verification",
+      "timestamp": "2025-08-24T15:57:09.619578",
+      "details": {}
+    },
+    {
+      "test": "Connection Stability (60s)",
+      "success": false,
+      "message": "Connection unstable - 0.0% uptime over 13 checks",
+      "timestamp": "2025-08-24T15:58:17.782165",
+      "details": {
+        "stability_rate": 0.0,
+        "total_checks": 13
+      }
+    },
+    {
+      "test": "Frontend Data Integration",
+      "success": true,
+      "message": "Stats properly formatted for frontend - Hashrate: 0.0 H/s, Pool: True, All required fields present",
+      "timestamp": "2025-08-24T15:58:20.788082",
+      "details": {
+        "hashrate": 0.0,
+        "threads": 2,
+        "intensity": 90,
+        "coin": "XMR",
+        "pool_connected": true,
+        "accepted_shares": 28,
+        "rejected_shares": 2,
+        "uptime": 12.764325857162476,
+        "difficulty": 420000.0,
+        "ai_learning": 88.5,
+        "ai_optimization": 82.3,
+        "last_update": "2025-08-24T15:56:24.590625"
+      }
+    }
+  ]
+}

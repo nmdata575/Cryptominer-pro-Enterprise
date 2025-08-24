@@ -66,6 +66,7 @@ class MiningStats:
     hashrate_15m: float = 0.0
     hashes_total: int = 0
     shares_good: int = 0
+    shares_rejected: int = 0
     shares_total: int = 0
     avg_time: float = 0.0
     max_diff: int = 0

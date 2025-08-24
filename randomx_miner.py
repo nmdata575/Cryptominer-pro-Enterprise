@@ -278,16 +278,23 @@ class StratumConnection:
             return False
     
     def _send_receive(self, message: Dict) -> Optional[Dict]:
-        """Send message and receive response"""
+        """Send message and receive response with better error handling"""
         try:
             # Send message
             json_msg = json.dumps(message) + '\n'
+            logger.debug(f"📤 Sending: {json_msg.strip()}")
             self.socket.send(json_msg.encode('utf-8'))
             
             # Receive response
             response_data = self._read_line()
             if response_data:
-                return json.loads(response_data.decode('utf-8'))
+                response_str = response_data.decode('utf-8')
+                logger.debug(f"📥 Received: {response_str}")
+                try:
+                    return json.loads(response_str)
+                except json.JSONDecodeError as e:
+                    logger.error(f"❌ JSON decode error: {e}, data: {response_str}")
+                    return None
                 
         except Exception as e:
             logger.error(f"❌ Send/receive error: {e}")

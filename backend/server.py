@@ -299,10 +299,54 @@ async def get_mining_stats_debug():
     """Debug endpoint to see raw mining stats"""
     return {"raw_stats": mining_stats, "type_info": {k: type(v).__name__ for k, v in mining_stats.items()}}
 
+def sanitize_stats_data(stats):
+    """Sanitize mining stats to prevent data corruption"""
+    cleaned = {}
+    for key, value in stats.items():
+        if isinstance(value, str):
+            # Fix the auto duplication bug
+            if "auto" in value and len(value) > 10:
+                cleaned[key] = 0 if key in ['threads', 'hashrate'] else "auto"
+            elif value == "auto":
+                cleaned[key] = 0 if key in ['threads', 'hashrate'] else value
+            else:
+                try:
+                    # Try to convert string numbers to proper types
+                    if key in ['threads', 'intensity']:
+                        cleaned[key] = int(float(value))
+                    elif key in ['hashrate', 'cpu_usage', 'memory_usage', 'uptime']:
+                        cleaned[key] = float(value)
+                    else:
+                        cleaned[key] = value
+                except (ValueError, TypeError):
+                    cleaned[key] = 0 if key in ['threads', 'hashrate', 'intensity', 'cpu_usage', 'memory_usage', 'uptime'] else value
+        else:
+            cleaned[key] = value if value is not None else 0
+    return cleaned
+
 @api_router.get("/mining/stats", response_model=MiningStats)
 async def get_mining_stats():
     """Get current mining statistics"""
-    return MiningStats(**mining_stats)
+    try:
+        sanitized_stats = sanitize_stats_data(mining_stats)
+        return MiningStats(**sanitized_stats)
+    except Exception as e:
+        logger.error(f"Stats validation error: {e}")
+        # Return safe default values
+        return MiningStats(
+            hashrate=0.0,
+            threads=0,
+            intensity=80,
+            coin="XMR",
+            algorithm="RandomX",
+            pool_connected=False,
+            shares_good=0,
+            hashes_total=0,
+            uptime=0,
+            cpu_usage=0.0,
+            memory_usage=0.0,
+            is_running=False
+        )
 
 @api_router.post("/mining/update-stats")
 async def update_mining_stats(stats: Dict[str, Any]):

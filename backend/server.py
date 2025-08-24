@@ -197,11 +197,15 @@ async def start_mining_process(config):
             "python3", str(crypto_script),
             "--coin", config.get("coin", default_mining_config.get("coin", "XMR")),
             "--wallet", config.get("wallet", default_mining_config.get("wallet", "XMR_PLACEHOLDER_WALLET")),
-            "--pool", config.get("pool", default_mining_config.get("pool", "stratum+tcp://us.fastpool.xyz:10055")),
+            "--pool", config.get("pool", default_mining_config.get("pool", "stratum+tcp://pool.supportxmr.com:3333")),
             "--intensity", str(config.get("intensity", default_mining_config.get("intensity", 80))),
-            "--threads", str(config.get("threads", default_mining_config.get("threads", "auto"))),
-            "--proxy-mode"  # Use proxy mode for better multi-threading
+            "--threads", str(config.get("threads", default_mining_config.get("threads", "auto")))
         ]
+        
+        # Only use proxy mode for Scrypt coins (LTC, DOGE), not for RandomX coins (XMR, AEON)
+        coin = config.get("coin", default_mining_config.get("coin", "XMR")).upper()
+        if coin not in ["XMR", "AEON"]:
+            cmd.append("--proxy-mode")  # Use proxy mode only for non-RandomX coins
         
         if config.get("password"):
             cmd.extend(["--password", config.get("password")])

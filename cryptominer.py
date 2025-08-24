@@ -474,7 +474,7 @@ class CryptoMinerPro:
         }
         
         async function startMining() {
-            const pool = document.getElementById('config-pool').value || 'ltc.luckymonster.pro:4112';
+            const pool = document.getElementById('config-pool').value || 'stratum+tcp://pool.supportxmr.com:3333';
             const threads = parseInt(document.getElementById('config-threads').value) || 8;
             const intensity = parseInt(document.getElementById('config-intensity').value) || 80;
             

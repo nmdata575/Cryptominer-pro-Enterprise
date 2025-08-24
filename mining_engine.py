@@ -1265,20 +1265,36 @@ class RandomXMinerThread:
             return False
     
     def _submit_share_via_proxy(self, hash_result: bytes) -> bool:
-        """Submit share through connection proxy"""
+        """Submit share through connection proxy with real job prioritization"""
         try:
-            # Get job ID from current job or proxy
+            # Get real pool job - prioritize over local fallback
             job_id = None
+            is_real_job = False
+            
+            # First try to get job from current thread job
             if self.current_job and self.current_job.get('job_id'):
                 job_id = self.current_job['job_id']
-            elif self.connection_proxy:
+                is_real_job = not job_id.startswith('local_')
+            
+            # If no real job, try to get fresh job from proxy
+            if not is_real_job and self.connection_proxy:
                 fresh_job = self.connection_proxy.get_current_job()
                 if fresh_job and fresh_job.get('job_id'):
-                    job_id = fresh_job['job_id']
+                    fresh_job_id = fresh_job['job_id']
+                    if not fresh_job_id.startswith('local_'):
+                        job_id = fresh_job_id
+                        is_real_job = True
+                        protocol_logger.debug(f"🔄 Using fresh REAL job from proxy: {job_id}")
             
-            if not job_id:
-                job_id = f"local_{int(time.time())}"
-                protocol_logger.debug(f"Using fallback job ID: {job_id}")
+            # Only use local fallback if no real job available AND we're offline/disconnected
+            if not job_id or not is_real_job:
+                if self.connection_proxy and not self.connection_proxy.connected:
+                    job_id = f"local_{int(time.time())}"
+                    protocol_logger.debug(f"⚠️ Using LOCAL fallback (offline): {job_id}")
+                else:
+                    # Don't submit share - wait for real pool job
+                    protocol_logger.warning(f"⏳ No real pool job available - skipping share submission")
+                    return False
             
             # Format nonce as 8-character hex (standard for Monero)
             nonce_hex = f"{self.nonce:08x}"
@@ -1286,7 +1302,10 @@ class RandomXMinerThread:
             # For Monero, result should be the complete hash in hex format
             result_hex = hash_result[:32].hex()
             
-            protocol_logger.debug(f"🔍 Thread {self.thread_id} share: job={job_id}, nonce={nonce_hex}, result={result_hex[:16]}...")
+            if is_real_job:
+                protocol_logger.info(f"✅ Thread {self.thread_id} submitting REAL share: job={job_id}, nonce={nonce_hex}")
+            else:
+                protocol_logger.debug(f"🔍 Thread {self.thread_id} submitting fallback share: job={job_id}, nonce={nonce_hex}")
             
             # Submit through connection proxy (queued submission)
             return self.connection_proxy.submit_share(job_id, nonce_hex, result_hex)

@@ -58,7 +58,7 @@ def load_mining_config():
         mining_config = {
             "coin": "XMR",
             "wallet": "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
-            "pool": "stratum+tcp://us.fastpool.xyz:10055",
+            "pool": "stratum+tcp://pool.supportxmr.com:3333",
             "password": "x",
             "intensity": 80,
             "threads": "auto",

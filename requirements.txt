@@ -2,7 +2,6 @@
 # Core application dependencies
 
 # Async and HTTP
-asyncio-mqtt==0.13.0
 aiohttp==3.8.5
 aiofiles==23.2.1
 
@@ -17,7 +16,6 @@ python-dotenv==1.0.0
 
 # Cryptographic and Hashing
 cryptography==41.0.7
-hashlib-compat==1.0.1
 
 # AI and Machine Learning
 scikit-learn==1.3.2
@@ -39,10 +37,6 @@ colorama==0.4.6
 pytest==7.4.3
 black==23.11.0
 flake8==6.1.0
-
-# Additional dependencies for specific algorithms
-# RandomX simulation libraries (if available)
-# blake2b, scrypt are in stdlib
 
 # Monitoring and Logging
 rich==13.7.0

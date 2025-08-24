@@ -1,192 +1,94 @@
 # 🚀 CryptoMiner V21
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+[![Version](https://img.shields.io/badge/version-21.0.0-green.svg)](VERSION)
+
 **Advanced Multi-Algorithm CPU Mining Platform with AI Optimization**
 
-CryptoMiner V21 is an enterprise-grade distributed mining solution supporting 250,000+ CPU cores with intelligent algorithm switching and AI-driven performance optimization.
+CryptoMiner V21 is an enterprise-grade, intelligent CPU mining solution that supports multiple algorithms including RandomX (Monero) and Scrypt (Litecoin, Dogecoin). Features real-time AI optimization, web-based monitoring, and professional mining pool integration.
 
-## 📥 **Quick Start (Individual Use)**
+## ✨ Key Features
 
-### **Prerequisites**
-- Ubuntu 24.04+ / Debian 12+ / Similar Linux distributions  
-- Python 3.11+
-- Node.js 20.x (for React frontend)
-- MongoDB 8.0+ (for AI database and statistics)
-- 4GB+ RAM (8GB recommended)
-- Multi-core CPU (more cores = better performance)
+### 🔀 Multi-Algorithm Support
+- **RandomX**: Optimized for Monero (XMR) and Aeon mining
+- **Scrypt**: Support for Litecoin (LTC), Dogecoin (DOGE)
+- **Auto-Detection**: Automatically selects optimal algorithm based on coin
+- **Pool Integration**: Real Stratum protocol implementation
 
-### **Installation**
-```bash
-# 1. Extract the archive
-tar -xzf cryptominer-v21.tar.gz
-cd cryptominer-v21
+### 🤖 AI-Powered Optimization
+- **Machine Learning**: Advanced AI models for performance optimization
+- **Predictive Analytics**: Share prediction and efficiency analysis
+- **Real-time Adaptation**: Dynamic parameter adjustment
+- **Performance Learning**: Continuous improvement from mining data
 
-# 2. Install Python dependencies
-pip install -r requirements.txt
+### 📊 Professional Monitoring
+- **Web Dashboard**: Real-time browser-based monitoring
+- **REST API**: Complete backend API for integration
+- **Statistics Tracking**: Comprehensive mining metrics
+- **Performance Analytics**: Detailed hashrate and efficiency reports
 
-# 3. Install MongoDB 8.0 (if not already installed)
-./install.sh
+### ⚡ Enterprise Features
+- **Multi-Threading**: Optimized CPU utilization
+- **Connection Management**: Robust pool connection handling
+- **Error Recovery**: Automatic reconnection and failover
+- **Configuration Management**: Flexible configuration system
 
-# 4. Configure your mining settings
-cp mining_config.template mining_config.env
-# Edit mining_config.env with your wallet addresses and preferred pools
+## 📋 Requirements
 
-# 5. Start the integrated system
-chmod +x start-integrated.sh
-./start-integrated.sh
-```
+### System Requirements
+- **OS**: Linux (Ubuntu 18.04+, CentOS 7+, or similar)
+- **Python**: 3.8 or higher
+- **RAM**: Minimum 4GB (8GB+ recommended for RandomX)
+- **CPU**: Modern multi-core processor (Intel/AMD)
+- **Network**: Stable internet connection
 
-### **Web Interface**
-- **Dashboard URL**: http://localhost:3000
-- **Backend API**: http://localhost:8001  
-- **Features**: Real-time mining control, statistics, AI optimization
-
-### **Frontend Management**
-CryptoMiner V21 includes scripts to ensure proper V21 branding:
-
-```bash
-# Switch to HTML dashboard (recommended for V21 branding)
-./switch-frontend.sh html
-
-# Switch to React frontend (may show cached V30)
-./switch-frontend.sh react
-
-# Check current frontend status
-./switch-frontend.sh status
-
-# Complete V21 setup (stops services, switches to HTML, shows status)
-./setup-v21.sh
-```
-
-### **Configuration**
-Edit `mining_config.env` with your settings:
-```env
-COIN=XMR
-WALLET=your_monero_wallet_address_here
-POOL=pool.supportxmr.com:3333
-PASSWORD=your_worker_name
-INTENSITY=80
-THREADS=8
-```
-
-### Key Features
-
-- ⚡ **Enterprise Mining Engine** - High-performance multi-threaded mining
-- 🤖 **AI Optimization** - Machine learning-driven performance tuning
-- 🔗 **Pool & Solo Support** - Connect to any Stratum-compatible pool
-- 📊 **Web Monitoring** - Real-time dashboard and statistics
-- 🛡️ **Graceful Shutdown** - Proper signal handling and resource cleanup
-- 🎯 **Dynamic Configuration** - Adjust mining parameters on-the-fly
-
-### Supported Algorithms
-
-- **Scrypt** - Litecoin (LTC), Dogecoin (DOGE), Vertcoin (VTC)
-- **RandomX** - Monero (XMR) *(CPU-friendly)*
+### Dependencies
+- Python 3.8+
+- FastAPI
+- AsyncIO support
+- psutil
+- aiohttp
+- scikit-learn (for AI features)
+- numpy, pandas (for analytics)
 
 ## 🚀 Quick Start
 
-### Automated Installation
+### 1. Installation
 
 ```bash
-# Run the installation script
-chmod +x install.sh
-./install.sh
+# Clone the repository
+git clone https://github.com/yourusername/cryptominer-v21.git
+cd cryptominer-v21
 
-# Edit your configuration
-nano mining_config.env
-
-# Start mining with integrated web dashboard
-./start-integrated.sh
-```
-
-### Manual Installation
-
-```bash
-# Install system dependencies
-sudo apt-get update
-sudo apt-get install python3 python3-pip python3-venv build-essential
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install Python dependencies  
+# Install dependencies
 pip install -r requirements.txt
 
-# Configure mining settings
+# Make management script executable
+chmod +x manage.sh
+```
+
+### 2. Configuration
+
+Create your mining configuration:
+
+```bash
+# Copy template configuration
 cp mining_config.template mining_config.env
-# Edit mining_config.env with your wallet address
 
-# Start mining
-python3 cryptominer.py --proxy-mode
+# Edit configuration with your details
+nano mining_config.env
 ```
 
-## 📊 Web Dashboard
-
-The application automatically creates and starts a beautiful web dashboard:
-
-- **URL**: http://localhost:3000
-- **Features**: Real-time mining statistics, AI optimization progress, share tracking
-- **Backend API**: http://localhost:8001/docs
-
-## 🏗️ Architecture Options
-
-### Proxy Mode (Recommended)
-```bash
-python3 cryptominer.py --proxy-mode --threads 8
-```
-- Single connection to pool
-- Multiple internal mining threads
-- Bypasses pool connection limits
-- Maximum efficiency
-
-### Direct Mode
-```bash  
-python3 cryptominer.py --threads 8
-```
-- Direct connections to pool
-- Traditional mining approach
-- May hit pool connection limits
-
-## Command Line Options
-
-```bash
-Options:
-  --setup                     Run interactive setup wizard
-  --list-coins               Show available coins
-  --coin COIN                Coin to mine (LTC, DOGE, VTC, XMR)
-  --wallet ADDRESS           Your wallet address
-  --pool URL                 Mining pool URL
-  --password PASSWORD        Pool worker password (optional)
-  --intensity PERCENT        Mining intensity 1-100% (default: 80)
-  --threads COUNT            Number of threads (default: auto)
-  --web-port PORT           Web monitoring port (default: 8001)
-  --help                     Show help message
-```
-
-## Web Monitoring Dashboard
-
-Access the real-time mining dashboard at: **http://localhost:8001**
-
-### Dashboard Features
-
-- 📊 **Real-time Statistics** - Hashrate, shares, uptime
-- ⚙️ **Mining Configuration** - Current settings and status
-- 🤖 **AI Metrics** - Learning and optimization progress
-- 📈 **Performance Graphs** - Historical data and trends
-- 🔗 **Pool Status** - Connection and difficulty information
-
-## Configuration File
-
-Create `mining_config.env` for persistent settings:
-
+Example configuration:
 ```env
 # Mining Configuration
-COIN=LTC
-WALLET=your_wallet_address_here
-POOL=stratum+tcp://pool.example.com:4444
-PASSWORD=worker1
+COIN=XMR
+WALLET=your_monero_wallet_address_here
+POOL=stratum+tcp://pool.supportxmr.com:3333
+PASSWORD=x
 
-# Performance Settings  
+# Performance Settings
 INTENSITY=80
 THREADS=auto
 
@@ -196,147 +98,384 @@ WEB_ENABLED=true
 
 # AI Optimization
 AI_ENABLED=true
-AI_LEARNING_RATE=0.1
 ```
 
-## Popular Mining Pools
+### 3. Start Mining
 
-### Litecoin (LTC)
-- **LitecoinPool**: `stratum+tcp://stratum.litecoinpool.org:3333`
-- **F2Pool**: `stratum+tcp://ltc.f2pool.com:4444`
-- **ViaBTC**: `stratum+tcp://ltc.viabtc.com:3333`
+```bash
+# Start mining with management script
+./manage.sh start
 
-### Dogecoin (DOGE)
-- **Prohashing**: `stratum+tcp://prohashing.com:3333`
-- **MultiPool**: `stratum+tcp://stratum.multipool.us:3333`
-
-## AI Optimization
-
-The built-in AI optimizer continuously learns from mining performance and automatically adjusts parameters for optimal results:
-
-- **Learning Progress** - Data collection and model training
-- **Optimization Progress** - Performance improvement tracking
-- **Automatic Tuning** - Thread count and intensity optimization
-- **Performance Prediction** - Forecasting optimal configurations
-
-## Architecture
-
-### Core Components
-
-```
-cryptominer.py       # Main application with CLI interface
-mining_engine.py     # Mining orchestration and thread management
-scrypt_miner.py      # Low-level Scrypt mining and Stratum protocol
-ai_optimizer.py      # AI-driven performance optimization
+# Or start directly
+python3 cryptominer.py
 ```
 
-### Web Interface
+### 4. Monitor Performance
 
-```
-backend/server.py    # FastAPI backend with mining APIs
-frontend/src/App.js  # React dashboard for monitoring
+- **Web Dashboard**: Open http://localhost:8001 in your browser
+- **API Endpoints**: Access REST API at http://localhost:8001/api
+- **Logs**: Check `mining.log` for detailed logging
+
+## 📖 Usage Guide
+
+### Command Line Interface
+
+```bash
+# Basic usage
+python3 cryptominer.py --coin XMR --wallet YOUR_WALLET --pool POOL_URL
+
+# Advanced options
+python3 cryptominer.py \
+  --coin XMR \
+  --wallet YOUR_WALLET \
+  --pool stratum+tcp://pool.supportxmr.com:3333 \
+  --intensity 90 \
+  --threads 8 \
+  --password worker1
 ```
 
-## Troubleshooting
+### Management Script
+
+```bash
+# Start mining
+./manage.sh start
+
+# Stop mining
+./manage.sh stop
+
+# Restart mining
+./manage.sh restart
+
+# Check status
+./manage.sh status
+
+# View logs
+./manage.sh logs
+
+# Setup/install dependencies
+./manage.sh setup
+```
+
+### Web API Usage
+
+```bash
+# Get mining statistics
+curl http://localhost:8001/api/mining/stats
+
+# Start mining via API
+curl -X POST http://localhost:8001/api/mining/control \
+  -H "Content-Type: application/json" \
+  -d '{"action": "start", "config": {"coin": "XMR", "threads": 4}}'
+
+# Stop mining
+curl -X POST http://localhost:8001/api/mining/control \
+  -H "Content-Type: application/json" \
+  -d '{"action": "stop"}'
+```
+
+## ⚙️ Configuration Reference
+
+### Mining Configuration (mining_config.env)
+
+| Parameter | Description | Default | Example |
+|-----------|-------------|---------|---------|
+| `COIN` | Cryptocurrency to mine | - | `XMR`, `LTC`, `DOGE` |
+| `WALLET` | Your wallet address | - | `48edfHu7V9Z84Yzz...` |
+| `POOL` | Mining pool URL | - | `stratum+tcp://pool.supportxmr.com:3333` |
+| `PASSWORD` | Pool password/worker | `x` | `worker1` |
+| `INTENSITY` | Mining intensity (1-100) | `80` | `90` |
+| `THREADS` | Number of threads | `auto` | `8` |
+| `WEB_ENABLED` | Enable web monitoring | `true` | `false` |
+| `AI_ENABLED` | Enable AI optimization | `true` | `false` |
+| `LOG_LEVEL` | Logging level | `INFO` | `DEBUG` |
+
+### Supported Coins
+
+| Coin | Algorithm | Description | Recommended Pool |
+|------|-----------|-------------|------------------|
+| XMR | RandomX | Monero - CPU optimized | pool.supportxmr.com:3333 |
+| AEON | RandomX | Aeon - CPU friendly | mine.aeon-pool.com:5555 |
+| LTC | Scrypt | Litecoin | stratum.litecoinpool.org:3333 |
+| DOGE | Scrypt | Dogecoin | doge.f2pool.com:4444 |
+
+## 🏗️ Architecture
+
+### File Structure
+```
+cryptominer-v21/
+├── cryptominer.py          # Main application entry point
+├── mining_engine.py        # Unified mining engine (all algorithms)
+├── ai_mining_optimizer.py  # AI optimization system
+├── config.py              # Configuration and constants
+├── mining_config.env      # User configuration file
+├── manage.sh              # Management script
+├── requirements.txt       # Python dependencies
+├── README.md             # This file
+├── backend/
+│   ├── server.py         # FastAPI backend server
+│   └── requirements.txt  # Backend dependencies
+└── logs/
+    └── mining.log        # Mining logs
+```
+
+### System Components
+
+1. **Mining Engine**: Multi-algorithm mining with RandomX and Scrypt support
+2. **AI Optimizer**: Machine learning for performance optimization
+3. **Web Backend**: FastAPI-based REST API and monitoring
+4. **Configuration**: Centralized configuration management
+5. **Monitoring**: Real-time statistics and web dashboard
+
+## 🔧 API Reference
+
+### Mining Control Endpoints
+
+#### Start Mining
+```http
+POST /api/mining/control
+Content-Type: application/json
+
+{
+  "action": "start",
+  "config": {
+    "coin": "XMR",
+    "wallet": "your_wallet_address",
+    "pool": "stratum+tcp://pool.supportxmr.com:3333",
+    "threads": 8,
+    "intensity": 90
+  }
+}
+```
+
+#### Stop Mining
+```http
+POST /api/mining/control
+Content-Type: application/json
+
+{
+  "action": "stop"
+}
+```
+
+### Statistics Endpoints
+
+#### Get Mining Statistics
+```http
+GET /api/mining/stats
+```
+
+Response:
+```json
+{
+  "hashrate": 1250.5,
+  "coin": "XMR",
+  "algorithm": "RandomX",
+  "threads": 8,
+  "pool_connected": true,
+  "shares_good": 15,
+  "shares_rejected": 1,
+  "uptime": 3600,
+  "cpu_usage": 85.2,
+  "ai_optimization": 12.5
+}
+```
+
+#### Get Mining Configuration
+```http
+GET /api/mining/config
+```
+
+### AI Endpoints
+
+#### Get AI Recommendations
+```http
+GET /api/mining/ai-recommendation
+```
+
+#### Update Mining Statistics
+```http
+POST /api/mining/update-stats
+Content-Type: application/json
+
+{
+  "hashrate": 1250.5,
+  "threads": 8,
+  "shares_good": 15,
+  "cpu_usage": 85.2
+}
+```
+
+## 🤖 AI Optimization
+
+### Features
+- **Performance Learning**: Analyzes historical mining data
+- **Parameter Optimization**: Automatically adjusts mining parameters
+- **Predictive Analytics**: Predicts optimal mining conditions
+- **Efficiency Analysis**: Tracks and improves mining efficiency
+
+### AI Models
+- **Random Forest**: For performance prediction
+- **Gradient Boosting**: For optimization recommendations
+- **Linear Regression**: For trend analysis
+- **Neural Networks**: For complex pattern recognition
+
+### Configuration
+```env
+# AI Configuration
+AI_ENABLED=true
+AI_LEARNING_RATE=1.0
+AI_OPTIMIZATION_INTERVAL=30
+```
+
+## 📊 Monitoring & Analytics
+
+### Web Dashboard Features
+- Real-time hashrate monitoring
+- Pool connection status
+- Share acceptance rates
+- CPU and memory usage
+- AI optimization status
+- Mining profitability estimates
+
+### Key Metrics
+- **Hashrate**: Mining speed (H/s, KH/s, MH/s)
+- **Shares**: Accepted vs rejected shares
+- **Efficiency**: Hashes per watt
+- **Uptime**: Mining session duration
+- **Temperature**: CPU temperature monitoring
+- **Profitability**: Estimated earnings
+
+## 🛠️ Troubleshooting
 
 ### Common Issues
 
-#### 1. Connection Errors
+#### Connection Problems
 ```bash
-# Check pool URL and firewall
-telnet pool.example.com 4444
+# Check pool connectivity
+telnet pool.supportxmr.com 3333
+
+# Test with different pool
+# Edit mining_config.env and change POOL setting
 ```
 
-#### 2. Authorization Failed
-- Verify wallet address format
-- Check pool worker password
-- Ensure pool supports the coin
-
-#### 3. Low Hashrate
-- Increase mining intensity: `--intensity 90`
-- Add more threads: `--threads 16`
-- Enable AI optimization (default)
-
-#### 4. Shutdown Issues
-The application now properly handles Ctrl+C with graceful shutdown:
-- All mining threads are stopped
-- Socket connections are closed
-- Resources are cleaned up
-- No hanging processes
-
-### Performance Tuning
-
-#### CPU-Intensive Workloads
+#### Performance Issues
 ```bash
-# High performance setup
-python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --intensity 95 --threads 16
+# Check system resources
+htop
+free -h
+
+# Reduce thread count
+# Edit mining_config.env: THREADS=4
+
+# Lower intensity
+# Edit mining_config.env: INTENSITY=60
 ```
 
-#### Balanced Performance
+#### Configuration Errors
 ```bash
-# Moderate resource usage
-python3 cryptominer.py --coin LTC --wallet ADDRESS --pool POOL --intensity 70 --threads 8
+# Validate configuration
+python3 -c "from config import config; config.display_config()"
+
+# Check for errors
+tail -f mining.log
 ```
 
-## Development
+### Debug Mode
+```bash
+# Enable debug logging
+echo "LOG_LEVEL=DEBUG" >> mining_config.env
 
-### Project Structure
-
-```
-/app/
-├── cryptominer.py          # Main application
-├── mining_engine.py        # Mining coordination
-├── scrypt_miner.py         # Scrypt implementation
-├── ai_optimizer.py         # AI optimization
-├── install.py              # Installation script
-├── requirements.txt        # Python dependencies
-├── backend/
-│   └── server.py           # FastAPI web API
-└── frontend/
-    └── src/
-        └── App.js          # React dashboard
+# Start with verbose output
+python3 cryptominer.py --debug
 ```
 
-### API Endpoints
+## 🚀 Performance Optimization
 
+### CPU Optimization
+- Use `THREADS=auto` for automatic optimization
+- For RandomX: Use physical cores only (not hyperthreads)
+- For Scrypt: Can use all logical cores
+
+### Memory Optimization
+- RandomX requires ~2GB per mining thread
+- Ensure sufficient RAM for chosen thread count
+- Enable huge pages for better performance
+
+### Network Optimization
+- Choose geographically close mining pools
+- Use low-latency internet connection
+- Configure proper pool backup/failover
+
+## 📈 Mining Best Practices
+
+### Pool Selection
+- Choose pools with low latency
+- Consider pool fees (typically 1-2%)
+- Verify pool reputation and reliability
+- Use backup pools for failover
+
+### Security
+- Never share your private keys
+- Use dedicated mining wallets
+- Keep software updated
+- Monitor for unusual activity
+
+### Profitability
+- Calculate electricity costs
+- Compare coin profitability
+- Consider hardware depreciation
+- Monitor market conditions
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Setup
+```bash
+# Clone repository
+git clone https://github.com/yourusername/cryptominer-v21.git
+cd cryptominer-v21
+
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run tests
+python -m pytest tests/
+
+# Format code
+black .
+flake8 .
 ```
-GET  /api/mining/stats      # Current mining statistics
-POST /api/mining/update     # Update mining stats
-GET  /api/mining/config     # Mining configuration
-POST /api/mining/config     # Update configuration
-GET  /api/mining/history    # Performance history
-GET  /api/mining/coins      # Available coins
-GET  /api/system/info       # System information
-```
 
-## Recent Improvements
+## 📞 Support
 
-### v30 Updates
-- ✅ **Graceful Shutdown** - Fixed Ctrl+C handling with proper signal management
-- ✅ **Password Authentication** - Corrected pool authorization issues
-- ✅ **Difficulty Adjustment** - Implemented Bitcoin Wiki difficulty calculation
-- ✅ **Connection Stability** - Increased timeouts and better error handling
-- ✅ **Performance Optimization** - Replaced custom Scrypt with optimized library
-- ✅ **AI Integration** - Enhanced machine learning capabilities
-- ✅ **Web Dashboard** - Real-time monitoring interface
+- **Issues**: [GitHub Issues](https://github.com/yourusername/cryptominer-v21/issues)
+- **Documentation**: [Wiki](https://github.com/yourusername/cryptominer-v21/wiki)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/cryptominer-v21/discussions)
 
-### Architecture Evolution
-- **From**: Complex supervisor-managed full-stack system
-- **To**: Streamlined terminal application with optional web monitoring
-- **Benefits**: Easier deployment, better debugging, improved performance
+## 🔄 Changelog
 
-## License
+### Version 21.0.0 (Current)
+- ✅ Unified multi-algorithm mining engine
+- ✅ Real RandomX and Scrypt implementation
+- ✅ AI-powered optimization system
+- ✅ Professional web dashboard
+- ✅ Comprehensive REST API
+- ✅ Advanced configuration management
+- ✅ Pool connection stability improvements
+- ✅ Enhanced error handling and recovery
 
-Enterprise Mining License - See LICENSE file for details.
-
-## Support
-
-For technical support and enterprise licensing:
-- Documentation: See inline code comments
-- Configuration: Use `--setup` for guided configuration
-- Web Interface: Monitor at http://localhost:8001
-- Logs: Check `mining.log` for detailed operation logs
+### Previous Versions
+- **v20.x**: Legacy multi-algorithm support
+- **v19.x**: Initial AI integration
+- **v18.x**: Web monitoring introduction
 
 ---
 
-**CryptoMiner Pro V30** - Building the future of distributed mining 🚀
+**⚡ Happy Mining! ⚡**
+
+For more information, visit our [documentation](https://github.com/yourusername/cryptominer-v21/wiki) or join our [community discussions](https://github.com/yourusername/cryptominer-v21/discussions).

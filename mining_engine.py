@@ -647,12 +647,20 @@ class RandomXMinerThread:
     
     def _submit_share(self, hash_result: bytes) -> bool:
         """Submit share to pool with proper Monero format"""
-        if not self.current_job or not self.stratum.authorized:
-            return False
-        
         try:
-            # Get the most recent job_id from the pool
-            job_id = self.current_job.get('job_id', '')
+            # Always get the freshest job from the Stratum connection
+            fresh_job = self.stratum.get_work()
+            if fresh_job and fresh_job.get('job_id'):
+                job_id = fresh_job['job_id']
+                logger.debug(f"🔍 Using fresh job ID: {job_id}")
+            elif self.current_job and self.current_job.get('job_id'):
+                job_id = self.current_job['job_id']
+                job_age = time.time() - self.current_job.get('received_at', 0)
+                if job_age > 30:
+                    logger.warning(f"⚠️ Using potentially stale job ({job_age:.1f}s old): {job_id}")
+            else:
+                logger.error("❌ No valid job available for share submission")
+                return False
             
             # Format nonce as 8-character hex (standard for Monero)
             nonce_hex = f"{self.nonce:08x}"
@@ -662,17 +670,6 @@ class RandomXMinerThread:
             result_hex = hash_result[:32].hex()
             
             logger.debug(f"🔍 Share details: job={job_id}, nonce={nonce_hex}, result={result_hex[:16]}...")
-            
-            # Check if job is still valid (not too old)
-            job_age = time.time() - self.current_job.get('received_at', 0)
-            if job_age > 60:  # Job older than 60 seconds
-                logger.warning(f"⚠️ Job too old ({job_age:.1f}s), getting fresh work")
-                # Try to get fresh work
-                fresh_job = self.stratum.get_work()
-                if fresh_job:
-                    self.current_job = fresh_job
-                    self.current_job['received_at'] = time.time()
-                    job_id = fresh_job.get('job_id', job_id)
             
             return self.stratum.submit_share(job_id, nonce_hex, result_hex)
             

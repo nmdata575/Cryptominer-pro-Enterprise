@@ -1049,18 +1049,18 @@ class RandomXMinerThread:
                     if self._check_target(hash_result):
                         protocol_logger.info(f"🎯 Share found by thread {self.thread_id}!")
                         
-                        # Attempt to submit share to pool
-                        if self.stratum.authorized:
-                            submitted = self._submit_share(hash_result)
-                            if submitted:
-                                logger.info(f"✅ Share accepted from thread {self.thread_id}")
+                        # Submit share through connection proxy
+                        if self.connection_proxy and not self.offline_mode:
+                            success = self._submit_share_via_proxy(hash_result)
+                            if success:
+                                protocol_logger.info(f"✅ Share accepted from thread {self.thread_id}")
                                 self.stats.shares_good += 1
                             else:
-                                logger.info(f"⚠️ Share submission failed from thread {self.thread_id}")
+                                protocol_logger.warning(f"⚠️ Share submission failed from thread {self.thread_id}")
                                 self.stats.shares_rejected += 1
                         else:
-                            logger.info(f"📊 Share found (pool protocol not available)")
-                            self.stats.shares_good += 1  # Count as good share if no pool protocol
+                            protocol_logger.info(f"📊 Share found (offline mode)")
+                            self.stats.shares_good += 1  # Count as good share in offline mode
                     
                     self.nonce += 1
                     self.hashes_done += 1

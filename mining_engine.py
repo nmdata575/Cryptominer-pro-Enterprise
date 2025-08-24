@@ -288,25 +288,39 @@ class StratumConnection:
         """Read line from socket with improved buffering"""
         try:
             buffer = b''
-            self.socket.settimeout(15)  # Longer timeout for reading response
+            max_attempts = 3
+            attempts = 0
             
-            while b'\n' not in buffer:
+            while b'\n' not in buffer and attempts < max_attempts:
                 try:
-                    data = self.socket.recv(1024)
+                    self.socket.settimeout(8)  # Reasonable timeout for reading
+                    data = self.socket.recv(4096)  # Increased buffer size
                     if not data:
-                        logger.warning("❌ Socket closed by remote host")
+                        logger.debug("❌ Socket closed by remote host")
                         break
                     buffer += data
-                    logger.debug(f"📥 Received data: {data}")
+                    logger.debug(f"📥 Received data chunk: {data[:100]}{'...' if len(data) > 100 else ''}")
+                    
+                    # If we have complete line(s), break
+                    if b'\n' in buffer:
+                        break
+                        
                 except socket.timeout:
-                    logger.warning("⏱️ Socket read timeout")
+                    attempts += 1
+                    logger.debug(f"⏱️ Socket read timeout (attempt {attempts}/{max_attempts})")
+                    if attempts >= max_attempts:
+                        break
+                except Exception as e:
+                    logger.error(f"❌ Socket read error: {e}")
                     break
             
             if b'\n' in buffer:
-                line, _ = buffer.split(b'\n', 1)
-                response = line.strip()
-                logger.debug(f"📥 Complete line received: {response}")
-                return response
+                # Find the first complete line
+                lines = buffer.split(b'\n')
+                first_line = lines[0].strip()
+                if first_line:
+                    logger.debug(f"📥 Complete line received: {first_line}")
+                    return first_line
                 
         except Exception as e:
             logger.error(f"❌ Socket read error: {e}")

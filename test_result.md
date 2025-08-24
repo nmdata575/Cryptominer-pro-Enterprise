@@ -329,6 +329,18 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+  - task: "Zeropool.io Authentication Issue"
+    implemented: true
+    working: false
+    file: "mining_engine.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "CRITICAL ISSUE: Persistent 'Unauthenticated' error when submitting shares to xmr.zeropool.io. Investigation shows wallet format issue - current config uses 'solo:' prefix but zeropool.io expects plain Monero address. Pool supports both PROP and SOLO mining, has 4 connected miners currently. Need to fix wallet format and authentication method."
+
 agent_communication:
   - agent: "main"
     message: "Starting Phase 1: Code Review & Consolidation. Analyzing current cryptominer.py and related files for potential optimizations while preserving all functionality."
@@ -360,3 +372,5 @@ agent_communication:
     message: "🎯 STRATUM PROTOCOL FIX VERIFICATION COMPLETED - 100% SUCCESS! Comprehensive testing of CryptoMiner V21 backend API after Stratum protocol fix completed successfully. All 4 key requested endpoints verified: ✅ POST /api/mining/control with XMR coin: Successfully starts mining with updated cryptominer.py using fixed Stratum protocol, proper pool connection to pool.supportxmr.com:3333 ✅ GET /api/mining/stats: Returns proper mining data from updated engine (XMR coin, 600+ H/s hashrate, pool connection status) ✅ GET /api/mining/status: Accurately reports mining process state and pool connectivity ✅ POST /api/mining/update-stats: Successfully receives and processes mining data from updated engine. MANUAL VERIFICATION CONFIRMED: Direct testing of cryptominer.py shows ✅ Successful connection to pool.supportxmr.com:3333 ✅ Monero-specific Stratum 'login' method working (not Bitcoin-style mining.subscribe) ✅ RandomX algorithm properly detected and initialized ✅ Mining at 780+ H/s with real CPU load ✅ Receiving job notifications from pool ✅ Finding and attempting share submissions. The Stratum protocol fix is fully functional - the mining engine now properly uses Monero-specific protocol and successfully connects to pool.supportxmr.com:3333 at 600+ H/s as requested. Backend integration with the updated mining engine is working perfectly."
   - agent: "main"
     message: "🎉 CRYPTOMINER V21 - COMPLETE SUCCESS! Major breakthrough achieved in fixing the core mining functionality: ✅ STRATUM PROTOCOL FIX: Implemented proper Monero-specific 'login' method instead of Bitcoin-style mining.subscribe, successfully connecting to pool.supportxmr.com:3333 ✅ MINING PERFORMANCE: Achieving 776+ H/s with real CPU-intensive RandomX mining, actual pool authentication and job notifications ✅ WEB DASHBOARD: Frontend displaying correct real-time data - hashrate, XMR coin, 3 threads, pool connected status, mining active indicator ✅ AI OPTIMIZATION: AI monitoring and learning system active with mining data collection and recommendations ✅ BACKEND INTEGRATION: All API endpoints working correctly with mining process control and statistics collection ✅ REAL-TIME STATS: Mining statistics flowing properly from engine to web interface every 5 seconds. The core issue of Stratum handshake failure has been completely resolved. CryptoMiner V21 is now fully functional with real mining, proper pool connectivity, and comprehensive monitoring."
+  - agent: "main"
+    message: "🔍 INVESTIGATING ZEROPOOL.IO AUTHENTICATION ISSUE: Found that the current wallet format 'solo:4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8' contains a 'solo:' prefix that is incompatible with zeropool.io requirements. Research shows zeropool.io expects plain Monero wallet addresses without prefixes. The pool is operational (4 connected miners, last block 11 months ago, PROP mining active). Need to remove the 'solo:' prefix and enhance authentication compatibility."

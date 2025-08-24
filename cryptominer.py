@@ -240,19 +240,25 @@ class CryptoMinerV21:
             }
             
             # Try multiple backend URLs for better compatibility
-            backend_urls = [
-                # First try the production backend from environment
-                os.environ.get('BACKEND_URL', '').rstrip('/') + '/api/mining/update-stats',
-                # Fallback to local backend
+            # First get the production backend URL from environment variable
+            production_backend = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+            
+            backend_urls = []
+            if production_backend:
+                backend_urls.append(f"{production_backend}/api/mining/update-stats")
+            
+            # Add fallback URLs
+            backend_urls.extend([
+                # Local backend fallback
                 'http://localhost:8001/api/mining/update-stats',
                 # Secondary fallback with web port 
                 f'http://localhost:{config.get("web_port", 3333)}/api/mining/update-stats',
                 # Container networking fallback
                 'http://backend:8001/api/mining/update-stats'
-            ]
+            ])
             
-            # Remove empty URLs
-            backend_urls = [url for url in backend_urls if url and not url.startswith('/api')]
+            # Remove empty URLs and deduplicate
+            backend_urls = list(dict.fromkeys([url for url in backend_urls if url]))
             
             # Try each backend URL
             for backend_url in backend_urls:

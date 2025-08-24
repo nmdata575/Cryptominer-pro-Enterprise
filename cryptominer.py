@@ -229,7 +229,7 @@ class CryptoMinerV21:
             }
             
             # Send to backend API
-            web_port = config.get('web_port', 8001)
+            web_port = config.get('web_port', 3333)
             async with aiohttp.ClientSession() as session:
                 await session.post(
                     f'http://localhost:{web_port}/api/mining/update-stats',

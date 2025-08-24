@@ -261,22 +261,28 @@ class CryptoMinerV21:
             backend_urls = list(dict.fromkeys([url for url in backend_urls if url]))
             
             # Try each backend URL
-            for backend_url in backend_urls:
+            logger.debug(f"🌐 Trying {len(backend_urls)} backend URLs: {backend_urls}")
+            
+            for i, backend_url in enumerate(backend_urls):
                 try:
+                    logger.debug(f"📤 Attempt {i+1}: Sending stats to {backend_url}")
                     async with aiohttp.ClientSession() as session:
                         async with session.post(
                             backend_url,
                             json=update_data,
-                            timeout=aiohttp.ClientTimeout(total=3)
+                            timeout=aiohttp.ClientTimeout(total=5),  # Increased timeout
+                            headers={'Content-Type': 'application/json'}
                         ) as response:
                             if response.status == 200:
-                                logger.debug(f"✅ Stats updated via {backend_url}")
+                                logger.debug(f"✅ Stats successfully sent to {backend_url}")
                                 return
+                            else:
+                                logger.debug(f"⚠️ Backend {backend_url} responded with status {response.status}")
                 except Exception as e:
-                    logger.debug(f"Backend URL {backend_url} failed: {e}")
+                    logger.debug(f"❌ Backend URL {backend_url} failed: {e}")
                     continue
                     
-            logger.debug("⚠️ All backend URLs failed, stats not sent")
+            logger.warning("⚠️ All backend URLs failed - stats not sent to web dashboard")
                 
         except Exception as e:
             logger.debug(f"Web backend update failed: {e}")

@@ -498,21 +498,30 @@ class PoolConnectionProxy:
                                         protocol_logger.info(f"🎯 NEW JOB NOTIFICATION: {method}")
                                         protocol_logger.info(f"   Job params: {params}")
                                         
-                                        # Store new job
+                                        # Store new job with enhanced ID extraction
                                         with self.job_lock:
                                             if isinstance(params, dict):
                                                 self.current_job = params.copy()
+                                                # Try multiple job_id field names
+                                                job_id = (params.get('job_id') or 
+                                                        params.get('jobId') or 
+                                                        params.get('id') or 
+                                                        params.get('job'))
+                                                if job_id:
+                                                    self.current_job['job_id'] = str(job_id)
                                             elif isinstance(params, list) and len(params) > 0:
                                                 # Create job from array format
+                                                job_id = params[0] if len(params) > 0 else None
                                                 self.current_job = {
-                                                    'job_id': params[0] if len(params) > 0 else f"job_{int(time.time())}",
+                                                    'job_id': str(job_id) if job_id else f"zp_{int(time.time())}",
                                                     'blob': params[1] if len(params) > 1 else '',
                                                     'target': params[2] if len(params) > 2 else '',
                                                     'height': params[3] if len(params) > 3 else 0
                                                 }
                                             
                                             self.current_job['received_at'] = time.time()
-                                            protocol_logger.info(f"✅ Updated job: {self.current_job.get('job_id', 'UNKNOWN')}")
+                                            final_job_id = self.current_job.get('job_id', 'NO_ID')
+                                            protocol_logger.info(f"✅ Updated job with ID: {final_job_id}")
                                 
                                 # Handle other methods like difficulty changes
                                 elif method == 'mining.set_difficulty':

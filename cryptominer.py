@@ -335,7 +335,7 @@ def main():
                 'pool': args.pool or config.get('pool'),
                 'password': args.password or config.get('password', 'x'),
                 'intensity': args.intensity or config.get('intensity', 80),
-                'threads': args.threads or config.get('threads', 0),
+                'threads': args.threads or config.get('threads') or 0,  # Convert None to 0
                 'web_enabled': not args.no_web and config.get('web_enabled', True),
                 'ai_enabled': not args.no_ai and config.get('ai_enabled', True)
             }

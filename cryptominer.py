@@ -268,6 +268,15 @@ class CryptoMinerV21:
         
         logger.info("✅ CryptoMiner V21 shutdown complete")
 
+def parse_threads(value):
+    """Parse threads argument - accepts integers or 'auto'"""
+    if value.lower() == 'auto':
+        return 0  # 0 means auto-detect
+    try:
+        return int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"threads must be an integer or 'auto', got '{value}'")
+
 def parse_arguments():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(

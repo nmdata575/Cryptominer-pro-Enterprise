@@ -710,6 +710,8 @@ class RandomXMiner:
             else:
                 logger.info("✅ Pool connection successful")
                 self.offline_mode = False
+                # Start listening for job notifications from pool
+                self.stratum_connection.listen_for_jobs()
             
             # Create and start mining threads
             logger.info(f"⚡ Starting {self.config.threads} mining threads...")

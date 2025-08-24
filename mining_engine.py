@@ -427,6 +427,38 @@ class StratumConnection:
             logger.error(f"❌ Share submission error: {e}")
             return False
     
+    def listen_for_jobs(self):
+        """Listen for job notifications from pool in background"""
+        if not self.connected:
+            return
+            
+        def job_listener():
+            while self.connected:
+                try:
+                    # Listen for incoming messages (job notifications)
+                    self.socket.settimeout(30)  # 30-second timeout for job updates
+                    data = self._read_line()
+                    if data:
+                        try:
+                            message = json.loads(data.decode('utf-8'))
+                            if 'method' in message and message['method'] == 'job':
+                                # Update current job
+                                self.current_job = message['params']
+                                logger.info(f"🔄 New job received: {self.current_job.get('job_id', 'N/A')}")
+                        except json.JSONDecodeError:
+                            pass
+                except socket.timeout:
+                    # Timeout is normal, just continue listening
+                    continue
+                except Exception as e:
+                    logger.debug(f"Job listener error: {e}")
+                    break
+        
+        # Start job listener in background thread
+        job_thread = threading.Thread(target=job_listener, daemon=True)
+        job_thread.start()
+        logger.info("👂 Started listening for job notifications")
+        
     def close(self):
         """Close connection"""
         if self.socket:

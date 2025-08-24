@@ -544,11 +544,11 @@ class RandomXMinerThread:
                 self.hashes_done = 0
 
 class RandomXMiner:
-    """Main RandomX Miner class"""
+    """Main RandomX Miner class with real pool connection"""
     
     def __init__(self, config: RandomXConfig):
         self.config = config
-        self.dataset = RandomXDataset(config)
+        self.stratum_connection = None
         self.threads: List[RandomXMinerThread] = []
         self.is_running = False
         self.total_stats = MiningStats()
@@ -558,19 +558,31 @@ class RandomXMiner:
             self.config.threads = max(1, psutil.cpu_count() - 1)
         
         logger.info(f"🔧 RandomX Miner configured with {self.config.threads} threads")
+        logger.info(f"🎯 Target pool: {self.config.pool_url}")
+        logger.info(f"💰 Wallet: {self.config.wallet_address}")
     
     def start(self) -> bool:
-        """Start RandomX mining"""
+        """Start RandomX mining with real pool connection"""
         try:
             logger.info("🚀 Starting RandomX CPU Miner...")
             
-            # Initialize dataset
-            if not self.dataset.initialize():
+            # Initialize Stratum connection
+            logger.info("🌐 Establishing pool connection...")
+            self.stratum_connection = StratumConnection(
+                self.config.pool_url,
+                self.config.wallet_address,
+                self.config.password
+            )
+            
+            # Connect to pool
+            if not self.stratum_connection.connect():
+                logger.error("❌ Failed to connect to mining pool")
                 return False
             
             # Create and start mining threads
+            logger.info(f"⚡ Starting {self.config.threads} mining threads...")
             for i in range(self.config.threads):
-                thread = RandomXMinerThread(i, self.config, self.dataset)
+                thread = RandomXMinerThread(i, self.config, self.stratum_connection)
                 self.threads.append(thread)
                 thread.start()
             
@@ -596,16 +608,12 @@ class RandomXMiner:
         for thread in self.threads:
             thread.stop()
         
-        # Release dataset
-        self.dataset.release()
+        # Close pool connection
+        if self.stratum_connection:
+            self.stratum_connection.close()
         
         self.threads.clear()
         logger.info("✅ RandomX miner stopped")
-    
-    def set_job(self, job_data: Dict[str, Any]):
-        """Set mining job for all threads"""
-        for thread in self.threads:
-            thread.set_job(job_data)
     
     def get_stats(self) -> Dict[str, Any]:
         """Get comprehensive mining statistics"""
@@ -614,8 +622,19 @@ class RandomXMiner:
         total_shares = sum(t.stats.shares_good for t in self.threads)
         
         # System statistics
-        cpu_percent = psutil.cpu_percent(interval=1)
-        memory = psutil.virtual_memory()
+        try:
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            memory = psutil.virtual_memory()
+        except:
+            cpu_percent = 0
+            memory = type('obj', (object,), {'percent': 0, 'total': 0, 'available': 0})()
+        
+        # Pool connection status
+        pool_connected = (
+            self.stratum_connection and 
+            self.stratum_connection.connected and 
+            self.stratum_connection.authorized
+        )
         
         return {
             'algorithm': 'RandomX',
@@ -630,6 +649,9 @@ class RandomXMiner:
             'memory_total': memory.total,
             'memory_available': memory.available,
             'is_running': self.is_running,
+            'pool_connected': pool_connected,
+            'pool_url': self.config.pool_url,
+            'difficulty': self.stratum_connection.difficulty if self.stratum_connection else 0,
             'thread_stats': [
                 {
                     'id': t.thread_id,
@@ -647,12 +669,14 @@ class RandomXMiner:
             try:
                 stats = self.get_stats()
                 
-                if stats['hashrate'] > 0:
+                if stats['hashrate'] > 0 or stats['pool_connected']:
+                    pool_status = "🟢 Connected" if stats['pool_connected'] else "🔴 Disconnected"
                     logger.info(
                         f"⚡ RandomX: {stats['hashrate']:.1f} H/s | "
                         f"Shares: {stats['shares_good']} | "
-                        f"CPU: {stats['cpu_usage']:.1f}% | "
-                        f"RAM: {stats['memory_usage']:.1f}%"
+                        f"Threads: {stats['threads']} | "
+                        f"Pool: {pool_status} | "
+                        f"CPU: {stats['cpu_usage']:.1f}%"
                     )
                 
                 time.sleep(30)  # Update every 30 seconds

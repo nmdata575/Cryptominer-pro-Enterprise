@@ -85,8 +85,380 @@ class MiningStats:
     efficiency: float = 0.0  # hashes per watt
 
 # ============================================================================
-# STRATUM PROTOCOL CONNECTION
+# SINGLE CONNECTION PROXY MANAGER
 # ============================================================================
+
+class PoolConnectionProxy:
+    """Single connection proxy that all mining threads use to communicate with pool"""
+    
+    def __init__(self, pool_url: str, wallet: str, password: str = "x"):
+        self.pool_url = pool_url
+        self.wallet = wallet
+        self.password = password
+        self.socket = None
+        self.connected = False
+        self.authorized = False
+        
+        # Parse pool URL
+        self._parse_pool_url()
+        
+        # Connection management
+        self.connection_lock = threading.Lock()
+        self.last_activity = time.time()
+        self.current_job = None
+        self.job_lock = threading.Lock()
+        
+        # Share submission queue and thread
+        self.share_queue = queue.Queue()
+        self.submission_thread = None
+        self.running = False
+        
+        # Stats
+        self.shares_submitted = 0
+        self.shares_accepted = 0
+        self.shares_rejected = 0
+        self.last_share_time = 0
+        
+    def _parse_pool_url(self):
+        """Parse pool URL to extract host and port"""
+        url = self.pool_url
+        if "://" in url:
+            url = url.split("://")[1]
+        
+        if ":" in url:
+            self.host, port_str = url.split(":")
+            self.port = int(port_str)
+        else:
+            self.host = url
+            self.port = 3333  # Default Monero port
+            
+        protocol_logger.info(f"🌐 Parsed pool: {self.host}:{self.port}")
+    
+    def start(self) -> bool:
+        """Start the connection proxy"""
+        if self.running:
+            return True
+            
+        protocol_logger.info(f"🚀 Starting connection proxy to {self.host}:{self.port}")
+        
+        if self._connect_to_pool():
+            self.running = True
+            self.submission_thread = threading.Thread(target=self._share_submission_worker, daemon=True)
+            self.submission_thread.start()
+            
+            # Start keepalive thread
+            keepalive_thread = threading.Thread(target=self._keepalive_worker, daemon=True)
+            keepalive_thread.start()
+            
+            protocol_logger.info("✅ Connection proxy started successfully")
+            return True
+        else:
+            protocol_logger.error("❌ Failed to start connection proxy")
+            return False
+    
+    def stop(self):
+        """Stop the connection proxy"""
+        protocol_logger.info("🛑 Stopping connection proxy")
+        self.running = False
+        if self.socket:
+            try:
+                self.socket.close()
+            except:
+                pass
+        self.connected = False
+        self.authorized = False
+    
+    def _connect_to_pool(self) -> bool:
+        """Connect to mining pool with single persistent connection"""
+        try:
+            with self.connection_lock:
+                protocol_logger.info(f"🔗 Establishing connection to {self.host}:{self.port}")
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                
+                # Set socket options for stability
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                
+                # Longer timeout for stability
+                self.socket.settimeout(30)
+                self.socket.connect((self.host, self.port))
+                self.connected = True
+                self.last_activity = time.time()
+                
+                protocol_logger.info(f"✅ Connected to {self.host}:{self.port}")
+                
+                # Authenticate with pool
+                return self._authenticate()
+                
+        except Exception as e:
+            protocol_logger.error(f"❌ Connection failed: {e}")
+            self.connected = False
+            return False
+    
+    def _authenticate(self) -> bool:
+        """Authenticate with zeropool.io using clean wallet format"""
+        try:
+            # Clean wallet address
+            clean_wallet = self.wallet
+            if ":" in clean_wallet:
+                clean_wallet = clean_wallet.split(":", 1)[1]
+            
+            # Try zeropool.io authentication methods
+            auth_methods = [
+                {
+                    "id": 1,
+                    "method": "login",
+                    "params": {
+                        "login": clean_wallet,
+                        "pass": self.password,
+                        "agent": "CryptoMiner-V21/1.0"
+                    }
+                },
+                {
+                    "id": 1, 
+                    "method": "login",
+                    "params": [clean_wallet, self.password]
+                }
+            ]
+            
+            for i, auth_msg in enumerate(auth_methods):
+                protocol_logger.info(f"🔐 Trying authentication method {i+1}")
+                protocol_logger.debug(f"📤 SEND: {json.dumps(auth_msg)}")
+                
+                response = self._send_receive_message(auth_msg, timeout=15)
+                
+                if response and 'result' in response:
+                    result = response['result']
+                    if isinstance(result, dict) or result is True or result == "OK":
+                        # Store job if provided
+                        if isinstance(result, dict):
+                            with self.job_lock:
+                                self.current_job = result.copy()
+                                self.current_job['received_at'] = time.time()
+                        
+                        self.authorized = True
+                        protocol_logger.info(f"✅ Authentication successful with method {i+1}")
+                        return True
+                
+                protocol_logger.warning(f"⚠️ Authentication method {i+1} failed")
+            
+            protocol_logger.error("❌ All authentication methods failed")
+            return False
+            
+        except Exception as e:
+            protocol_logger.error(f"❌ Authentication error: {e}")
+            return False
+    
+    def _send_receive_message(self, message: Dict, timeout: int = 10) -> Optional[Dict]:
+        """Send message and receive response with full logging"""
+        try:
+            if not self.connected or not self.socket:
+                return None
+                
+            # Send message
+            json_msg = json.dumps(message) + '\n'
+            protocol_logger.debug(f"📤 SEND: {json_msg.strip()}")
+            
+            self.socket.send(json_msg.encode('utf-8'))
+            self.last_activity = time.time()
+            
+            # Receive response
+            original_timeout = self.socket.gettimeout()
+            self.socket.settimeout(timeout)
+            
+            try:
+                buffer = b''
+                while b'\n' not in buffer:
+                    data = self.socket.recv(4096)
+                    if not data:
+                        protocol_logger.warning("🔌 Socket closed by pool")
+                        self.connected = False
+                        return None
+                    buffer += data
+                
+                # Parse first complete line
+                lines = buffer.split(b'\n')
+                response_str = lines[0].decode('utf-8').strip()
+                
+                if response_str:
+                    protocol_logger.debug(f"📥 RECV: {response_str}")
+                    return json.loads(response_str)
+                    
+            finally:
+                self.socket.settimeout(original_timeout)
+                
+        except json.JSONDecodeError as e:
+            protocol_logger.error(f"❌ JSON decode error: {e}")
+        except socket.timeout:
+            protocol_logger.warning("⏰ Socket timeout")
+        except Exception as e:
+            protocol_logger.error(f"❌ Send/receive error: {e}")
+            self.connected = False
+        
+        return None
+    
+    def submit_share(self, job_id: str, nonce: str, result: str) -> bool:
+        """Queue share for submission through single connection"""
+        if not self.running:
+            return False
+            
+        share_data = {
+            'job_id': job_id,
+            'nonce': nonce,
+            'result': result,
+            'timestamp': time.time()
+        }
+        
+        try:
+            self.share_queue.put(share_data, timeout=1)
+            protocol_logger.debug(f"📋 Share queued: {job_id} | {nonce[:8]}...")
+            return True
+        except queue.Full:
+            protocol_logger.warning("⚠️ Share queue full, dropping share")
+            return False
+    
+    def _share_submission_worker(self):
+        """Worker thread that processes share submissions sequentially"""
+        protocol_logger.info("🔄 Share submission worker started")
+        
+        while self.running:
+            try:
+                # Get next share from queue
+                share_data = self.share_queue.get(timeout=1)
+                
+                if not self.connected or not self.authorized:
+                    protocol_logger.warning("⚠️ Not connected/authorized, attempting reconnection")
+                    if not self._reconnect():
+                        continue
+                
+                # Submit share with detailed logging
+                success = self._submit_share_to_pool(
+                    share_data['job_id'],
+                    share_data['nonce'],
+                    share_data['result']
+                )
+                
+                if success:
+                    self.shares_accepted += 1
+                    protocol_logger.info(f"✅ Share ACCEPTED | Total: {self.shares_accepted}")
+                else:
+                    self.shares_rejected += 1
+                    protocol_logger.warning(f"❌ Share REJECTED | Total: {self.shares_rejected}")
+                
+                self.shares_submitted += 1
+                self.last_share_time = time.time()
+                
+                # Mark task as done
+                self.share_queue.task_done()
+                
+            except queue.Empty:
+                continue
+            except Exception as e:
+                protocol_logger.error(f"❌ Share submission worker error: {e}")
+                time.sleep(1)
+        
+        protocol_logger.info("🛑 Share submission worker stopped")
+    
+    def _submit_share_to_pool(self, job_id: str, nonce: str, result: str) -> bool:
+        """Submit single share to pool with full protocol logging"""
+        try:
+            with self.connection_lock:
+                # Clean wallet for submission
+                clean_wallet = self.wallet
+                if ":" in clean_wallet:
+                    clean_wallet = clean_wallet.split(":", 1)[1]
+                
+                submit_msg = {
+                    "id": int(time.time() * 1000),
+                    "method": "submit", 
+                    "params": {
+                        "id": clean_wallet,
+                        "job_id": job_id,
+                        "nonce": nonce,
+                        "result": result
+                    }
+                }
+                
+                protocol_logger.info(f"📤 Submitting share: job={job_id} | nonce={nonce[:8]}...")
+                response = self._send_receive_message(submit_msg, timeout=20)
+                
+                if response:
+                    if 'result' in response:
+                        result_value = response['result']
+                        if result_value == 'OK' or result_value is True:
+                            return True
+                        else:
+                            protocol_logger.warning(f"Share rejected: {response}")
+                            return False
+                    elif 'error' in response:
+                        error = response['error']
+                        error_msg = error.get('message', str(error)) if isinstance(error, dict) else str(error)
+                        
+                        if 'unauthenticated' in error_msg.lower():
+                            protocol_logger.warning("🔐 Authentication lost, attempting re-auth")
+                            if self._authenticate():
+                                protocol_logger.info("✅ Re-authenticated, retrying share")
+                                return self._submit_share_to_pool(job_id, nonce, result)
+                        
+                        protocol_logger.error(f"Share submission error: {error_msg}")
+                        return False
+                else:
+                    protocol_logger.warning("No response from pool")
+                    return False
+                    
+        except Exception as e:
+            protocol_logger.error(f"❌ Share submission failed: {e}")
+            return False
+    
+    def _reconnect(self) -> bool:
+        """Reconnect to pool if connection is lost"""
+        protocol_logger.info("🔄 Attempting reconnection...")
+        self.stop()
+        time.sleep(2)  # Brief pause before reconnection
+        return self._connect_to_pool()
+    
+    def _keepalive_worker(self):
+        """Send periodic keepalive messages"""
+        while self.running:
+            try:
+                time.sleep(60)  # Every minute
+                if self.connected and self.authorized:
+                    current_time = time.time()
+                    if current_time - self.last_activity > 45:  # If no activity for 45 seconds
+                        keepalive_msg = {
+                            "id": int(current_time * 1000),
+                            "method": "keepalive",
+                            "params": []
+                        }
+                        protocol_logger.debug("💓 Sending keepalive")
+                        response = self._send_receive_message(keepalive_msg, timeout=5)
+                        if not response:
+                            protocol_logger.warning("⚠️ Keepalive failed, connection may be lost")
+            except Exception as e:
+                protocol_logger.debug(f"Keepalive error: {e}")
+    
+    def get_current_job(self) -> Optional[Dict]:
+        """Get current mining job"""
+        with self.job_lock:
+            if self.current_job:
+                job_age = time.time() - self.current_job.get('received_at', 0)
+                if job_age < 120:  # Job valid for 2 minutes
+                    return self.current_job.copy()
+        return None
+    
+    def get_stats(self) -> Dict:
+        """Get connection and submission stats"""
+        return {
+            'connected': self.connected,
+            'authorized': self.authorized,
+            'shares_submitted': self.shares_submitted,
+            'shares_accepted': self.shares_accepted,
+            'shares_rejected': self.shares_rejected,
+            'queue_size': self.share_queue.qsize(),
+            'last_activity': self.last_activity,
+            'last_share_time': self.last_share_time
+        }
 
 class StratumConnection:
     """Handles Stratum protocol connection to mining pool"""

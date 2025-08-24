@@ -213,6 +213,7 @@ class CryptoMinerV21:
         """Update web backend with current statistics"""
         try:
             import aiohttp
+            import os
             
             # Prepare stats data
             update_data = {
@@ -228,14 +229,38 @@ class CryptoMinerV21:
                 'is_running': stats.get('is_running', False)
             }
             
-            # Send to backend API
-            web_port = config.get('web_port', 3333)
-            async with aiohttp.ClientSession() as session:
-                await session.post(
-                    f'http://localhost:{web_port}/api/mining/update-stats',
-                    json=update_data,
-                    timeout=aiohttp.ClientTimeout(total=5)
-                )
+            # Try multiple backend URLs for better compatibility
+            backend_urls = [
+                # First try the production backend from environment
+                os.environ.get('BACKEND_URL', '').rstrip('/') + '/api/mining/update-stats',
+                # Fallback to local backend
+                'http://localhost:8001/api/mining/update-stats',
+                # Secondary fallback with web port 
+                f'http://localhost:{config.get("web_port", 3333)}/api/mining/update-stats',
+                # Container networking fallback
+                'http://backend:8001/api/mining/update-stats'
+            ]
+            
+            # Remove empty URLs
+            backend_urls = [url for url in backend_urls if url and not url.startswith('/api')]
+            
+            # Try each backend URL
+            for backend_url in backend_urls:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(
+                            backend_url,
+                            json=update_data,
+                            timeout=aiohttp.ClientTimeout(total=3)
+                        ) as response:
+                            if response.status == 200:
+                                logger.debug(f"✅ Stats updated via {backend_url}")
+                                return
+                except Exception as e:
+                    logger.debug(f"Backend URL {backend_url} failed: {e}")
+                    continue
+                    
+            logger.debug("⚠️ All backend URLs failed, stats not sent")
                 
         except Exception as e:
             logger.debug(f"Web backend update failed: {e}")

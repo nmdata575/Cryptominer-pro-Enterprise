@@ -220,18 +220,23 @@ class CryptoMinerV21:
             import aiohttp
             import os
             
-            # Prepare stats data
+            # Prepare stats data with enhanced proxy statistics
             update_data = {
                 'hashrate': stats.get('hashrate', 0),
                 'algorithm': stats.get('algorithm', ''),
                 'coin': stats.get('coin', ''),
                 'threads': stats.get('threads', 0),
                 'shares_good': stats.get('shares_good', 0),
+                'shares_accepted': stats.get('shares_accepted', 0),  # New from proxy
+                'shares_rejected': stats.get('shares_rejected', 0),  # Enhanced from proxy
+                'shares_submitted': stats.get('shares_submitted', 0),  # New from proxy
                 'pool_connected': stats.get('pool_connected', False),
                 'cpu_usage': stats.get('cpu_usage', 0),
                 'memory_usage': stats.get('memory_usage', 0),
                 'uptime': time.time() - self.start_time if self.start_time else 0,
-                'is_running': stats.get('is_running', False)
+                'is_running': stats.get('is_running', False),
+                'queue_size': stats.get('queue_size', 0),  # New from proxy
+                'last_share_time': stats.get('last_share_time', 0)  # New from proxy
             }
             
             # Try multiple backend URLs for better compatibility

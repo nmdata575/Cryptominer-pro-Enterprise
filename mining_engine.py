@@ -827,6 +827,7 @@ class RandomXMiner:
         total_hashrate = sum(t.stats.hashrate for t in self.threads)
         total_hashes = sum(t.stats.hashes_total for t in self.threads)
         total_shares = sum(t.stats.shares_good for t in self.threads)
+        total_rejected = sum(t.stats.shares_rejected for t in self.threads)
         
         # System statistics
         try:

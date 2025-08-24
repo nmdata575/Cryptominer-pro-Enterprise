@@ -522,7 +522,7 @@ class RandomXMiner:
         self.total_stats = MiningStats()
         
         # Auto-detect thread count if not specified
-        if self.config.threads <= 0:
+        if self.config.threads is None or self.config.threads <= 0:
             self.config.threads = max(1, psutil.cpu_count() - 1)
         
         logger.info(f"🔧 RandomX Miner configured with {self.config.threads} threads")

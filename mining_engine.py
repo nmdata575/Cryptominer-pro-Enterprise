@@ -259,12 +259,26 @@ class StratumConnection:
             try:
                 response_data = self._read_line()
                 if response_data:
-                    response_str = response_data.decode('utf-8')
+                    response_str = response_data.decode('utf-8').strip()
                     logger.debug(f"📥 Received: {response_str}")
-                    return json.loads(response_str)
+                    
+                    # Handle multiple JSON objects in response
+                    if '\n' in response_str:
+                        # Split multiple responses, use the first valid one
+                        for line in response_str.split('\n'):
+                            line = line.strip()
+                            if line:
+                                try:
+                                    return json.loads(line)
+                                except json.JSONDecodeError:
+                                    continue
+                    else:
+                        return json.loads(response_str)
             finally:
                 self.socket.settimeout(original_timeout)
                 
+        except json.JSONDecodeError as e:
+            logger.debug(f"JSON decode error: {e}")
         except Exception as e:
             logger.debug(f"Send/receive error: {e}")
         

@@ -93,7 +93,7 @@ INTENSITY=80
 THREADS=auto
 
 # Web Monitoring
-WEB_PORT=8001
+WEB_PORT=3333
 WEB_ENABLED=true
 
 # AI Optimization

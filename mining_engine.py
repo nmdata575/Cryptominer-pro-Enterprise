@@ -568,8 +568,10 @@ class RandomXMinerThread:
                 # Small delay to control CPU usage
                 time.sleep(batch_delay)
                 
-                # Update hashrate every 10000 hashes
-                if self.hashes_done % 10000 == 0:
+                # Update hashrate more frequently during startup, then less frequently
+                elapsed_time = time.time() - self.start_time
+                update_frequency = 1000 if elapsed_time < 30 else 10000  # More frequent for first 30 seconds
+                if self.hashes_done % update_frequency == 0:
                     self._update_hashrate()
                 
             except Exception as e:

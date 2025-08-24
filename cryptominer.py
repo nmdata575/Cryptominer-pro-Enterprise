@@ -63,7 +63,7 @@ class CryptoMinerV21:
             print(f"  Wallet: {wallet}")
             print(f"  Pool: {pool}")
             print(f"  Intensity: {intensity}%")
-            print(f"  Threads: {threads if threads > 0 else 'auto-detect'}")
+            print(f"  Threads: {threads if threads and threads > 0 else 'auto-detect'}")
             print()
             
             # Initialize AI optimizer if enabled

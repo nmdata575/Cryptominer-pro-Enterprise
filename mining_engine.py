@@ -597,17 +597,19 @@ class RandomXMinerThread:
                     # Check if hash meets difficulty (simulate finding shares)
                     if self._check_target(hash_result):
                         logger.info(f"🎯 Share found by thread {self.thread_id}!")
-                        self.stats.shares_good += 1
                         
                         # Attempt to submit share to pool
                         if self.stratum.authorized:
                             submitted = self._submit_share(hash_result)
                             if submitted:
                                 logger.info(f"✅ Share accepted from thread {self.thread_id}")
+                                self.stats.shares_good += 1
                             else:
                                 logger.info(f"⚠️ Share submission failed from thread {self.thread_id}")
+                                self.stats.shares_rejected += 1
                         else:
                             logger.info(f"📊 Share found (pool protocol not available)")
+                            self.stats.shares_good += 1  # Count as good share if no pool protocol
                     
                     self.nonce += 1
                     self.hashes_done += 1

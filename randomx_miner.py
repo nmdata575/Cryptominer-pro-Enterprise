@@ -534,8 +534,12 @@ class RandomXMinerThread:
         if elapsed > 0:
             self.stats.hashrate = self.hashes_done / elapsed
             
-            # Reset counters periodically
-            if elapsed > 60:  # Reset every minute
+            # Log progress
+            if self.stats.hashrate > 0:
+                logger.debug(f"Thread {self.thread_id}: {self.stats.hashrate:.1f} H/s")
+            
+            # Reset counters every 5 minutes
+            if elapsed > 300:
                 self.start_time = current_time
                 self.hashes_done = 0
 

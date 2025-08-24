@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 CryptoMiner V21 Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+            color: white;
+        }
+        
+        .btn-restart {
+            background: linear-gradient(135deg, #17a2b8, #6f42c1);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card h3 {
+            margin-bottom: 15px;
+            color: #61dafb;
+            font-size: 1.3em;
+            border-bottom: 2px solid #61dafb;
+            padding-bottom: 8px;
+        }
+        
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat:last-child {
+            border-bottom: none;
+        }
+        
+        .value {
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        .status-connected {
+            color: #00ff88;
+        }
+        
+        .status-disconnected {
+            color: #ff4444;
+        }
+        
+        .error, .success {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .error {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            color: #ff8888;
+        }
+        
+        .success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #88ff88;
+        }
+        
+        .timestamp {
+            text-align: center;
+            margin-top: 20px;
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #61dafb);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 CryptoMiner V21</h1>
+            <p>Advanced Multi-Algorithm CPU Mining Dashboard</p>
+        </div>
+        
+        <div class="controls">
+            <button id="start-btn" class="btn btn-start" onclick="startMining()">▶️ Start Mining</button>
+            <button id="stop-btn" class="btn btn-stop" onclick="stopMining()">⏹️ Stop Mining</button>
+            <button id="restart-btn" class="btn btn-restart" onclick="restartMining()">🔄 Restart Mining</button>
+        </div>
+        
+        <div id="error-message" class="error hidden">
+            <div id="error-text">Error message will appear here</div>
+        </div>
+        
+        <div id="success-message" class="success hidden">
+            <div id="success-text">Success message will appear here</div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h3>⚡ Mining Status</h3>
+                <div class="stat">
+                    <span>Algorithm:</span>
+                    <span class="value" id="algorithm">-</span>
+                </div>
+                <div class="stat">
+                    <span>Coin:</span>
+                    <span class="value" id="coin">-</span>
+                </div>
+                <div class="stat">
+                    <span>Hashrate:</span>
+                    <span class="value" id="hashrate">0 H/s</span>
+                </div>
+                <div class="stat">
+                    <span>Threads:</span>
+                    <span class="value" id="threads">0</span>
+                </div>
+                <div class="stat">
+                    <span>Status:</span>
+                    <span class="value" id="mining-status">🔴 Stopped</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🎯 Pool & Shares</h3>
+                <div class="stat">
+                    <span>Pool Status:</span>
+                    <span class="value" id="pool-status">❌ Disconnected</span>
+                </div>
+                <div class="stat">
+                    <span>Accepted Shares:</span>
+                    <span class="value" id="shares-good">0</span>
+                </div>
+                <div class="stat">
+                    <span>Total Hashes:</span>
+                    <span class="value" id="total-hashes">0</span>
+                </div>
+                <div class="stat">
+                    <span>Uptime:</span>
+                    <span class="value" id="uptime">0s</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>💻 System Resources</h3>
+                <div class="stat">
+                    <span>CPU Usage:</span>
+                    <span class="value" id="cpu-usage">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="cpu-progress"></div>
+                </div>
+                <div class="stat">
+                    <span>Memory Usage:</span>
+                    <span class="value" id="memory-usage">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="memory-progress"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🤖 AI Optimization</h3>
+                <div class="stat">
+                    <span>AI Status:</span>
+                    <span class="value" id="ai-status">🔴 Inactive</span>
+                </div>
+                <div class="stat">
+                    <span>Optimization:</span>
+                    <span class="value" id="ai-optimization">0%</span>
+                </div>
+                <div class="stat">
+                    <span>Learning Progress:</span>
+                    <span class="value" id="ai-learning">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="ai-progress"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="timestamp">
+            Last Updated: <span id="last-updated">Never</span>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let updateInterval = null;
+        
+        // Start auto-update when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            startAutoUpdate();
+        });
+        
+        function startAutoUpdate() {
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = setInterval(updateStats, 5000); // Update every 5 seconds
+        }
+        
+        function showMessage(text, isError = false) {
+            const errorEl = document.getElementById('error-message');
+            const successEl = document.getElementById('success-message');
+            
+            if (isError) {
+                document.getElementById('error-text').textContent = text;
+                errorEl.classList.remove('hidden');
+                successEl.classList.add('hidden');
+            } else {
+                document.getElementById('success-text').textContent = text;
+                successEl.classList.remove('hidden');
+                errorEl.classList.add('hidden');
+            }
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                errorEl.classList.add('hidden');
+                successEl.classList.add('hidden');
+            }, 5000);
+        }
+        
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API request failed:', error);
+                throw error;
+            }
+        }
+        
+        async function updateStats() {
+            try {
+                const stats = await makeRequest(`${API_BASE}/mining/stats`);
+                
+                // Update mining status
+                document.getElementById('algorithm').textContent = stats.algorithm || '-';
+                document.getElementById('coin').textContent = stats.coin || '-';
+                document.getElementById('hashrate').textContent = formatHashrate(stats.hashrate || 0);
+                document.getElementById('threads').textContent = stats.threads || 0;
+                document.getElementById('mining-status').textContent = stats.is_running ? '🟢 Running' : '🔴 Stopped';
+                
+                // Update pool and shares
+                document.getElementById('pool-status').textContent = stats.pool_connected ? '🟢 Connected' : '🔴 Disconnected';
+                document.getElementById('shares-good').textContent = stats.shares_good || 0;
+                document.getElementById('total-hashes').textContent = formatNumber(stats.hashes_total || 0);
+                document.getElementById('uptime').textContent = formatUptime(stats.uptime || 0);
+                
+                // Update system resources
+                const cpuUsage = Math.round(stats.cpu_usage || 0);
+                const memoryUsage = Math.round(stats.memory_usage || 0);
+                
+                document.getElementById('cpu-usage').textContent = `${cpuUsage}%`;
+                document.getElementById('cpu-progress').style.width = `${cpuUsage}%`;
+                document.getElementById('memory-usage').textContent = `${memoryUsage}%`;
+                document.getElementById('memory-progress').style.width = `${memoryUsage}%`;
+                
+                // Update AI status (placeholder)
+                document.getElementById('ai-status').textContent = stats.ai_enabled ? '🟢 Active' : '🔴 Inactive';
+                document.getElementById('ai-optimization').textContent = `${Math.round(stats.ai_optimization || 0)}%`;
+                document.getElementById('ai-learning').textContent = `${Math.round(stats.ai_learning || 0)}%`;
+                document.getElementById('ai-progress').style.width = `${stats.ai_optimization || 0}%`;
+                
+                // Update timestamp
+                document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+                
+            } catch (error) {
+                console.error('Failed to update stats:', error);
+                document.getElementById('last-updated').textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function startMining() {
+            try {
+                document.getElementById('start-btn').disabled = true;
+                
+                const result = await makeRequest(`${API_BASE}/mining/control`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'start'
+                    })
+                });
+                
+                showMessage('✅ Mining started successfully');
+                updateStats(); // Immediate update
+                
+            } catch (error) {
+                showMessage(`❌ Failed to start mining: ${error.message}`, true);
+            } finally {
+                document.getElementById('start-btn').disabled = false;
+            }
+        }
+        
+        async function stopMining() {
+            try {
+                document.getElementById('stop-btn').disabled = true;
+                
+                const result = await makeRequest(`${API_BASE}/mining/control`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'stop'
+                    })
+                });
+                
+                showMessage('✅ Mining stopped successfully');
+                updateStats(); // Immediate update
+                
+            } catch (error) {
+                showMessage(`❌ Failed to stop mining: ${error.message}`, true);
+            } finally {
+                document.getElementById('stop-btn').disabled = false;
+            }
+        }
+        
+        async function restartMining() {
+            try {
+                document.getElementById('restart-btn').disabled = true;
+                
+                const result = await makeRequest(`${API_BASE}/mining/control`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'restart'
+                    })
+                });
+                
+                showMessage('✅ Mining restarted successfully');
+                updateStats(); // Immediate update
+                
+            } catch (error) {
+                showMessage(`❌ Failed to restart mining: ${error.message}`, true);
+            } finally {
+                document.getElementById('restart-btn').disabled = false;
+            }
+        }
+        
+        function formatHashrate(hashrate) {
+            if (hashrate >= 1000000000) {
+                return `${(hashrate / 1000000000).toFixed(2)} GH/s`;
+            } else if (hashrate >= 1000000) {
+                return `${(hashrate / 1000000).toFixed(2)} MH/s`;
+            } else if (hashrate >= 1000) {
+                return `${(hashrate / 1000).toFixed(2)} KH/s`;
+            } else {
+                return `${hashrate.toFixed(2)} H/s`;
+            }
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000000) {
+                return `${(num / 1000000000).toFixed(1)}B`;
+            } else if (num >= 1000000) {
+                return `${(num / 1000000).toFixed(1)}M`;
+            } else if (num >= 1000) {
+                return `${(num / 1000).toFixed(1)}K`;
+            } else {
+                return num.toString();
+            }
+        }
+        
+        function formatUptime(seconds) {
+            if (seconds < 60) {
+                return `${Math.round(seconds)}s`;
+            } else if (seconds < 3600) {
+                const minutes = Math.floor(seconds / 60);
+                const secs = Math.round(seconds % 60);
+                return `${minutes}m ${secs}s`;
+            } else {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                return `${hours}h ${minutes}m`;
+            }
+        }
+    </script>
+</body>
+</html>

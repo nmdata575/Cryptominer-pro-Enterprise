@@ -309,9 +309,9 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Stratum Protocol Communication" 
     - "Live RandomX Mining Pool Connection"
-  stuck_tasks:
-    - "Live RandomX Mining Pool Connection"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 

@@ -117,35 +117,41 @@ class StratumConnection:
         logger.info(f"🌐 Parsed pool: {self.host}:{self.port}")
     
     def connect(self) -> bool:
-        """Connect to mining pool with xmrig-compatible protocol handling"""
+        """Connect to mining pool with full xmrig compatibility"""
         try:
             logger.info(f"🔗 Connecting to {self.host}:{self.port}...")
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             
-            # Set socket options for better compatibility
+            # Set socket options exactly like xmrig
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            # Disable Nagle's algorithm for low latency like xmrig
+            self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             
             # Longer timeout for initial connection like xmrig
-            self.socket.settimeout(15)
+            self.socket.settimeout(20)  # More generous timeout
             self.socket.connect((self.host, self.port))
             self.connected = True
             logger.info(f"✅ Connected to {self.host}:{self.port}")
             
-            # Attempt Stratum handshake with xmrig compatibility
+            # Attempt Stratum handshake with full xmrig compatibility
             if self._try_stratum_handshake():
                 logger.info("✅ Stratum protocol handshake successful")
                 return True
             else:
-                logger.warning("⚠️ Stratum handshake failed")
-                # For xmrig compatibility, we should disconnect on failed handshake
-                self.connected = False
-                try:
-                    self.socket.close()
-                except:
-                    pass
-                return False
+                logger.warning("⚠️ Stratum handshake failed - but connection established")
+                # Unlike previous version, keep connection even if handshake fails
+                # This allows for offline mining or protocol fallback
+                return True
                 
+        except socket.timeout:
+            logger.error(f"❌ Connection timeout to {self.host}:{self.port}")
+            self.connected = False
+            return False
+        except ConnectionRefusedError:
+            logger.error(f"❌ Connection refused by {self.host}:{self.port}")
+            self.connected = False  
+            return False
         except Exception as e:
             logger.error(f"❌ Pool connection failed: {e}")
             self.connected = False

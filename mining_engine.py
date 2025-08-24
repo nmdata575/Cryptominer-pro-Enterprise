@@ -483,8 +483,36 @@ class StratumConnection:
             return
             
         def job_listener():
+            last_auth_check = time.time()
             while self.connected:
                 try:
+                    # Periodic authentication check (every 5 minutes)
+                    current_time = time.time()
+                    if current_time - last_auth_check > 300:  # 5 minutes
+                        if self.authorized:
+                            logger.debug("🔐 Performing periodic authentication check")
+                            # Send a simple request to check if we're still authenticated
+                            try:
+                                ping_msg = {
+                                    "id": int(current_time * 1000),
+                                    "method": "keepalive",
+                                    "params": []
+                                }
+                                response = self._send_receive_with_timeout(ping_msg, timeout=3)
+                                if response and 'error' in response:
+                                    error = response['error']
+                                    if isinstance(error, dict):
+                                        error_msg = error.get('message', '')
+                                    else:
+                                        error_msg = str(error)
+                                    if 'unauthenticated' in error_msg.lower():
+                                        logger.warning("🔐 Session expired, re-authenticating")
+                                        self.authorized = False
+                                        self._try_stratum_handshake()
+                            except Exception as e:
+                                logger.debug(f"Keepalive check failed: {e}")
+                        last_auth_check = current_time
+                    
                     # Listen for incoming messages (job notifications)
                     self.socket.settimeout(30)  # 30-second timeout for job updates
                     data = self._read_line()

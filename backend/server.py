@@ -118,7 +118,12 @@ mining_stats = {
     "difficulty": 1.0,
     "ai_learning": 0.0,
     "ai_optimization": 0.0,
-    "last_update": datetime.utcnow()
+    "last_update": datetime.utcnow(),
+    # Enhanced proxy fields for connection proxy architecture
+    "shares_accepted": 0,
+    "shares_submitted": 0,
+    "queue_size": 0,
+    "last_share_time": 0
 }
 
 # Global process management

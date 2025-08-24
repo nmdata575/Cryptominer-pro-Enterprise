@@ -385,6 +385,7 @@
                 // Update pool and shares
                 document.getElementById('pool-status').textContent = stats.pool_connected ? '🟢 Connected' : '🔴 Disconnected';
                 document.getElementById('shares-good').textContent = parseInt(stats.shares_good) || 0;
+                document.getElementById('shares-rejected').textContent = parseInt(stats.shares_rejected) || 0;
                 document.getElementById('total-hashes').textContent = formatNumber(parseInt(stats.hashes_total) || 0);
                 document.getElementById('uptime').textContent = formatUptime(parseFloat(stats.uptime) || 0);
                 

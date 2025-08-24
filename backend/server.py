@@ -70,14 +70,16 @@ def load_mining_config():
         logger.info(f"📁 Loaded mining config from {config_file}")
         logger.info(f"   Coin: {mining_config['coin']}")
         logger.info(f"   Pool: {mining_config['pool']}")
+        logger.info(f"   Wallet: {mining_config['wallet'][:20]}...{mining_config['wallet'][-20:]}")
         logger.info(f"   Intensity: {mining_config['intensity']}%")
         logger.info(f"   Threads: {mining_config['threads']}")
     else:
         logger.warning(f"⚠️ Mining config file not found: {config_file}")
-        # Use default XMR configuration
+        # Use default XMR configuration with cleaned wallet format
+        default_wallet = "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"
         mining_config = {
             "coin": "XMR",
-            "wallet": "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
+            "wallet": default_wallet,  # Already cleaned format
             "pool": "stratum+tcp://pool.supportxmr.com:3333",
             "password": "x",
             "intensity": 80,

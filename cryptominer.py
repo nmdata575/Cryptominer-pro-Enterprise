@@ -324,7 +324,7 @@ class CryptoMinerPro:
                     <h4 style="margin: 0 0 10px 0; color: #61dafb;">⚙️ Quick Config</h4>
                     <div class="config-input">
                         <span>Pool:</span>
-                        <input type="text" id="config-pool" placeholder="ltc.luckymonster.pro:4112">
+                        <input type="text" id="config-pool" placeholder="stratum+tcp://pool.supportxmr.com:3333">
                     </div>
                     <div class="config-input">
                         <span>Threads:</span>

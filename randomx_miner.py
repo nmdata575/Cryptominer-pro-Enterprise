@@ -386,10 +386,6 @@ class RandomXMinerThread:
         if self.is_running:
             return
             
-        if not self.vm.initialize():
-            logger.error(f"Failed to initialize VM for thread {self.thread_id}")
-            return
-            
         self.is_running = True
         self.thread = threading.Thread(target=self._mining_loop, daemon=True)
         self.thread.start()

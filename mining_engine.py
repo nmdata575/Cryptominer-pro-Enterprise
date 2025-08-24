@@ -850,6 +850,7 @@ class RandomXMiner:
             'hashrate': total_hashrate,
             'hashes_total': total_hashes,
             'shares_good': total_shares,
+            'shares_rejected': total_rejected,
             'threads': len(self.threads),
             'uptime': time.time() - (self.threads[0].start_time if self.threads else time.time()),
             'cpu_usage': cpu_percent,

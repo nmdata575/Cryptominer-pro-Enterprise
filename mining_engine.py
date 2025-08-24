@@ -15,14 +15,22 @@ import logging
 import socket
 import asyncio
 import random
+import queue
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, Future
 from queue import Queue, Empty
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging with detailed protocol logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Create separate logger for pool protocol communication
+protocol_logger = logging.getLogger('pool_protocol')
+protocol_logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s - POOL_PROTOCOL - %(levelname)s - %(message)s'))
+protocol_logger.addHandler(handler)
 
 # ============================================================================
 # CONFIGURATION CLASSES

@@ -112,8 +112,8 @@ python3 cryptominer.py
 
 ### 4. Monitor Performance
 
-- **Web Dashboard**: Open http://localhost:8001 in your browser
-- **API Endpoints**: Access REST API at http://localhost:8001/api
+- **Web Dashboard**: Open http://localhost:3333 in your browser
+- **API Endpoints**: Access REST API at http://localhost:3333/api
 - **Logs**: Check `mining.log` for detailed logging
 
 ## 📖 Usage Guide

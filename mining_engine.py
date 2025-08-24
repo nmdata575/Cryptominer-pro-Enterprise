@@ -973,6 +973,7 @@ class ScryptMiner:
             'hashrate': self.stats.hashes_total / max(1, time.time() - getattr(self, 'start_time', time.time())),
             'hashes_total': self.stats.hashes_total,
             'shares_good': self.stats.shares_good,
+            'shares_rejected': self.stats.shares_rejected,
             'threads': len(self.threads),
             'is_running': self.is_running
         }

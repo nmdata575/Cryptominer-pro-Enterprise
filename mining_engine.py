@@ -406,7 +406,7 @@ class StratumConnection:
         return None
     
     def submit_share(self, job_id: str, nonce: str, result: str) -> bool:
-        """Submit mining share to pool with proper format and authentication handling"""
+        """Submit mining share to pool with zeropool.io compatible format"""
         try:
             # Check if we're still authenticated
             if not self.authorized:
@@ -415,32 +415,41 @@ class StratumConnection:
                     logger.error("❌ Re-authentication failed")
                     return False
             
-            # For zeropool.io and most Monero pools, use simple array format like xmrig
+            # Clean wallet address - ensure no prefixes for zeropool.io compatibility
+            clean_wallet = self.wallet
+            if ":" in clean_wallet:
+                clean_wallet = clean_wallet.split(":", 1)[1]  # Remove any prefix like "solo:"
+            
+            # For zeropool.io: Use standard xmrig-compatible format
             submit_msg = {
-                "id": int(time.time() * 1000),  # Use millisecond timestamp like xmrig
-                "jsonrpc": "2.0",  # Add jsonrpc version
+                "id": int(time.time() * 1000),  # Millisecond timestamp like xmrig
                 "method": "submit",
-                "params": [job_id, nonce, result]
+                "params": {
+                    "id": clean_wallet,  # Clean wallet address as ID
+                    "job_id": job_id,
+                    "nonce": nonce,
+                    "result": result
+                }
             }
             
-            logger.debug(f"📤 Submitting share: job_id={job_id}, nonce={nonce}")
-            response = self._send_receive_with_timeout(submit_msg, timeout=10)
+            logger.info(f"📤 Submitting share to zeropool.io: job_id={job_id}, nonce={nonce[:8]}...")
+            response = self._send_receive_with_timeout(submit_msg, timeout=15)
             
             if response:
                 logger.debug(f"📥 Pool response: {response}")
                 
                 if 'result' in response:
                     result_value = response['result']
-                    if result_value == 'OK' or result_value is True:
-                        logger.info("✅ Share accepted by pool")
+                    if result_value == 'OK' or result_value is True or result_value == "true":
+                        logger.info("✅ Share ACCEPTED by zeropool.io")
                         return True
-                    elif result_value is False:
-                        error = response.get('error', 'Share rejected')
+                    elif result_value is False or result_value == "false":
+                        error = response.get('error', 'Share rejected by pool')
                         if isinstance(error, dict):
                             error_msg = error.get('message', str(error))
                         else:
                             error_msg = str(error)
-                        logger.warning(f"❌ Share rejected: {error_msg}")
+                        logger.warning(f"❌ Share REJECTED by zeropool.io: {error_msg}")
                         return False
                 elif 'error' in response:
                     error = response['error']
@@ -451,26 +460,32 @@ class StratumConnection:
                         error_msg = str(error)
                         error_code = 0
                     
-                    # Handle authentication errors specifically
-                    if 'unauthenticated' in error_msg.lower() or error_code == -1:
-                        logger.warning(f"🔐 Authentication issue: {error_msg}")
-                        # Mark as unauthenticated and try to re-authenticate
+                    # Handle zeropool.io specific authentication errors
+                    if any(keyword in error_msg.lower() for keyword in ['unauthenticated', 'unauthorized', 'invalid login', 'access denied']):
+                        logger.warning(f"🔐 zeropool.io authentication issue: {error_msg}")
+                        # Mark as unauthenticated and try to re-authenticate with clean wallet
                         self.authorized = False
+                        original_wallet = self.wallet
+                        self.wallet = clean_wallet  # Use clean wallet for re-auth
+                        
                         if self._try_stratum_handshake():
-                            logger.info("✅ Re-authenticated successfully, retrying share submission")
+                            logger.info("✅ Re-authenticated with zeropool.io, retrying share submission")
                             # Retry the share submission once after re-authentication
-                            return self.submit_share(job_id, nonce, result)
+                            result = self.submit_share(job_id, nonce, result)
+                            self.wallet = original_wallet  # Restore original wallet
+                            return result
                         else:
-                            logger.error("❌ Re-authentication failed")
+                            logger.error("❌ zeropool.io re-authentication failed")
+                            self.wallet = original_wallet  # Restore original wallet
                             return False
                     else:
-                        logger.warning(f"❌ Share error: {error_msg}")
+                        logger.warning(f"❌ Share submission error: {error_msg} (code: {error_code})")
                         return False
                 else:
-                    logger.warning(f"❌ Unexpected response: {response}")
+                    logger.warning(f"❌ Unexpected response from zeropool.io: {response}")
                     return False
             else:
-                logger.warning("❌ No response from pool")
+                logger.warning("❌ No response from zeropool.io pool")
                 return False
                 
         except Exception as e:

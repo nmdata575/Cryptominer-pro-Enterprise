@@ -324,7 +324,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "AI Optimization Testing"
+    - "Enhanced Job Prioritization System Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

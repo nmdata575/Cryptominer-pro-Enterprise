@@ -200,6 +200,11 @@ class CryptoMinerV21:
                 # Get current stats
                 stats = self.mining_engine.get_stats()
                 
+                # Log stats for debugging
+                logger.debug(f"📊 Current stats: hashrate={stats.get('hashrate', 0)}, "
+                           f"threads={stats.get('threads', 0)}, "
+                           f"pool_connected={stats.get('pool_connected', False)}")
+                
                 # Update web backend if available
                 await self._update_web_backend(stats)
                 

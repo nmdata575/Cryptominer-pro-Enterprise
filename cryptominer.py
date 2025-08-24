@@ -295,7 +295,7 @@ Examples:
     parser.add_argument('--pool', type=str, help='Mining pool URL (stratum+tcp://...)')
     parser.add_argument('--password', type=str, default='x', help='Pool password/worker name')
     parser.add_argument('--intensity', type=int, default=80, help='Mining intensity 1-100 (default: 80)')
-    parser.add_argument('--threads', type=int, default=0, help='Number of threads (0 = auto-detect)')
+    parser.add_argument('--threads', type=parse_threads, default=0, help='Number of threads (0 or auto = auto-detect)')
     parser.add_argument('--web-port', type=int, default=8001, help='Web monitoring port (default: 8001)')
     parser.add_argument('--no-web', action='store_true', help='Disable web monitoring')
     parser.add_argument('--no-ai', action='store_true', help='Disable AI optimization')

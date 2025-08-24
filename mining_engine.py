@@ -1192,15 +1192,15 @@ class RandomXMinerThread:
                 self.hashes_done = 0
 
 class RandomXMiner:
-    """Main RandomX Miner class with real pool connection"""
+    """Main RandomX Miner class with single connection proxy"""
     
     def __init__(self, config: RandomXConfig):
         self.config = config
-        self.stratum_connection = None
+        self.connection_proxy = None
         self.threads: List[RandomXMinerThread] = []
         self.is_running = False
         self.total_stats = MiningStats()
-        self.offline_mode = False  # Add offline mode support
+        self.offline_mode = False
         
         # Auto-detect thread count if not specified
         if self.config.threads is None or self.config.threads <= 0:
@@ -1211,40 +1211,40 @@ class RandomXMiner:
         logger.info(f"💰 Wallet: {self.config.wallet_address}")
     
     def start(self) -> bool:
-        """Start RandomX mining with real pool connection"""
+        """Start RandomX mining with single connection proxy"""
         try:
-            logger.info("🚀 Starting RandomX CPU Miner...")
+            logger.info("🚀 Starting RandomX CPU Miner with Connection Proxy...")
             
-            # Initialize Stratum connection
-            logger.info("🌐 Establishing pool connection...")
-            self.stratum_connection = StratumConnection(
+            # Initialize single connection proxy
+            protocol_logger.info("🌐 Initializing single connection proxy...")
+            self.connection_proxy = PoolConnectionProxy(
                 self.config.pool_url,
                 self.config.wallet_address,
                 self.config.password
             )
             
-            # Connect to pool (with offline fallback)
-            if not self.stratum_connection.connect():
-                logger.warning("⚠️ Pool connection failed, enabling offline mining mode")
+            # Start connection proxy (with offline fallback)
+            if not self.connection_proxy.start():
+                logger.warning("⚠️ Pool connection proxy failed, enabling offline mining mode")
                 self.offline_mode = True
             else:
-                logger.info("✅ Pool connection successful")
+                protocol_logger.info("✅ Connection proxy started successfully")
                 self.offline_mode = False
-                # Start listening for job notifications from pool
-                self.stratum_connection.listen_for_jobs()
             
-            # Create and start mining threads
-            logger.info(f"⚡ Starting {self.config.threads} mining threads...")
+            # Create and start mining threads (all use same proxy)
+            logger.info(f"⚡ Starting {self.config.threads} mining threads with shared connection...")
             for i in range(self.config.threads):
-                thread = RandomXMinerThread(i, self.config, self.stratum_connection)
-                thread.offline_mode = self.offline_mode  # Pass offline mode to threads
+                thread = RandomXMinerThread(i, self.config, self.connection_proxy)
+                thread.offline_mode = self.offline_mode
                 self.threads.append(thread)
                 thread.start()
             
             self.is_running = True
-            logger.info(f"✅ RandomX miner started with {len(self.threads)} threads")
+            logger.info(f"✅ RandomX miner started with {len(self.threads)} threads using single connection")
             if self.offline_mode:
                 logger.info("🔄 Running in offline mining mode - local hash calculations only")
+            else:
+                protocol_logger.info("🔗 All threads connected through single proxy to zeropool.io")
             
             # Start statistics monitoring
             threading.Thread(target=self._stats_monitor, daemon=True).start()
@@ -1265,15 +1265,15 @@ class RandomXMiner:
         for thread in self.threads:
             thread.stop()
         
-        # Close pool connection
-        if self.stratum_connection:
-            self.stratum_connection.close()
+        # Stop connection proxy
+        if self.connection_proxy:
+            self.connection_proxy.stop()
         
         self.threads.clear()
         logger.info("✅ RandomX miner stopped")
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get comprehensive mining statistics"""
+        """Get comprehensive mining statistics including proxy stats"""
         total_hashrate = sum(t.stats.hashrate for t in self.threads)
         total_hashes = sum(t.stats.hashes_total for t in self.threads)
         total_shares = sum(t.stats.shares_good for t in self.threads)

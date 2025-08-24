@@ -377,7 +377,7 @@ show_status() {
     fi
     
     echo
-    print_color $CYAN "Web Dashboard: http://localhost:${WEB_PORT:-8001}"
+    print_color $CYAN "Web Dashboard: http://localhost:${WEB_PORT:-3333}"
     print_color $CYAN "Configuration: $CONFIG_FILE"
     print_color $CYAN "Logs: $LOG_FILE"
 }

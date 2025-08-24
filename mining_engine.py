@@ -546,12 +546,26 @@ class PoolConnectionProxy:
         protocol_logger.info("🛑 Job listener worker stopped")
     
     def get_current_job(self) -> Optional[Dict]:
-        """Get current mining job"""
+        """Get current mining job with enhanced real job prioritization"""
         with self.job_lock:
             if self.current_job:
                 job_age = time.time() - self.current_job.get('received_at', 0)
-                if job_age < 120:  # Job valid for 2 minutes
+                job_id = self.current_job.get('job_id', '')
+                
+                # Prioritize real pool jobs over local fallback jobs
+                is_real_job = not job_id.startswith('local_')
+                
+                if is_real_job and job_age < 300:  # Real jobs valid for 5 minutes
+                    protocol_logger.debug(f"✅ Using REAL pool job: {job_id} (age: {job_age:.1f}s)")
                     return self.current_job.copy()
+                elif not is_real_job and job_age < 60:  # Local jobs only valid for 1 minute
+                    protocol_logger.debug(f"⚠️ Using fallback LOCAL job: {job_id} (age: {job_age:.1f}s)")
+                    return self.current_job.copy()
+                else:
+                    protocol_logger.debug(f"❌ Job expired: {job_id} (age: {job_age:.1f}s, real: {is_real_job})")
+                    
+        # Return None to trigger fresh job request
+        protocol_logger.debug("🔄 No valid job available - requesting fresh work")
         return None
     
     def get_stats(self) -> Dict:

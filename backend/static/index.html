@@ -437,15 +437,19 @@
                 setTimeout(updateStats, 2000);
                 
             } catch (error) {
-                showMessage(`❌ Failed to stop mining: ${error.message}`, true);
+                console.error('Stop mining error:', error);
+                showMessage(`❌ Failed to stop mining: ${error.message || 'Unknown error'}`, true);
             } finally {
-                document.getElementById('stop-btn').disabled = false;
+                setTimeout(() => {
+                    document.getElementById('stop-btn').disabled = false;
+                }, 1000);
             }
         }
         
         async function restartMining() {
             try {
                 document.getElementById('restart-btn').disabled = true;
+                showMessage('⏳ Restarting mining...', false);
                 
                 const result = await makeRequest(`${API_BASE}/mining/control`, {
                     method: 'POST',
@@ -454,13 +458,22 @@
                     })
                 });
                 
-                showMessage('✅ Mining restarted successfully');
-                updateStats(); // Immediate update
+                if (result.status === 'success') {
+                    showMessage('✅ Mining restarted successfully');
+                } else {
+                    showMessage(`⚠️ Mining restart result: ${result.message}`, true);
+                }
+                
+                // Wait a moment then update stats
+                setTimeout(updateStats, 3000);
                 
             } catch (error) {
-                showMessage(`❌ Failed to restart mining: ${error.message}`, true);
+                console.error('Restart mining error:', error);
+                showMessage(`❌ Failed to restart mining: ${error.message || 'Unknown error'}`, true);
             } finally {
-                document.getElementById('restart-btn').disabled = false;
+                setTimeout(() => {
+                    document.getElementById('restart-btn').disabled = false;
+                }, 2000);
             }
         }
         

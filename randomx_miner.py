@@ -399,38 +399,51 @@ class RandomXMinerThread:
         logger.info(f"🛑 RandomX mining thread {self.thread_id} stopped")
     
     def _mining_loop(self):
-        """Main mining loop"""
+        """Main mining loop with real pool connection"""
         logger.info(f"⚡ Mining loop started for thread {self.thread_id}")
         
         while self.is_running:
             try:
+                # Get work from pool
+                if not self.current_job or time.time() - self.current_job.get('received_at', 0) > 30:
+                    self.current_job = self.stratum.get_work()
+                    if self.current_job:
+                        self.current_job['received_at'] = time.time()
+                        logger.debug(f"Thread {self.thread_id} received new work")
+                
                 if not self.current_job:
-                    time.sleep(0.1)
+                    time.sleep(1)
                     continue
                 
-                # Create input for hash calculation
-                input_data = self._create_mining_input()
-                
-                # Calculate RandomX hash
-                hash_result = self.vm.calculate_hash(input_data)
-                
-                # Check if hash meets difficulty target
-                if self._check_difficulty(hash_result):
-                    logger.info(f"🎯 Share found by thread {self.thread_id}!")
-                    self.stats.shares_good += 1
-                    # Submit share (would be implemented with pool communication)
-                
-                self.nonce += 1
-                self.hashes_done += 1
-                self.stats.hashes_total += 1
-                self.stats.shares_total += 1
-                
-                # Update hashrate every 1000 hashes
-                if self.hashes_done % 1000 == 0:
-                    self._update_hashrate()
-                
-                # Small delay to prevent 100% CPU usage in simulation
-                time.sleep(0.001)
+                # Perform mining calculations
+                for _ in range(1000):  # Hash 1000 nonces before checking for new work
+                    if not self.is_running:
+                        break
+                    
+                    # Create mining input
+                    hash_input = self._create_hash_input()
+                    
+                    # Calculate hash (simplified for now)
+                    hash_result = self._calculate_hash(hash_input)
+                    
+                    # Check if hash meets difficulty
+                    if self._check_target(hash_result):
+                        logger.info(f"🎯 Share found by thread {self.thread_id}!")
+                        self.stats.shares_good += 1
+                        
+                        # Submit share to pool
+                        if self._submit_share(hash_result):
+                            logger.info(f"✅ Share accepted from thread {self.thread_id}")
+                        else:
+                            logger.warning(f"❌ Share rejected from thread {self.thread_id}")
+                    
+                    self.nonce += 1
+                    self.hashes_done += 1
+                    self.stats.hashes_total += 1
+                    
+                    # Update hashrate every 10000 hashes
+                    if self.hashes_done % 10000 == 0:
+                        self._update_hashrate()
                 
             except Exception as e:
                 logger.error(f"Mining error in thread {self.thread_id}: {e}")

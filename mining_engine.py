@@ -164,75 +164,79 @@ class StratumConnection:
             return False
     
     def _try_stratum_handshake(self) -> bool:
-        """Attempt Stratum handshake using multiple protocol variants like xmrig"""
+        """Attempt Stratum handshake using zeropool.io compatible methods"""
         try:
-            # Try different Stratum protocols in order of compatibility
+            # Clean wallet address for zeropool.io compatibility
+            clean_wallet = self.wallet
+            if ":" in clean_wallet:
+                clean_wallet = clean_wallet.split(":", 1)[1]  # Remove any prefix like "solo:"
+            
+            # Try different Stratum protocols in order of zeropool.io compatibility
             login_methods = [
-                # Method 1: Standard xmrig-compatible login (most common)
+                # Method 1: zeropool.io preferred format - object params
                 {
                     "id": 1,
                     "method": "login",
                     "params": {
-                        "login": self.wallet,
+                        "login": clean_wallet,
                         "pass": self.password,
-                        "agent": "xmrig/6.24.0",  # Latest xmrig version
-                        "keepalive": True
+                        "agent": "xmrig/6.24.0"
                     }
                 },
-                # Method 2: Simple array format (backup)
+                # Method 2: Standard xmrig-compatible login with clean wallet
                 {
                     "id": 1,
                     "method": "login",
-                    "params": [self.wallet, self.password]
+                    "params": {
+                        "login": clean_wallet,
+                        "pass": self.password,
+                        "agent": "xmrig/6.24.0",
+                        "keepalive": True
+                    }
                 },
-                # Method 3: Bitcoin-style subscribe (fallback)
+                # Method 3: Simple array format (backup)
                 {
                     "id": 1,
-                    "method": "mining.subscribe",
-                    "params": ["xmrig/6.21.0"]
+                    "method": "login",
+                    "params": [clean_wallet, self.password]
                 }
             ]
             
             for i, login_msg in enumerate(login_methods):
                 try:
-                    logger.info(f"🔐 Trying login method {i+1}: {login_msg['method']}")
-                    response = self._send_receive_with_timeout(login_msg, timeout=8)
+                    logger.info(f"🔐 Trying zeropool.io login method {i+1} with wallet: {clean_wallet[:12]}...")
+                    response = self._send_receive_with_timeout(login_msg, timeout=10)
                     
                     if response:
-                        logger.debug(f"📡 Pool response: {response}")
+                        logger.debug(f"📡 zeropool.io response: {response}")
                         
                         # Handle successful login response
                         if 'result' in response:
                             result = response['result']
                             
-                            # Method 1 & 2: Monero login response
+                            # Monero login response handling
                             if login_msg['method'] == 'login':
                                 if isinstance(result, dict):
                                     # Modern pools return job info directly
                                     self.current_job = result.copy()
                                     self.current_job['received_at'] = time.time()
                                     job_id = result.get('job', {}).get('job_id') or result.get('job_id', 'N/A')
-                                    logger.info(f"✅ Login successful, got job: {job_id}")
+                                    logger.info(f"✅ zeropool.io login successful, got job: {job_id}")
                                     self.authorized = True
                                     return True
                                 elif isinstance(result, bool) and result:
-                                    logger.info("✅ Login successful (boolean response)")
+                                    logger.info("✅ zeropool.io login successful (boolean response)")
                                     self.authorized = True
                                     return True
                                 elif isinstance(result, list) and len(result) > 0:
                                     # Some pools return array with session info
-                                    logger.info("✅ Login successful (array response)")
+                                    logger.info("✅ zeropool.io login successful (array response)")
                                     self.authorized = True
                                     return True
-                            
-                            # Method 3: Bitcoin-style response
-                            elif login_msg['method'] == 'mining.subscribe':
-                                if isinstance(result, list) and len(result) >= 2:
-                                    self.extranonce1 = result[1]
-                                    if len(result) > 2:
-                                        self.extranonce2_size = result[2]
-                                    logger.info(f"📡 Subscribed: extranonce1={self.extranonce1}")
-                                    return self._try_authorization()
+                                elif result == "OK" or result == "ok":
+                                    logger.info("✅ zeropool.io login successful (OK response)")
+                                    self.authorized = True
+                                    return True
                         
                         elif 'error' in response:
                             error = response['error']
@@ -240,27 +244,27 @@ class StratumConnection:
                                 error_msg = error.get('message', str(error))
                             else:
                                 error_msg = str(error)
-                            logger.warning(f"Method {i+1} failed: {error_msg}")
+                            logger.warning(f"zeropool.io method {i+1} failed: {error_msg}")
                             continue
                         else:
-                            logger.debug(f"Method {i+1} unexpected response: {response}")
+                            logger.debug(f"zeropool.io method {i+1} unexpected response: {response}")
                             continue
                     else:
-                        logger.debug(f"Method {i+1} no response")
+                        logger.debug(f"zeropool.io method {i+1} no response")
                         continue
                         
                 except socket.timeout:
-                    logger.debug(f"Method {i+1} timeout")
+                    logger.debug(f"zeropool.io method {i+1} timeout")
                     continue
                 except Exception as e:
-                    logger.debug(f"Method {i+1} failed: {e}")
+                    logger.debug(f"zeropool.io method {i+1} failed: {e}")
                     continue
             
-            logger.warning("⚠️ All login methods failed")
+            logger.warning("⚠️ All zeropool.io login methods failed")
             return False
             
         except Exception as e:
-            logger.error(f"❌ Stratum handshake error: {e}")
+            logger.error(f"❌ zeropool.io Stratum handshake error: {e}")
             return False
     
     def _try_authorization(self) -> bool:

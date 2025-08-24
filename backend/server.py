@@ -26,6 +26,22 @@ load_dotenv(ROOT_DIR / '.env')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def clean_wallet_format(wallet_address):
+    """Clean wallet format by removing prefixes like 'solo:' for zeropool.io compatibility"""
+    if not wallet_address:
+        return wallet_address
+    
+    # Remove common prefixes that cause authentication issues
+    prefixes_to_remove = ['solo:', 'pool:', 'prop:']
+    
+    for prefix in prefixes_to_remove:
+        if wallet_address.startswith(prefix):
+            cleaned = wallet_address[len(prefix):]
+            logger.info(f"🧹 Cleaned wallet format: removed '{prefix}' prefix")
+            return cleaned
+    
+    return wallet_address
+
 def load_mining_config():
     """Load mining configuration from mining_config.env file"""
     config_file = Path("/app/mining_config.env")
@@ -35,9 +51,13 @@ def load_mining_config():
         # Load the mining config file
         load_dotenv(str(config_file))
         
+        # Get wallet and clean the format for zeropool.io compatibility
+        raw_wallet = os.getenv("WALLET", "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8")
+        cleaned_wallet = clean_wallet_format(raw_wallet)
+        
         mining_config = {
             "coin": os.getenv("COIN", "XMR"),
-            "wallet": os.getenv("WALLET", "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"),
+            "wallet": cleaned_wallet,
             "pool": os.getenv("POOL", "stratum+tcp://pool.supportxmr.com:3333"),
             "password": os.getenv("PASSWORD", "x"),
             "intensity": int(os.getenv("INTENSITY", "80")),

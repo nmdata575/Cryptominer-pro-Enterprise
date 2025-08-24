@@ -398,11 +398,6 @@ class RandomXMinerThread:
             self.thread.join(timeout=5)
         logger.info(f"🛑 RandomX mining thread {self.thread_id} stopped")
     
-    def set_job(self, job_data: Dict[str, Any]):
-        """Set new mining job"""
-        self.current_job = job_data
-        self.nonce = random.randint(0, 2**32-1)  # Random starting nonce
-    
     def _mining_loop(self):
         """Main mining loop"""
         logger.info(f"⚡ Mining loop started for thread {self.thread_id}")

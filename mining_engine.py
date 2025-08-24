@@ -324,6 +324,7 @@ class RandomXMinerThread:
         self.is_running = False
         self.stats = MiningStats()
         self.thread = None
+        self.offline_mode = False  # Add offline mode support
         
         # Mining state
         self.current_job = None

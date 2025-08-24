@@ -142,56 +142,68 @@ class StratumConnection:
             return False
     
     def _try_stratum_handshake(self) -> bool:
-        """Attempt Stratum handshake using Monero-specific protocol"""
+        """Attempt Stratum handshake using multiple protocol variants like xmrig"""
         try:
-            # Monero uses "login" method instead of mining.subscribe/authorize
-            # Try multiple login message formats for different Monero pools
-            login_formats = [
+            # Try different Stratum protocols in order of compatibility
+            login_methods = [
+                # Method 1: Standard xmrig-compatible login (most common)
                 {
                     "id": 1,
                     "method": "login",
                     "params": {
                         "login": self.wallet,
                         "pass": self.password,
-                        "agent": "CryptoMiner V21/1.0"
+                        "agent": "xmrig/6.21.0"  # Mimic xmrig user agent
                     }
                 },
-                # Some pools expect params as array
+                # Method 2: Simple array format (backup)
                 {
                     "id": 1,
                     "method": "login",
-                    "params": [self.wallet, self.password, "CryptoMiner V21/1.0"]
+                    "params": [self.wallet, self.password]
                 },
-                # Fallback to standard Bitcoin-style for compatibility
-                {"id": 1, "method": "mining.subscribe", "params": ["CryptoMiner V21"]},
+                # Method 3: Bitcoin-style subscribe (fallback)
+                {
+                    "id": 1,
+                    "method": "mining.subscribe",
+                    "params": ["xmrig/6.21.0"]
+                }
             ]
             
-            for msg_format in login_formats:
+            for i, login_msg in enumerate(login_methods):
                 try:
-                    logger.info(f"🔐 Trying login format: {msg_format['method']}")
-                    response = self._send_receive_with_timeout(msg_format, timeout=5)
+                    logger.info(f"🔐 Trying login method {i+1}: {login_msg['method']}")
+                    response = self._send_receive_with_timeout(login_msg, timeout=8)
                     
                     if response:
-                        logger.debug(f"📡 Pool responded: {response}")
+                        logger.debug(f"📡 Pool response: {response}")
                         
-                        if 'result' in response and response['result']:
+                        # Handle successful login response
+                        if 'result' in response:
                             result = response['result']
                             
-                            # Handle Monero login response
-                            if msg_format['method'] == 'login':
+                            # Method 1 & 2: Monero login response
+                            if login_msg['method'] == 'login':
                                 if isinstance(result, dict):
-                                    # Modern Monero pools return job info
-                                    self.current_job = result.get('job', {})
-                                    logger.info(f"✅ Monero login successful, got job: {self.current_job.get('job_id', 'N/A')}")
+                                    # Modern pools return job info directly
+                                    self.current_job = result.copy()
+                                    self.current_job['received_at'] = time.time()
+                                    job_id = result.get('job', {}).get('job_id') or result.get('job_id', 'N/A')
+                                    logger.info(f"✅ Login successful, got job: {job_id}")
                                     self.authorized = True
                                     return True
                                 elif isinstance(result, bool) and result:
-                                    logger.info("✅ Monero login successful")
+                                    logger.info("✅ Login successful (boolean response)")
+                                    self.authorized = True
+                                    return True
+                                elif isinstance(result, list) and len(result) > 0:
+                                    # Some pools return array with session info
+                                    logger.info("✅ Login successful (array response)")
                                     self.authorized = True
                                     return True
                             
-                            # Handle Bitcoin-style response
-                            elif msg_format['method'] == 'mining.subscribe':
+                            # Method 3: Bitcoin-style response
+                            elif login_msg['method'] == 'mining.subscribe':
                                 if isinstance(result, list) and len(result) >= 2:
                                     self.extranonce1 = result[1]
                                     if len(result) > 2:
@@ -200,22 +212,28 @@ class StratumConnection:
                                     return self._try_authorization()
                         
                         elif 'error' in response:
-                            error_msg = response['error']
-                            logger.warning(f"Pool login error: {error_msg}")
-                            # Continue to try other formats
+                            error = response['error']
+                            if isinstance(error, dict):
+                                error_msg = error.get('message', str(error))
+                            else:
+                                error_msg = str(error)
+                            logger.warning(f"Method {i+1} failed: {error_msg}")
                             continue
                         else:
-                            logger.debug(f"Unexpected response format: {response}")
+                            logger.debug(f"Method {i+1} unexpected response: {response}")
                             continue
-                            
+                    else:
+                        logger.debug(f"Method {i+1} no response")
+                        continue
+                        
                 except socket.timeout:
-                    logger.debug(f"Timeout with {msg_format['method']} format")
+                    logger.debug(f"Method {i+1} timeout")
                     continue
                 except Exception as e:
-                    logger.debug(f"Login attempt with {msg_format['method']} failed: {e}")
+                    logger.debug(f"Method {i+1} failed: {e}")
                     continue
             
-            logger.warning("⚠️ All login formats failed")
+            logger.warning("⚠️ All login methods failed")
             return False
             
         except Exception as e:

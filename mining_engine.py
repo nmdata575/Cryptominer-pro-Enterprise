@@ -427,10 +427,10 @@ class StratumConnection:
                             # Handle job notifications (common in Monero pools)
                             if 'method' in message:
                                 if message['method'] == 'job':
-                                    # New job notification
+                                    # Monero pool job notification (standard format)
                                     params = message.get('params', {})
                                     if isinstance(params, dict) and 'job_id' in params:
-                                        self.current_job = params
+                                        self.current_job = params.copy()
                                         self.current_job['received_at'] = time.time()
                                         logger.info(f"🔄 New job received: {params.get('job_id', 'N/A')}")
                                 elif message['method'] == 'mining.notify':
@@ -445,6 +445,9 @@ class StratumConnection:
                                         }
                                         self.current_job = job_data
                                         logger.info(f"🔄 Mining job update: {job_data.get('job_id', 'N/A')}")
+                            elif 'result' in message and 'id' in message:
+                                # This is a response to our request, not a job notification
+                                logger.debug(f"📥 Pool response to request {message['id']}: {message.get('result', 'N/A')}")
                         except json.JSONDecodeError:
                             # Not JSON, ignore
                             pass

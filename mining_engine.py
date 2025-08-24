@@ -117,28 +117,43 @@ class StratumConnection:
         logger.info(f"🌐 Parsed pool: {self.host}:{self.port}")
     
     def connect(self) -> bool:
-        """Connect to mining pool with improved protocol handling"""
+        """Connect to mining pool with xmrig-compatible protocol handling"""
         try:
             logger.info(f"🔗 Connecting to {self.host}:{self.port}...")
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(10)
+            
+            # Set socket options for better compatibility
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            
+            # Longer timeout for initial connection like xmrig
+            self.socket.settimeout(15)
             self.socket.connect((self.host, self.port))
             self.connected = True
             logger.info(f"✅ Connected to {self.host}:{self.port}")
             
-            # Try Stratum handshake - if it fails, we'll still mine locally
+            # Attempt Stratum handshake with xmrig compatibility
             if self._try_stratum_handshake():
                 logger.info("✅ Stratum protocol handshake successful")
                 return True
             else:
-                logger.warning("⚠️ Stratum handshake failed, continuing with connection tracking")
-                # Keep connection for monitoring but don't require full handshake
-                self.connected = True  # Consider connected for mining purposes
-                return True
+                logger.warning("⚠️ Stratum handshake failed")
+                # For xmrig compatibility, we should disconnect on failed handshake
+                self.connected = False
+                try:
+                    self.socket.close()
+                except:
+                    pass
+                return False
                 
         except Exception as e:
             logger.error(f"❌ Pool connection failed: {e}")
             self.connected = False
+            if hasattr(self, 'socket') and self.socket:
+                try:
+                    self.socket.close()
+                except:
+                    pass
             return False
     
     def _try_stratum_handshake(self) -> bool:

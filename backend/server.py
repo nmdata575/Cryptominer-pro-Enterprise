@@ -287,6 +287,11 @@ class MiningStats(BaseModel):
     ai_learning: float
     ai_optimization: float
     last_update: datetime
+    # Enhanced proxy fields for connection proxy architecture
+    shares_accepted: Optional[int] = 0
+    shares_submitted: Optional[int] = 0
+    queue_size: Optional[int] = 0
+    last_share_time: Optional[int] = 0
 
 class MiningConfig(BaseModel):
     coin: Optional[str] = None

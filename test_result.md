@@ -303,8 +303,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "RandomX Web Dashboard Integration"
-  stuck_tasks: []
+    - "Live RandomX Mining Pool Connection"
+  stuck_tasks:
+    - "Live RandomX Mining Pool Connection"
   test_all: false
   test_priority: "high_first"
 

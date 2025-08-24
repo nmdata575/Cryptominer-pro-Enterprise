@@ -690,35 +690,53 @@ if __name__ == "__main__":
     # Example configuration for Monero mining
     config = RandomXConfig(
         coin="XMR",
-        pool_url="pool.supportxmr.com:3333",
-        wallet_address="48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD",
+        pool_url="stratum+tcp://us.fastpool.xyz:10055",
+        wallet_address="solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
         password="x",
         threads=2,  # Use 2 threads for testing
-        memory_pool=2  # 2GB memory pool
+        cpu_priority=1
     )
     
     miner = RandomXMiner(config)
     
-    # Test job data (simulated)
-    test_job = {
-        'blob': '0606e4a0c05a0e80b40c0e49e02e6b90f8b3b9c4e1d9a3a9e7a1f7a0e5a0e4a0c05a0e80b40c0e49e02e6b90f8b3b9c4e1d9a3a9e7a1f7a0e5a0',
-        'target': 'b88d0600'
-    }
-    
     try:
+        logger.info("🚀 Testing RandomX miner with real pool connection...")
         if miner.start():
-            miner.set_job(test_job)
+            # Run for testing period
+            test_duration = 120  # Test for 2 minutes
+            logger.info(f"⏱️ Running test for {test_duration} seconds...")
             
-            # Run for testing
-            time.sleep(60)  # Mine for 1 minute
+            start_time = time.time()
+            while time.time() - start_time < test_duration:
+                time.sleep(10)
+                stats = miner.get_stats()
+                logger.info(
+                    f"📊 Test Progress: {stats['hashrate']:.1f} H/s | "
+                    f"Shares: {stats['shares_good']} | "
+                    f"Pool: {'Connected' if stats['pool_connected'] else 'Disconnected'}"
+                )
             
             # Print final stats
             final_stats = miner.get_stats()
-            print(f"\n📊 Final Statistics:")
-            print(f"   Total Hashrate: {final_stats['hashrate']:.2f} H/s")
-            print(f"   Total Hashes: {final_stats['hashes_total']}")
-            print(f"   Shares Found: {final_stats['shares_good']}")
-            print(f"   CPU Usage: {final_stats['cpu_usage']:.1f}%")
+            logger.info("\n" + "="*60)
+            logger.info("📊 FINAL TEST STATISTICS:")
+            logger.info("="*60)
+            logger.info(f"   Total Hashrate: {final_stats['hashrate']:.2f} H/s")
+            logger.info(f"   Total Hashes: {final_stats['hashes_total']:,}")
+            logger.info(f"   Shares Found: {final_stats['shares_good']}")
+            logger.info(f"   Pool Connected: {final_stats['pool_connected']}")
+            logger.info(f"   CPU Usage: {final_stats['cpu_usage']:.1f}%")
+            logger.info(f"   Threads: {final_stats['threads']}")
+            logger.info(f"   Uptime: {final_stats['uptime']:.1f}s")
+            logger.info("="*60)
             
+        else:
+            logger.error("❌ Failed to start RandomX miner")
+            
+    except KeyboardInterrupt:
+        logger.info("\n⚠️ Test interrupted by user")
+    except Exception as e:
+        logger.error(f"❌ Test error: {e}")
     finally:
         miner.stop()
+        logger.info("🏁 Test completed")

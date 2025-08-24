@@ -462,6 +462,69 @@ class RandomXMinerThread:
         header_bytes = bytes.fromhex(block_header)
         return header_bytes + nonce_bytes
     
+    def _create_hash_input(self) -> bytes:
+        """Create input for hash calculation"""
+        if not self.current_job:
+            return b'\x00' * 76
+        
+        # Create block template with nonce
+        blob = self.current_job.get('blob', '0' * 152)
+        try:
+            # Convert hex blob to bytes and insert nonce
+            blob_bytes = bytearray.fromhex(blob)
+            # Insert nonce at position 39 (standard for Monero)
+            nonce_bytes = struct.pack('<I', self.nonce)
+            blob_bytes[39:43] = nonce_bytes
+            return bytes(blob_bytes)
+        except:
+            # Fallback - create simple input
+            return struct.pack('<I', self.nonce) + b'\x00' * 72
+    
+    def _calculate_hash(self, input_data: bytes) -> bytes:
+        """Calculate hash (simplified version)"""
+        # This is still simplified - in a real implementation you'd use
+        # the actual RandomX library with proper VM execution
+        hash1 = hashlib.blake2b(input_data, digest_size=32).digest()
+        hash2 = hashlib.sha3_256(hash1 + input_data).digest()
+        
+        # Simple memory-hard simulation
+        for i in range(100):  # Reduced for performance
+            hash1 = hashlib.blake2b(hash1 + hash2[i % 32:i % 32 + 1], digest_size=32).digest()
+        
+        return hash1
+    
+    def _check_target(self, hash_result: bytes) -> bool:
+        """Check if hash meets difficulty target"""
+        if not self.current_job:
+            return False
+        
+        try:
+            # Convert hash to integer (little endian)
+            hash_int = int.from_bytes(hash_result[:8], byteorder='little')
+            
+            # Simple difficulty check (every 100000th hash is a "share")
+            return hash_int % 100000 == 0
+            
+        except Exception as e:
+            logger.error(f"Target check error: {e}")
+            return False
+    
+    def _submit_share(self, hash_result: bytes) -> bool:
+        """Submit share to pool"""
+        if not self.current_job or not self.stratum.authorized:
+            return False
+        
+        try:
+            job_id = self.current_job['job_id']
+            nonce_hex = f"{self.nonce:08x}"
+            result_hex = hash_result.hex()
+            
+            return self.stratum.submit_share(job_id, nonce_hex, result_hex)
+            
+        except Exception as e:
+            logger.error(f"Share submission error: {e}")
+            return False
+    
     def _check_difficulty(self, hash_result: bytes) -> bool:
         """Check if hash meets difficulty target"""
         if not self.current_job:

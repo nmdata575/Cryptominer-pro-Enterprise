@@ -405,18 +405,18 @@ class StratumConnection:
         return None
     
     def submit_share(self, job_id: str, nonce: str, result: str) -> bool:
-        """Submit mining share to Monero pool with proper format"""
+        """Submit mining share to pool with proper format for zeropool/xmrig compatibility"""
         try:
-            # For Monero, we need to use the exact job format from the pool
-            # Most Monero pools expect array format: [job_id, nonce, result]
+            # For zeropool.io and most Monero pools, use simple array format like xmrig
             submit_msg = {
-                "id": int(time.time()),
+                "id": int(time.time() * 1000),  # Use millisecond timestamp like xmrig
+                "jsonrpc": "2.0",  # Add jsonrpc version
                 "method": "submit",
                 "params": [job_id, nonce, result]
             }
             
-            logger.debug(f"📤 Submitting share: job_id={job_id}, nonce={nonce}, result={result[:16]}...")
-            response = self._send_receive_with_timeout(submit_msg, timeout=8)
+            logger.debug(f"📤 Submitting share: job_id={job_id}, nonce={nonce}")
+            response = self._send_receive_with_timeout(submit_msg, timeout=10)
             
             if response:
                 logger.debug(f"📥 Pool response: {response}")
@@ -424,11 +424,15 @@ class StratumConnection:
                 if 'result' in response:
                     result_value = response['result']
                     if result_value == 'OK' or result_value is True:
-                        logger.info("✅ Share accepted by Monero pool")
+                        logger.info("✅ Share accepted by pool")
                         return True
-                    elif result_value is False or result_value is None:
+                    elif result_value is False:
                         error = response.get('error', 'Share rejected')
-                        logger.warning(f"❌ Share rejected: {error}")
+                        if isinstance(error, dict):
+                            error_msg = error.get('message', str(error))
+                        else:
+                            error_msg = str(error)
+                        logger.warning(f"❌ Share rejected: {error_msg}")
                         return False
                 elif 'error' in response:
                     error = response['error']

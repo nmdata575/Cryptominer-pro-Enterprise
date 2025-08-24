@@ -412,27 +412,42 @@ async def get_available_coins():
 
 @api_router.post("/mining/control")
 async def control_mining(request: Dict[str, Any]):
-    """Control mining operations (start/stop/restart)"""
+    """Control mining operations (start/stop/restart) - Always uses mining_config.env settings"""
     global mining_process, is_mining_active
     
     action = request.get("action")
-    config = request.get("config", {})
+    web_config = request.get("config", {})
     
     if action == "start":
         if is_mining_active and mining_process and mining_process.poll() is None:
             return {"status": "error", "message": "Mining is already running"}
         
-        # Use configuration from mining_config.env file
-        merged_config = default_mining_config.copy()
-        merged_config.update(config)  # Override with any provided config
+        # ALWAYS use configuration from mining_config.env file as primary source
+        # Only allow web interface to override non-critical settings like threads/intensity
+        file_config = load_mining_config()  # Fresh load to get latest values
         
-        success = await start_mining_process(merged_config)
+        # Create final config - prioritize mining_config.env for critical settings
+        final_config = {
+            "coin": file_config.get("coin", "XMR"),  # Always from file
+            "wallet": file_config.get("wallet", "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"),  # Always from file
+            "pool": file_config.get("pool", "stratum+tcp://pool.supportxmr.com:3333"),  # Always from file
+            "password": file_config.get("password", "x"),  # Always from file
+            # Allow web interface to override performance settings only
+            "intensity": web_config.get("intensity", file_config.get("intensity", 80)),
+            "threads": web_config.get("threads", file_config.get("threads", "auto")),
+            "web_enabled": file_config.get("web_enabled", True),
+            "ai_enabled": file_config.get("ai_enabled", True)
+        }
+        
+        logger.info(f"🔒 Using mining_config.env settings: coin={final_config['coin']}, pool={final_config['pool']}")
+        
+        success = await start_mining_process(final_config)
         
         if success:
             # Log the control action
             await db.mining_control_log.insert_one({
                 "action": "start",
-                "config": merged_config,
+                "config": final_config,
                 "timestamp": datetime.utcnow(),
                 "status": "executed",
                 "process_id": mining_process.pid if mining_process else None
@@ -441,7 +456,7 @@ async def control_mining(request: Dict[str, Any]):
             return {
                 "status": "success", 
                 "message": f"Mining started successfully (PID: {mining_process.pid})", 
-                "config": merged_config
+                "config": final_config
             }
         else:
             return {"status": "error", "message": "Failed to start mining process"}
@@ -471,18 +486,32 @@ async def control_mining(request: Dict[str, Any]):
             killed_count = await kill_mining_processes()
             logger.info(f"Restart: killed {killed_count} processes")
         
-        # Use configuration from mining_config.env file
-        merged_config = default_mining_config.copy()
-        merged_config.update(config)  # Override with any provided config
+        # ALWAYS use configuration from mining_config.env file as primary source
+        file_config = load_mining_config()  # Fresh load to get latest values
         
-        # Start with merged config
-        success = await start_mining_process(merged_config)
+        # Create final config - prioritize mining_config.env for critical settings
+        final_config = {
+            "coin": file_config.get("coin", "XMR"),  # Always from file
+            "wallet": file_config.get("wallet", "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"),  # Always from file
+            "pool": file_config.get("pool", "stratum+tcp://pool.supportxmr.com:3333"),  # Always from file
+            "password": file_config.get("password", "x"),  # Always from file
+            # Allow web interface to override performance settings only
+            "intensity": web_config.get("intensity", file_config.get("intensity", 80)),
+            "threads": web_config.get("threads", file_config.get("threads", "auto")),
+            "web_enabled": file_config.get("web_enabled", True),
+            "ai_enabled": file_config.get("ai_enabled", True)
+        }
+        
+        logger.info(f"🔒 Using mining_config.env settings: coin={final_config['coin']}, pool={final_config['pool']}")
+        
+        # Start with final config
+        success = await start_mining_process(final_config)
         
         if success:
             # Log the control action
             await db.mining_control_log.insert_one({
                 "action": "restart",
-                "config": merged_config,
+                "config": final_config,
                 "timestamp": datetime.utcnow(),
                 "status": "executed",
                 "process_id": mining_process.pid if mining_process else None
@@ -491,7 +520,7 @@ async def control_mining(request: Dict[str, Any]):
             return {
                 "status": "success", 
                 "message": f"Mining restarted successfully (PID: {mining_process.pid})", 
-                "config": merged_config
+                "config": final_config
             }
         else:
             return {"status": "error", "message": "Failed to restart mining process"}

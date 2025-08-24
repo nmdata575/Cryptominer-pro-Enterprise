@@ -524,18 +524,7 @@ class RandomXMinerThread:
         except Exception as e:
             logger.error(f"Share submission error: {e}")
             return False
-    
-    def _check_difficulty(self, hash_result: bytes) -> bool:
-        """Check if hash meets difficulty target"""
-        if not self.current_job:
-            return False
-        
-        target = self.current_job.get('target', '0' * 8)
-        target_int = int(target, 16) if isinstance(target, str) else target
-        
-        # Compare hash as integer with target
-        hash_int = struct.unpack('<Q', hash_result[:8])[0]
-        return hash_int < target_int
+
     
     def _update_hashrate(self):
         """Update hashrate statistics"""

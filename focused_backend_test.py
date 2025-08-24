@@ -8,7 +8,7 @@ import json
 import time
 from datetime import datetime
 
-BACKEND_URL = "https://randomx-miner-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://smartcrypto-5.preview.emergentagent.com/api"
 
 def test_key_endpoints():
     """Test the 4 key endpoints mentioned in the review request"""

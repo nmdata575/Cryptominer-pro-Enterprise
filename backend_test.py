@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 # Use the production backend URL from frontend/.env
-BACKEND_URL = "https://randomx-miner-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://smartcrypto-5.preview.emergentagent.com/api"
 
 class CryptoMinerTester:
     def __init__(self):

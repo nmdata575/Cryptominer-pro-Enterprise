@@ -370,14 +370,18 @@ async def get_mining_stats():
             threads=0,
             intensity=80,
             coin="XMR",
-            algorithm="RandomX",
             pool_connected=False,
-            shares_good=0,
-            hashes_total=0,
-            uptime=0,
-            cpu_usage=0.0,
-            memory_usage=0.0,
-            is_running=False
+            accepted_shares=0,
+            rejected_shares=0,
+            uptime=0.0,
+            difficulty=1.0,
+            ai_learning=0.0,
+            ai_optimization=0.0,
+            last_update=datetime.utcnow(),
+            shares_accepted=0,
+            shares_submitted=0,
+            queue_size=0,
+            last_share_time=0
         )
 
 @api_router.post("/mining/update-stats")

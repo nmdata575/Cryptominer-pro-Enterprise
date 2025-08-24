@@ -1,0 +1,162 @@
+{
+  "summary": {
+    "passed": 3,
+    "total": 4,
+    "success_rate": 75.0,
+    "timestamp": "2025-08-24T17:37:40.146599",
+    "test_focus": "Enhanced Job ID Extraction for zeropool.io"
+  },
+  "detailed_results": [
+    {
+      "test": "Start XMR Mining (Zeropool)",
+      "success": true,
+      "message": "Mining started successfully with zeropool.io: Mining started successfully (PID: 97081)",
+      "timestamp": "2025-08-24T17:36:19.023855",
+      "details": {
+        "status": "success",
+        "message": "Mining started successfully (PID: 97081)",
+        "config": {
+          "coin": "XMR",
+          "wallet": "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8",
+          "pool": "stratum+tcp://xmr.zeropool.io:3333",
+          "password": "x",
+          "intensity": 90,
+          "threads": 2,
+          "web_enabled": true,
+          "ai_enabled": true
+        }
+      }
+    },
+    {
+      "test": "Job ID Extraction Verification",
+      "success": true,
+      "message": "Enhanced job ID extraction working - 2 real job IDs found",
+      "timestamp": "2025-08-24T17:37:34.051622",
+      "details": {
+        "stored_job_messages": 2,
+        "real_job_ids_count": 2,
+        "sample_job_ids": [
+          "759972436062762",
+          "522834327324142"
+        ],
+        "has_numeric_ids": true
+      }
+    },
+    {
+      "test": "Share Submission Success",
+      "success": true,
+      "message": "Share submissions working with real job IDs - 4/4 real",
+      "timestamp": "2025-08-24T17:37:35.051780",
+      "details": {
+        "total_submissions": 4,
+        "real_submissions": 4,
+        "empty_job_warnings": 0,
+        "real_job_usage": 84
+      }
+    },
+    {
+      "test": "Enhanced Job Processing",
+      "success": true,
+      "message": "Enhanced job processing working - nested structure analysis detected",
+      "timestamp": "2025-08-24T17:37:36.051925",
+      "details": {
+        "job_data_received": 2,
+        "updated_job_messages": 2,
+        "has_nested_analysis": true
+      }
+    },
+    {
+      "test": "Mining Performance",
+      "success": false,
+      "message": "Mining performance low - Max: 761.3 H/s, Avg: 425.2 H/s",
+      "timestamp": "2025-08-24T17:37:37.052162",
+      "details": {
+        "max_hashrate": 761.3,
+        "avg_hashrate": 425.1749999999999,
+        "hashrate_readings_count": 28,
+        "all_readings": [
+          "2025-08-24 17:36:23,122 - mining_engine - DEBUG - Thread 1: 362.4 H/s",
+          "2025-08-24 17:36:23,239 - mining_engine - DEBUG - Thread 0: 347.5 H/s",
+          "2025-08-24 17:36:25,621 - mining_engine - DEBUG - Thread 1: 380.3 H/s",
+          "2025-08-24 17:36:25,681 - mining_engine - DEBUG - Thread 0: 376.0 H/s",
+          "2025-08-24 17:36:28,613 - mining_engine - DEBUG - Thread 0: 363.6 H/s",
+          "2025-08-24 17:36:28,720 - mining_engine - DEBUG - Thread 1: 359.0 H/s",
+          "2025-08-24 17:36:31,069 - mining_engine - DEBUG - Thread 0: 373.6 H/s",
+          "2025-08-24 17:36:31,090 - mining_engine - DEBUG - Thread 1: 372.9 H/s",
+          "2025-08-24 17:36:32,439 - __main__ - INFO - \u26a1 Mining Status: 746.4 H/s | Algorithm: RandomX | Threads: 2 | Shares: 0 | Uptime: 12s | Pool: Connected",
+          "2025-08-24 17:36:34,058 - mining_engine - DEBUG - Thread 0: 365.1 H/s",
+          "2025-08-24 17:36:34,086 - mining_engine - DEBUG - Thread 1: 364.3 H/s",
+          "2025-08-24 17:36:36,553 - mining_engine - DEBUG - Thread 0: 370.6 H/s",
+          "2025-08-24 17:36:36,605 - mining_engine - DEBUG - Thread 1: 369.4 H/s",
+          "2025-08-24 17:36:39,259 - mining_engine - DEBUG - Thread 0: 370.4 H/s",
+          "2025-08-24 17:36:39,310 - mining_engine - DEBUG - Thread 1: 369.4 H/s",
+          "2025-08-24 17:36:41,858 - mining_engine - DEBUG - Thread 0: 372.2 H/s",
+          "2025-08-24 17:36:41,902 - mining_engine - DEBUG - Thread 1: 371.4 H/s",
+          "2025-08-24 17:36:44,478 - mining_engine - DEBUG - Thread 0: 373.2 H/s",
+          "2025-08-24 17:36:44,618 - mining_engine - DEBUG - Thread 1: 371.0 H/s",
+          "2025-08-24 17:36:47,039 - mining_engine - DEBUG - Thread 0: 374.9 H/s",
+          "2025-08-24 17:36:47,084 - mining_engine - DEBUG - Thread 1: 374.2 H/s",
+          "2025-08-24 17:36:49,602 - mining_engine - DEBUG - Thread 0: 376.2 H/s",
+          "2025-08-24 17:36:49,674 - mining_engine - DEBUG - Thread 1: 375.3 H/s",
+          "2025-08-24 17:36:51,487 - mining_engine - INFO - \u26a1 RandomX: 751.5 H/s | Shares: 0 | Accepted: 0 | Threads: 2 | Pool: \ud83d\udfe2 Connected | CPU: 12.8%",
+          "2025-08-24 17:37:02,710 - __main__ - INFO - \u26a1 Mining Status: 751.5 H/s | Algorithm: RandomX | Threads: 2 | Shares: 1 | Uptime: 42s | Pool: Connected",
+          "2025-08-24 17:37:12,832 - mining_engine - DEBUG - Thread 1: 381.2 H/s",
+          "2025-08-24 17:37:12,973 - mining_engine - DEBUG - Thread 0: 380.1 H/s",
+          "2025-08-24 17:37:22,047 - mining_engine - INFO - \u26a1 RandomX: 761.3 H/s | Shares: 1 | Accepted: 0 | Threads: 2 | Pool: \ud83d\udfe2 Connected | CPU: 16.9%"
+        ]
+      }
+    }
+  ],
+  "mining_logs_sample": [
+    "2025-08-24 17:37:18,214 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 44.5s)",
+    "2025-08-24 17:37:18,214 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 44.5s)",
+    "2025-08-24 17:37:18,219 - POOL_PROTOCOL - DEBUG - Thread 0 got fresh work: 759972436062762",
+    "2025-08-24 17:37:18,219 - pool_protocol - DEBUG - Thread 0 got fresh work: 759972436062762",
+    "2025-08-24 17:37:18,478 - POOL_PROTOCOL - WARNING - \u23f0 Socket timeout",
+    "2025-08-24 17:37:18,478 - pool_protocol - WARNING - \u23f0 Socket timeout",
+    "2025-08-24 17:37:18,479 - POOL_PROTOCOL - WARNING - No response from pool",
+    "2025-08-24 17:37:18,479 - pool_protocol - WARNING - No response from pool",
+    "2025-08-24 17:37:18,479 - POOL_PROTOCOL - WARNING - \u274c Share REJECTED | Total: 1",
+    "2025-08-24 17:37:18,479 - pool_protocol - WARNING - \u274c Share REJECTED | Total: 1",
+    "2025-08-24 17:37:20,498 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 46.8s)",
+    "2025-08-24 17:37:20,498 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 46.8s)",
+    "2025-08-24 17:37:20,499 - POOL_PROTOCOL - DEBUG - Thread 1 got fresh work: 759972436062762",
+    "2025-08-24 17:37:20,499 - pool_protocol - DEBUG - Thread 1 got fresh work: 759972436062762",
+    "2025-08-24 17:37:20,681 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 47.0s)",
+    "2025-08-24 17:37:20,681 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 47.0s)",
+    "2025-08-24 17:37:20,686 - POOL_PROTOCOL - DEBUG - Thread 0 got fresh work: 759972436062762",
+    "2025-08-24 17:37:20,686 - pool_protocol - DEBUG - Thread 0 got fresh work: 759972436062762",
+    "2025-08-24 17:37:21,475 - __main__ - DEBUG - AI recommendation error: 'AdvancedAIMiningOptimizer' object has no attribute 'get_optimization_recommendation'",
+    "2025-08-24 17:37:22,047 - mining_engine - INFO - \u26a1 RandomX: 761.3 H/s | Shares: 1 | Accepted: 0 | Threads: 2 | Pool: \ud83d\udfe2 Connected | CPU: 16.9%",
+    "2025-08-24 17:37:22,374 - __main__ - DEBUG - \ud83d\udcca Current stats: hashrate=761.3139757627962, threads=2, pool_connected=True",
+    "2025-08-24 17:37:22,379 - __main__ - DEBUG - \ud83c\udf10 Trying 3 backend URLs: ['http://localhost:8001/api/mining/update-stats', 'http://localhost:3333/api/mining/update-stats', 'http://backend:8001/api/mining/update-stats']",
+    "2025-08-24 17:37:22,379 - __main__ - DEBUG - \ud83d\udce4 Attempt 1: Sending stats to http://localhost:8001/api/mining/update-stats",
+    "2025-08-24 17:37:22,467 - __main__ - DEBUG - \u2705 Stats successfully sent to http://localhost:8001/api/mining/update-stats",
+    "2025-08-24 17:37:23,161 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 49.5s)",
+    "2025-08-24 17:37:23,161 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 49.5s)",
+    "2025-08-24 17:37:23,166 - POOL_PROTOCOL - DEBUG - Thread 1 got fresh work: 759972436062762",
+    "2025-08-24 17:37:23,166 - pool_protocol - DEBUG - Thread 1 got fresh work: 759972436062762",
+    "2025-08-24 17:37:23,292 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 49.6s)",
+    "2025-08-24 17:37:23,292 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 49.6s)",
+    "2025-08-24 17:37:23,302 - POOL_PROTOCOL - DEBUG - Thread 0 got fresh work: 759972436062762",
+    "2025-08-24 17:37:23,302 - pool_protocol - DEBUG - Thread 0 got fresh work: 759972436062762",
+    "2025-08-24 17:37:25,590 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 51.9s)",
+    "2025-08-24 17:37:25,590 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 51.9s)",
+    "2025-08-24 17:37:25,596 - POOL_PROTOCOL - DEBUG - Thread 1 got fresh work: 759972436062762",
+    "2025-08-24 17:37:25,596 - pool_protocol - DEBUG - Thread 1 got fresh work: 759972436062762",
+    "2025-08-24 17:37:25,771 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 52.1s)",
+    "2025-08-24 17:37:25,771 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 52.1s)",
+    "2025-08-24 17:37:25,776 - POOL_PROTOCOL - DEBUG - Thread 0 got fresh work: 759972436062762",
+    "2025-08-24 17:37:25,776 - pool_protocol - DEBUG - Thread 0 got fresh work: 759972436062762",
+    "2025-08-24 17:37:27,910 - __main__ - DEBUG - \ud83d\udcca Current stats: hashrate=761.3139757627962, threads=2, pool_connected=True",
+    "2025-08-24 17:37:27,910 - __main__ - DEBUG - \ud83c\udf10 Trying 3 backend URLs: ['http://localhost:8001/api/mining/update-stats', 'http://localhost:3333/api/mining/update-stats', 'http://backend:8001/api/mining/update-stats']",
+    "2025-08-24 17:37:27,910 - __main__ - DEBUG - \ud83d\udce4 Attempt 1: Sending stats to http://localhost:8001/api/mining/update-stats",
+    "2025-08-24 17:37:28,019 - __main__ - DEBUG - \u2705 Stats successfully sent to http://localhost:8001/api/mining/update-stats",
+    "2025-08-24 17:37:28,262 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 54.6s)",
+    "2025-08-24 17:37:28,262 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 54.6s)",
+    "2025-08-24 17:37:28,262 - POOL_PROTOCOL - DEBUG - Thread 1 got fresh work: 759972436062762",
+    "2025-08-24 17:37:28,262 - pool_protocol - DEBUG - Thread 1 got fresh work: 759972436062762",
+    "2025-08-24 17:37:28,347 - POOL_PROTOCOL - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 54.7s)",
+    "2025-08-24 17:37:28,347 - pool_protocol - DEBUG - \u2705 Using REAL pool job: 759972436062762 (age: 54.7s)"
+  ]
+}

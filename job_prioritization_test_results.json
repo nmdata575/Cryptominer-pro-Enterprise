@@ -1,0 +1,53 @@
+{
+  "summary": {
+    "passed": 5,
+    "total": 5,
+    "success_rate": 100.0,
+    "timestamp": "2025-08-24T17:00:20.764586",
+    "test_focus": "Enhanced Job Prioritization System with Real Pool Job Validation"
+  },
+  "detailed_results": [
+    {
+      "test": "Real Job Prioritization",
+      "success": true,
+      "message": "Found 57 real job messages and 8 job acquisitions",
+      "timestamp": "2025-08-24T17:00:00.658626",
+      "details": {}
+    },
+    {
+      "test": "Share Submission Validation",
+      "success": true,
+      "message": "Found 1 real job IDs, no local job submissions",
+      "timestamp": "2025-08-24T17:00:02.659624",
+      "details": {}
+    },
+    {
+      "test": "Job Timing Analysis",
+      "success": true,
+      "message": "Job timing analysis completed - no specific timing violations detected",
+      "timestamp": "2025-08-24T17:00:04.660676",
+      "details": {}
+    },
+    {
+      "test": "Connection State Handling",
+      "success": true,
+      "message": "Connection state management detected - 17 connection messages",
+      "timestamp": "2025-08-24T17:00:06.662109",
+      "details": {}
+    },
+    {
+      "test": "Performance Validation",
+      "success": true,
+      "message": "Good performance: 756.7153095408594 H/s with 2 threads",
+      "timestamp": "2025-08-24T17:00:18.755244",
+      "details": {}
+    }
+  ],
+  "captured_logs_count": 234,
+  "key_findings": {
+    "real_job_messages": 57,
+    "local_job_messages": 0,
+    "zeropool_messages": 11,
+    "share_messages": 6
+  }
+}

@@ -244,11 +244,35 @@ class PoolConnectionProxy:
                         for key, value in result.items():
                             protocol_logger.info(f"      {key}: {value}")
                         
-                        # Store job if provided
+                        # Store job if provided with enhanced ID extraction
                         with self.job_lock:
                             self.current_job = result.copy()
+                            
+                            # Try to extract job ID from various possible field names and nested structures
+                            job_id = None
+                            if 'job' in result and isinstance(result['job'], dict):
+                                # Check nested job object
+                                job_data = result['job']
+                                job_id = (job_data.get('job_id') or 
+                                         job_data.get('jobId') or 
+                                         job_data.get('id') or
+                                         job_data.get('job'))
+                            else:
+                                # Check top level
+                                job_id = (result.get('job_id') or 
+                                         result.get('jobId') or 
+                                         result.get('id') or
+                                         result.get('job'))
+                            
+                            if job_id:
+                                self.current_job['job_id'] = str(job_id)
+                            elif not self.current_job.get('job_id'):
+                                # Generate job ID if none found
+                                self.current_job['job_id'] = f"login_{int(time.time())}"
+                            
                             self.current_job['received_at'] = time.time()
-                            protocol_logger.info(f"   ✅ Stored job from login: {result.get('job_id', 'NO_JOB_ID')}")
+                            final_job_id = self.current_job.get('job_id', 'NO_JOB_ID')
+                            protocol_logger.info(f"   ✅ Stored job from login with ID: {final_job_id}")
                         
                         self.authorized = True
                         protocol_logger.info(f"✅ Authentication successful with method {i+1} - Job received")

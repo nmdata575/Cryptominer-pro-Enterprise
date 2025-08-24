@@ -416,11 +416,30 @@ class StratumConnection:
                     if data:
                         try:
                             message = json.loads(data.decode('utf-8'))
-                            if 'method' in message and message['method'] == 'job':
-                                # Update current job
-                                self.current_job = message['params']
-                                logger.info(f"🔄 New job received: {self.current_job.get('job_id', 'N/A')}")
+                            
+                            # Handle job notifications (common in Monero pools)
+                            if 'method' in message:
+                                if message['method'] == 'job':
+                                    # New job notification
+                                    params = message.get('params', {})
+                                    if isinstance(params, dict) and 'job_id' in params:
+                                        self.current_job = params
+                                        self.current_job['received_at'] = time.time()
+                                        logger.info(f"🔄 New job received: {params.get('job_id', 'N/A')}")
+                                elif message['method'] == 'mining.notify':
+                                    # Bitcoin-style job notification
+                                    params = message.get('params', [])
+                                    if len(params) > 0:
+                                        job_data = {
+                                            'job_id': params[0] if len(params) > 0 else '',
+                                            'blob': params[1] if len(params) > 1 else '',
+                                            'target': params[2] if len(params) > 2 else '',
+                                            'received_at': time.time()
+                                        }
+                                        self.current_job = job_data
+                                        logger.info(f"🔄 Mining job update: {job_data.get('job_id', 'N/A')}")
                         except json.JSONDecodeError:
+                            # Not JSON, ignore
                             pass
                 except socket.timeout:
                     # Timeout is normal, just continue listening

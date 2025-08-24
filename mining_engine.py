@@ -1143,36 +1143,35 @@ class RandomXMinerThread:
             logger.error(f"Target check error: {e}")
             return False
     
-    def _submit_share(self, hash_result: bytes) -> bool:
-        """Submit share to pool with proper Monero format"""
+    def _submit_share_via_proxy(self, hash_result: bytes) -> bool:
+        """Submit share through connection proxy"""
         try:
-            # Always get the freshest job from the Stratum connection
-            fresh_job = self.stratum.get_work()
-            if fresh_job and fresh_job.get('job_id'):
-                job_id = fresh_job['job_id']
-                logger.debug(f"🔍 Using fresh job ID: {job_id}")
-            elif self.current_job and self.current_job.get('job_id'):
+            # Get job ID from current job or proxy
+            job_id = None
+            if self.current_job and self.current_job.get('job_id'):
                 job_id = self.current_job['job_id']
-                job_age = time.time() - self.current_job.get('received_at', 0)
-                if job_age > 30:
-                    logger.warning(f"⚠️ Using potentially stale job ({job_age:.1f}s old): {job_id}")
-            else:
-                logger.error("❌ No valid job available for share submission")
-                return False
+            elif self.connection_proxy:
+                fresh_job = self.connection_proxy.get_current_job()
+                if fresh_job and fresh_job.get('job_id'):
+                    job_id = fresh_job['job_id']
+            
+            if not job_id:
+                job_id = f"local_{int(time.time())}"
+                protocol_logger.debug(f"Using fallback job ID: {job_id}")
             
             # Format nonce as 8-character hex (standard for Monero)
             nonce_hex = f"{self.nonce:08x}"
             
             # For Monero, result should be the complete hash in hex format
-            # Use only the first 32 bytes (64 hex characters) for the result
             result_hex = hash_result[:32].hex()
             
-            logger.debug(f"🔍 Share details: job={job_id}, nonce={nonce_hex}, result={result_hex[:16]}...")
+            protocol_logger.debug(f"🔍 Thread {self.thread_id} share: job={job_id}, nonce={nonce_hex}, result={result_hex[:16]}...")
             
-            return self.stratum.submit_share(job_id, nonce_hex, result_hex)
+            # Submit through connection proxy (queued submission)
+            return self.connection_proxy.submit_share(job_id, nonce_hex, result_hex)
             
         except Exception as e:
-            logger.error(f"❌ Share submission error: {e}")
+            protocol_logger.error(f"❌ Share submission error in thread {self.thread_id}: {e}")
             return False
     
     def _update_hashrate(self):

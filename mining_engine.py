@@ -973,16 +973,16 @@ class StratumConnection:
 # ============================================================================
 
 class RandomXMinerThread:
-    """Individual RandomX mining thread with real pool connection"""
+    """Individual RandomX mining thread using shared connection proxy"""
     
-    def __init__(self, thread_id: int, config: RandomXConfig, stratum_connection: StratumConnection):
+    def __init__(self, thread_id: int, config: RandomXConfig, connection_proxy: PoolConnectionProxy):
         self.thread_id = thread_id
         self.config = config
-        self.stratum = stratum_connection
+        self.connection_proxy = connection_proxy
         self.is_running = False
         self.stats = MiningStats()
         self.thread = None
-        self.offline_mode = False  # Add offline mode support
+        self.offline_mode = False
         
         # Mining state
         self.current_job = None
@@ -998,17 +998,17 @@ class RandomXMinerThread:
         self.is_running = True
         self.thread = threading.Thread(target=self._mining_loop, daemon=True)
         self.thread.start()
-        logger.info(f"🚀 RandomX mining thread {self.thread_id} started")
+        protocol_logger.info(f"🚀 RandomX mining thread {self.thread_id} started with proxy connection")
     
     def stop(self):
         """Stop mining thread"""
         self.is_running = False
         if self.thread:
             self.thread.join(timeout=5)
-        logger.info(f"🛑 RandomX mining thread {self.thread_id} stopped")
+        protocol_logger.info(f"🛑 RandomX mining thread {self.thread_id} stopped")
     
     def _mining_loop(self):
-        """Main mining loop with real CPU-intensive work"""
+        """Main mining loop using connection proxy for share submission"""
         logger.info(f"⚡ Mining loop started for thread {self.thread_id}")
         
         # Mining timing control
@@ -1017,17 +1017,18 @@ class RandomXMinerThread:
         
         while self.is_running:
             try:
-                # Get work from pool (always get fresh work to avoid stale jobs)
+                # Get work from connection proxy
                 if not self.current_job or time.time() - self.current_job.get('received_at', 0) > 10:
-                    # Get fresh work from stratum connection every 10 seconds or if no job
-                    fresh_work = self.stratum.get_work()
-                    if fresh_work:
-                        self.current_job = fresh_work
-                        logger.debug(f"Thread {self.thread_id} got fresh work: {fresh_work.get('job_id', 'N/A')}")
-                    elif not self.current_job:
+                    if self.connection_proxy:
+                        fresh_work = self.connection_proxy.get_current_job()
+                        if fresh_work:
+                            self.current_job = fresh_work
+                            protocol_logger.debug(f"Thread {self.thread_id} got fresh work: {fresh_work.get('job_id', 'N/A')}")
+                    
+                    if not self.current_job:
                         # Create local work template if no work available
                         self.current_job = self._create_local_work()
-                        logger.debug(f"Thread {self.thread_id} using local work")
+                        protocol_logger.debug(f"Thread {self.thread_id} using local work")
                 
                 if not self.current_job:
                     time.sleep(1)
@@ -1046,7 +1047,7 @@ class RandomXMinerThread:
                     
                     # Check if hash meets difficulty (simulate finding shares)
                     if self._check_target(hash_result):
-                        logger.info(f"🎯 Share found by thread {self.thread_id}!")
+                        protocol_logger.info(f"🎯 Share found by thread {self.thread_id}!")
                         
                         # Attempt to submit share to pool
                         if self.stratum.authorized:

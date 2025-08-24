@@ -230,15 +230,29 @@ class PoolConnectionProxy:
                 
                 if response and 'result' in response:
                     result = response['result']
-                    if isinstance(result, dict) or result is True or result == "OK":
+                    protocol_logger.info(f"🔍 LOGIN RESPONSE ANALYSIS - Method {i+1}:")
+                    protocol_logger.info(f"   Response type: {type(result)}")
+                    protocol_logger.info(f"   Response content: {result}")
+                    
+                    if isinstance(result, dict):
+                        # Detailed analysis of job data structure
+                        protocol_logger.info(f"   📋 JOB DATA RECEIVED:")
+                        for key, value in result.items():
+                            protocol_logger.info(f"      {key}: {value}")
+                        
                         # Store job if provided
-                        if isinstance(result, dict):
-                            with self.job_lock:
-                                self.current_job = result.copy()
-                                self.current_job['received_at'] = time.time()
+                        with self.job_lock:
+                            self.current_job = result.copy()
+                            self.current_job['received_at'] = time.time()
+                            protocol_logger.info(f"   ✅ Stored job from login: {result.get('job_id', 'NO_JOB_ID')}")
                         
                         self.authorized = True
-                        protocol_logger.info(f"✅ Authentication successful with method {i+1}")
+                        protocol_logger.info(f"✅ Authentication successful with method {i+1} - Job received")
+                        return True
+                    elif result is True or result == "OK":
+                        protocol_logger.info(f"   ✅ Authentication successful but NO JOB DATA provided by pool")
+                        self.authorized = True
+                        protocol_logger.info(f"✅ Authentication successful with method {i+1} - No job provided")
                         return True
                 
                 protocol_logger.warning(f"⚠️ Authentication method {i+1} failed")

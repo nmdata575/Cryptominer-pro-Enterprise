@@ -358,21 +358,31 @@ class StratumConnection:
         return None
     
     def submit_share(self, job_id: str, nonce: str, result: str) -> bool:
-        """Submit mining share to pool"""
+        """Submit mining share to Monero pool"""
         try:
+            # Monero uses "submit" method with different parameter format
             submit_msg = {
-                "id": 3,
-                "method": "mining.submit",
-                "params": [self.wallet, job_id, nonce, result]
+                "id": int(time.time()),  # Unique ID for each submission
+                "method": "submit",
+                "params": {
+                    "id": job_id,
+                    "job_id": job_id,
+                    "nonce": nonce,
+                    "result": result
+                }
             }
             
-            response = self._send_receive_with_timeout(submit_msg, timeout=3)
-            if response and response.get('result') is True:
-                logger.info("✅ Share accepted by pool")
-                return True
+            response = self._send_receive_with_timeout(submit_msg, timeout=5)
+            if response:
+                if response.get('result') == 'OK' or response.get('result') is True:
+                    logger.info("✅ Share accepted by Monero pool")
+                    return True
+                else:
+                    error = response.get('error', 'Unknown error')
+                    logger.warning(f"❌ Share rejected by pool: {error}")
+                    return False
             else:
-                error = response.get('error', 'Unknown error') if response else 'No response'
-                logger.warning(f"❌ Share rejected: {error}")
+                logger.warning("❌ No response from pool for share submission")
                 return False
                 
         except Exception as e:

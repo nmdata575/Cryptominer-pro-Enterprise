@@ -666,7 +666,7 @@ class ScryptMiner:
         self.threads = []
         self.stats = MiningStats()
         
-        if self.config.threads <= 0:
+        if self.config.threads is None or self.config.threads <= 0:
             self.config.threads = max(1, psutil.cpu_count())
         
         logger.info(f"🔧 Scrypt Miner configured for {self.config.coin} with {self.config.threads} threads")

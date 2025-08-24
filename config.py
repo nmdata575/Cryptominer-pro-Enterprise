@@ -67,7 +67,7 @@ CPU_THREADS_MULTIPLIER = 4  # threads per CPU core
 # Web Monitoring Constants
 WEB_UPDATE_INTERVAL = 5  # seconds
 WEB_API_TIMEOUT = 5  # seconds
-DEFAULT_WEB_PORT = 8001
+DEFAULT_WEB_PORT = 3333
 FRONTEND_UPDATE_INTERVAL = 5000  # milliseconds
 
 # Supported Coins

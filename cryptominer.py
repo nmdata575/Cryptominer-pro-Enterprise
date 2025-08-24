@@ -323,7 +323,7 @@ def main():
                 'pool': config.get('pool'),
                 'password': config.get('password', 'x'),
                 'intensity': config.get('intensity', 80),
-                'threads': config.get('threads', 0),
+                'threads': config.get('threads') or 0,  # Convert None to 0
                 'web_enabled': config.get('web_enabled', True) and not args.no_web,
                 'ai_enabled': config.get('ai_enabled', True) and not args.no_ai
             }

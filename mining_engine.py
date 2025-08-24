@@ -1287,12 +1287,15 @@ class RandomXMiner:
             cpu_percent = 0
             memory = type('obj', (object,), {'percent': 0, 'total': 0, 'available': 0})()
         
-        # Pool connection status
+        # Pool connection status from proxy
         pool_connected = (
-            self.stratum_connection and 
-            self.stratum_connection.connected and 
-            self.stratum_connection.authorized
+            self.connection_proxy and 
+            self.connection_proxy.connected and 
+            self.connection_proxy.authorized
         )
+        
+        # Get proxy stats
+        proxy_stats = self.connection_proxy.get_stats() if self.connection_proxy else {}
         
         return {
             'algorithm': 'RandomX',
@@ -1301,6 +1304,8 @@ class RandomXMiner:
             'hashes_total': total_hashes,
             'shares_good': total_shares,
             'shares_rejected': total_rejected,
+            'shares_accepted': proxy_stats.get('shares_accepted', 0),  # From proxy
+            'shares_submitted': proxy_stats.get('shares_submitted', 0),  # From proxy
             'threads': len(self.threads),
             'uptime': time.time() - (self.threads[0].start_time if self.threads else time.time()),
             'cpu_usage': cpu_percent,
@@ -1310,7 +1315,8 @@ class RandomXMiner:
             'is_running': self.is_running,
             'pool_connected': pool_connected,
             'pool_url': self.config.pool_url,
-            'difficulty': self.stratum_connection.difficulty if self.stratum_connection else 0,
+            'queue_size': proxy_stats.get('queue_size', 0),  # Share queue size
+            'last_share_time': proxy_stats.get('last_share_time', 0),
             'thread_stats': [
                 {
                     'id': t.thread_id,

@@ -456,6 +456,95 @@ class PoolConnectionProxy:
             except Exception as e:
                 protocol_logger.debug(f"Keepalive error: {e}")
     
+    def _job_listener_worker(self):
+        """Listen for job notifications from pool in background"""
+        protocol_logger.info("🎯 Job listener worker started")
+        
+        while self.running and self.connected:
+            try:
+                # Listen for incoming messages from pool (job notifications, etc.)
+                if not self.socket:
+                    time.sleep(1)
+                    continue
+                
+                # Set socket to non-blocking with timeout for job listening
+                original_timeout = self.socket.gettimeout()
+                self.socket.settimeout(5)  # 5 second timeout for job listening
+                
+                try:
+                    # Try to receive data
+                    data = self.socket.recv(4096)
+                    if not data:
+                        protocol_logger.warning("🔌 Socket closed during job listening")
+                        self.connected = False
+                        break
+                    
+                    self.last_activity = time.time()
+                    
+                    # Parse JSON messages
+                    messages = data.decode('utf-8').strip().split('\n')
+                    for message in messages:
+                        if message:
+                            try:
+                                parsed = json.loads(message)
+                                protocol_logger.debug(f"📥 JOB_LISTENER RECV: {message}")
+                                
+                                # Check for job notifications
+                                if 'method' in parsed:
+                                    method = parsed.get('method')
+                                    params = parsed.get('params', {})
+                                    
+                                    if method == 'job' or method == 'mining.notify':
+                                        protocol_logger.info(f"🎯 NEW JOB NOTIFICATION: {method}")
+                                        protocol_logger.info(f"   Job params: {params}")
+                                        
+                                        # Store new job
+                                        with self.job_lock:
+                                            if isinstance(params, dict):
+                                                self.current_job = params.copy()
+                                            elif isinstance(params, list) and len(params) > 0:
+                                                # Create job from array format
+                                                self.current_job = {
+                                                    'job_id': params[0] if len(params) > 0 else f"job_{int(time.time())}",
+                                                    'blob': params[1] if len(params) > 1 else '',
+                                                    'target': params[2] if len(params) > 2 else '',
+                                                    'height': params[3] if len(params) > 3 else 0
+                                                }
+                                            
+                                            self.current_job['received_at'] = time.time()
+                                            protocol_logger.info(f"✅ Updated job: {self.current_job.get('job_id', 'UNKNOWN')}")
+                                
+                                # Handle other methods like difficulty changes
+                                elif method == 'mining.set_difficulty':
+                                    difficulty = params[0] if isinstance(params, list) and len(params) > 0 else params
+                                    protocol_logger.info(f"🎯 DIFFICULTY UPDATE: {difficulty}")
+                                
+                                else:
+                                    protocol_logger.debug(f"🔍 Other method received: {method}")
+                            
+                            except json.JSONDecodeError as e:
+                                protocol_logger.debug(f"JSON decode error in job listener: {e}")
+                                continue
+                
+                except socket.timeout:
+                    # Normal timeout, continue listening
+                    pass
+                except Exception as e:
+                    protocol_logger.debug(f"Job listener receive error: {e}")
+                    time.sleep(1)
+                finally:
+                    if self.socket:
+                        self.socket.settimeout(original_timeout)
+                
+                # Small delay to prevent busy waiting
+                time.sleep(0.1)
+                
+            except Exception as e:
+                protocol_logger.error(f"❌ Job listener error: {e}")
+                time.sleep(5)
+        
+        protocol_logger.info("🛑 Job listener worker stopped")
+    
     def get_current_job(self) -> Optional[Dict]:
         """Get current mining job"""
         with self.job_lock:

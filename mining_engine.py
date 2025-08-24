@@ -362,42 +362,40 @@ class StratumConnection:
         try:
             # Monero pools often expect simple parameters array for share submission
             submit_formats = [
-                # Format 1: Standard Monero pool format
-                {
-                    "id": int(time.time()),
-                    "method": "submit",
-                    "params": {
-                        "id": job_id,
-                        "job_id": job_id,
-                        "nonce": nonce,
-                        "result": result
-                    }
-                },
-                # Format 2: Array-based parameters (many pools prefer this)
+                # Format 1: Array-based parameters (most common for Monero)
                 {
                     "id": int(time.time()),
                     "method": "submit",
                     "params": [job_id, nonce, result]
                 },
-                # Format 3: Include worker/login in submission
+                # Format 2: Object-based with job_id
                 {
                     "id": int(time.time()),
-                    "method": "submit", 
+                    "method": "submit",
                     "params": {
-                        "id": self.wallet,
                         "job_id": job_id,
                         "nonce": nonce,
                         "result": result
                     }
-                }
+                },
+                # Format 3: Include id field
+                {
+                    "id": int(time.time()),
+                    "method": "submit",
+                    "params": {
+                        "id": job_id,
+                        "nonce": nonce,
+                        "result": result
+                    }
+                },
             ]
             
-            for submit_msg in submit_formats:
+            for i, submit_msg in enumerate(submit_formats):
                 try:
-                    logger.debug(f"📤 Trying share submission format: {submit_msg}")
-                    response = self._send_receive_with_timeout(submit_msg, timeout=5)
+                    logger.info(f"📤 Trying share submission format {i+1}: {submit_msg['params']}")
+                    response = self._send_receive_with_timeout(submit_msg, timeout=8)
                     if response:
-                        logger.debug(f"📥 Share response: {response}")
+                        logger.info(f"📥 Pool share response: {response}")
                         
                         if (response.get('result') == 'OK' or 
                             response.get('result') is True or
@@ -410,14 +408,18 @@ class StratumConnection:
                                 error_msg = error.get('message', error)
                             else:
                                 error_msg = error
-                            logger.debug(f"❌ Share format failed: {error_msg}")
+                            logger.warning(f"❌ Share format {i+1} failed: {error_msg}")
                             # Try next format
                             continue
                         else:
-                            logger.debug(f"Unexpected response: {response}")
+                            logger.warning(f"Unexpected response format {i+1}: {response}")
                             continue
+                    else:
+                        logger.warning(f"No response from pool for format {i+1}")
+                        continue
+                        
                 except Exception as e:
-                    logger.debug(f"Share submission attempt failed: {e}")
+                    logger.warning(f"Share submission format {i+1} failed: {e}")
                     continue
             
             logger.warning("❌ All share submission formats failed")

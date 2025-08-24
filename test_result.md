@@ -324,7 +324,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced Job Prioritization System Testing"
+    - "Enhanced Job ID Extraction for Zeropool.io"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

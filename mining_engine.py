@@ -360,30 +360,68 @@ class StratumConnection:
     def submit_share(self, job_id: str, nonce: str, result: str) -> bool:
         """Submit mining share to Monero pool"""
         try:
-            # Monero uses "submit" method with different parameter format
-            submit_msg = {
-                "id": int(time.time()),  # Unique ID for each submission
-                "method": "submit",
-                "params": {
-                    "id": job_id,
-                    "job_id": job_id,
-                    "nonce": nonce,
-                    "result": result
+            # Monero pools often expect simple parameters array for share submission
+            submit_formats = [
+                # Format 1: Standard Monero pool format
+                {
+                    "id": int(time.time()),
+                    "method": "submit",
+                    "params": {
+                        "id": job_id,
+                        "job_id": job_id,
+                        "nonce": nonce,
+                        "result": result
+                    }
+                },
+                # Format 2: Array-based parameters (many pools prefer this)
+                {
+                    "id": int(time.time()),
+                    "method": "submit",
+                    "params": [job_id, nonce, result]
+                },
+                # Format 3: Include worker/login in submission
+                {
+                    "id": int(time.time()),
+                    "method": "submit", 
+                    "params": {
+                        "id": self.wallet,
+                        "job_id": job_id,
+                        "nonce": nonce,
+                        "result": result
+                    }
                 }
-            }
+            ]
             
-            response = self._send_receive_with_timeout(submit_msg, timeout=5)
-            if response:
-                if response.get('result') == 'OK' or response.get('result') is True:
-                    logger.info("✅ Share accepted by Monero pool")
-                    return True
-                else:
-                    error = response.get('error', 'Unknown error')
-                    logger.warning(f"❌ Share rejected by pool: {error}")
-                    return False
-            else:
-                logger.warning("❌ No response from pool for share submission")
-                return False
+            for submit_msg in submit_formats:
+                try:
+                    logger.debug(f"📤 Trying share submission format: {submit_msg}")
+                    response = self._send_receive_with_timeout(submit_msg, timeout=5)
+                    if response:
+                        logger.debug(f"📥 Share response: {response}")
+                        
+                        if (response.get('result') == 'OK' or 
+                            response.get('result') is True or
+                            response.get('status') == 'OK'):
+                            logger.info("✅ Share accepted by Monero pool")
+                            return True
+                        elif 'error' in response:
+                            error = response.get('error')
+                            if isinstance(error, dict):
+                                error_msg = error.get('message', error)
+                            else:
+                                error_msg = error
+                            logger.debug(f"❌ Share format failed: {error_msg}")
+                            # Try next format
+                            continue
+                        else:
+                            logger.debug(f"Unexpected response: {response}")
+                            continue
+                except Exception as e:
+                    logger.debug(f"Share submission attempt failed: {e}")
+                    continue
+            
+            logger.warning("❌ All share submission formats failed")
+            return False
                 
         except Exception as e:
             logger.error(f"❌ Share submission error: {e}")

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import pkgutil
+if not hasattr(pkgutil, 'ImpImporter'):
+    pkgutil.ImpImporter = pkgutil.zipimporter
 """
 🚀 CryptoMiner V21
 Advanced Multi-Algorithm CPU Mining Platform with AI Optimization

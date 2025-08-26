@@ -118,37 +118,18 @@ source venv/bin/activate
 log_info "Ensuring setuptools and wheel are installed/upgraded in the virtual environment..."
 pip install --upgrade setuptools wheel
 
-# Check Python dependencies
-log_info "Checking Python dependencies..."
-python3 -c "
-import sys
-required_modules = [
-    'fastapi', 'uvicorn', 'asyncio', 'aiohttp', 'scrypt', 'psutil',
-    'motor', 'pydantic', 'pymongo'
-]
-missing = []
+# Always upgrade pip and install requirements
+log_info "Upgrading pip..."
+if ! pip install --upgrade pip; then
+    log_error "Failed to upgrade pip"
+    exit 1
+fi
 
-for module in required_modules:
-    try:
-        __import__(module)
-    except ImportError:
-        missing.append(module)
-
-if missing:
-    print(f'❌ Missing modules: {missing}')
-    print('Installing missing dependencies...')
-    sys.exit(2)
-else:
-    print('✅ All required modules available')
-" || {
-    if [[ $? -eq 2 ]]; then
-        log_info "Installing missing dependencies..."
-        pip install -r requirements.txt
-    else
-        log_error "Dependency check failed"
-        exit 1
-    fi
-}
+log_info "Installing Python dependencies from requirements.txt..."
+if ! pip install -r requirements.txt; then
+    log_error "Failed to install Python dependencies"
+    exit 1
+fi
 
 # Stop any existing processes
 log_info "Stopping any existing CryptoMiner processes..."

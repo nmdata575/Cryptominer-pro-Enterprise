@@ -34,32 +34,38 @@ log_error() {
 # Cleanup function
 cleanup() {
     log_info "Shutting down all services..."
-    
+
     # Stop backend server gracefully
     if [[ -n "$BACKEND_PID" ]]; then
         log_info "Stopping backend server (PID: $BACKEND_PID)..."
         kill -TERM "$BACKEND_PID" 2>/dev/null || true
         sleep 2
-        # Force kill if still running
         kill -9 "$BACKEND_PID" 2>/dev/null || true
     fi
-    
+
     # Stop dashboard server gracefully
     if [[ -n "$DASHBOARD_PID" ]]; then
         log_info "Stopping web dashboard (PID: $DASHBOARD_PID)..."
         kill -TERM "$DASHBOARD_PID" 2>/dev/null || true
         sleep 2
-        # Force kill if still running
         kill -9 "$DASHBOARD_PID" 2>/dev/null || true
     fi
-    
+
+    # Stop cryptominer process
+    if [[ -n "$CRYPTO_PID" ]]; then
+        log_info "Stopping cryptominer (PID: $CRYPTO_PID)..."
+        kill -TERM "$CRYPTO_PID" 2>/dev/null || true
+        sleep 2
+        kill -9 "$CRYPTO_PID" 2>/dev/null || true
+    fi
+
     # Force kill any remaining processes
     log_info "Force stopping all CryptoMiner V21 processes..."
     pkill -9 -f "uvicorn.*server:app" 2>/dev/null || true
     pkill -9 -f "python3.*cryptominer" 2>/dev/null || true
     pkill -9 -f "http.server" 2>/dev/null || true
     pkill -9 -f "timeout.*cryptominer" 2>/dev/null || true
-    
+
     log_success "All services stopped"
     exit 0
 }
@@ -82,7 +88,7 @@ POOL=pool.supportxmr.com:3333
 PASSWORD=cryptominer-v21
 INTENSITY=80
 THREADS=8
-WEB_PORT=8001
+WEB_PORT=3000
 WEB_ENABLED=true
 AI_ENABLED=true
 EOF
@@ -91,19 +97,31 @@ EOF
     log_warning "Please edit mining_config.env with your wallet address"
 fi
 
-# Activate virtual environment if it exists
-if [[ -d "venv" ]]; then
-    log_info "Activating Python virtual environment..."
-    source venv/bin/activate
-else
-    log_warning "No virtual environment found. Using system Python."
+# Export WEB_PORT from mining_config.env, default to 3000 if not set
+WEB_PORT=$(grep -E '^WEB_PORT=' mining_config.env | cut -d'=' -f2 | tr -d '"')
+if [[ -z "$WEB_PORT" ]]; then
+    WEB_PORT=3000
 fi
+export WEB_PORT
+
+# Create virtual environment if it doesn't exist
+if [[ ! -d "venv" ]]; then
+    log_info "Creating Python virtual environment..."
+    python3 -m venv venv
+fi
+
+# Activate virtual environment
+log_info "Activating Python virtual environment..."
+source venv/bin/activate
 
 # Check Python dependencies
 log_info "Checking Python dependencies..."
 python3 -c "
 import sys
-required_modules = ['fastapi', 'uvicorn', 'asyncio', 'aiohttp', 'scrypt', 'psutil']
+required_modules = [
+    'fastapi', 'uvicorn', 'asyncio', 'aiohttp', 'scrypt', 'psutil',
+    'motor', 'pydantic', 'pymongo'
+]
 missing = []
 
 for module in required_modules:
@@ -169,52 +187,61 @@ else
     BACKEND_PID=""
 fi
 
-# Stop any React frontend and start HTML dashboard
+# Stop any existing frontend or HTTP server on the dashboard port
 log_info "Setting up web dashboard..."
 if command -v supervisorctl &> /dev/null; then
     sudo supervisorctl stop frontend 2>/dev/null || true
     log_info "Stopped React frontend (if running)"
 fi
 
-# Stop any existing HTTP server on port 3000
-lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+lsof -ti:"$WEB_PORT" | xargs kill -9 2>/dev/null || true
 sleep 1
 
-# Start HTML dashboard server
-if [[ -f "web-dashboard/index.html" ]]; then
-    log_info "Starting CryptoMiner V21 web dashboard..."
-    cd web-dashboard
-    python3 -m http.server 3000 > /dev/null 2>&1 &
-    DASHBOARD_PID=$!
+# Build and serve frontend dashboard
+if [[ -d "frontend" ]]; then
+    log_info "Building React frontend..."
+    cd frontend
+    npm install
+    npm run build
     cd ..
-    
-    # Wait a moment for dashboard to start
-    sleep 2
-    
-    # Check if dashboard started successfully
-    if kill -0 "$DASHBOARD_PID" 2>/dev/null; then
-        log_success "Web Dashboard started (PID: $DASHBOARD_PID) - http://localhost:3000"
+    if [[ -d "frontend/build" ]]; then
+        log_info "Starting CryptoMiner V21 web dashboard on port $WEB_PORT..."
+        cd frontend/build
+        python3 -m http.server "$WEB_PORT" > /dev/null 2>&1 &
+        DASHBOARD_PID=$!
+        cd ../..
+        sleep 2
+        if kill -0 "$DASHBOARD_PID" 2>/dev/null; then
+            log_success "Web Dashboard started (PID: $DASHBOARD_PID) - http://localhost:$WEB_PORT"
+        else
+            log_error "Failed to start web dashboard"
+            exit 1
+        fi
     else
-        log_error "Failed to start web dashboard"
-        exit 1
+        log_error "frontend/build not found. Web dashboard not started."
+        DASHBOARD_PID=""
     fi
 else
-    log_warning "web-dashboard/index.html not found. Web dashboard not started."
+    log_warning "frontend directory not found. Web dashboard not started."
     DASHBOARD_PID=""
 fi
 
 # Start the integrated mining application
 log_info "Starting CryptoMiner V21 with integrated web dashboard..."
 log_info ""
-log_success "🌐 Web Dashboard: http://localhost:3000"
+log_success "🌐 Web Dashboard: http://localhost:$WEB_PORT"
 log_success "🔧 Backend API: http://localhost:8001"
 log_success "📚 API Docs: http://localhost:8001/docs"
 log_info ""
 log_info "Press Ctrl+C to stop all services"
 log_info ""
 
-# Start with proxy mode for maximum efficiency
-python3 cryptominer.py --proxy-mode
+# Start with proxy mode for maximum efficiency and capture PID
+python3 cryptominer.py --proxy-mode &
+CRYPTO_PID=$!
+
+# Wait for cryptominer to exit (foreground wait)
+wait $CRYPTO_PID
 
 # If we reach here, cryptominer.py exited normally
 cleanup

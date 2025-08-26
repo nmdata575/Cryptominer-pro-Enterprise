@@ -114,6 +114,10 @@ fi
 log_info "Activating Python virtual environment..."
 source venv/bin/activate
 
+# Ensure setuptools & wheel installed for building packages
+log_info "Ensuring setuptools and wheel are installed/upgraded in the virtual environment..."
+pip install --upgrade setuptools wheel
+
 # Check Python dependencies
 log_info "Checking Python dependencies..."
 python3 -c "

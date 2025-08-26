@@ -236,15 +236,15 @@
                 </div>
                 <div class="stat">
                     <span>Accepted Shares:</span>
-                    <span class="value" id="shares-good">0</span>
+                    <span class="value" id="shares-accepted">0</span>
                 </div>
                 <div class="stat">
                     <span>Rejected Shares:</span>
                     <span class="value rejected" id="shares-rejected">0</span>
                 </div>
                 <div class="stat">
-                    <span>Total Hashes:</span>
-                    <span class="value" id="total-hashes">0</span>
+                    <span>Difficulty:</span>
+                    <span class="value" id="difficulty">-</span>
                 </div>
                 <div class="stat">
                     <span>Uptime:</span>
@@ -337,7 +337,6 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    timeout: 10000, // 10 second timeout
                     ...options
                 });
                 
@@ -384,9 +383,13 @@
                 
                 // Update pool and shares
                 document.getElementById('pool-status').textContent = stats.pool_connected ? '🟢 Connected' : '🔴 Disconnected';
-                document.getElementById('shares-good').textContent = parseInt(stats.shares_good) || 0;
-                document.getElementById('shares-rejected').textContent = parseInt(stats.shares_rejected) || 0;
-                document.getElementById('total-hashes').textContent = formatNumber(parseInt(stats.hashes_total) || 0);
+                document.getElementById('shares-accepted').textContent = (typeof stats.accepted_shares !== "undefined")
+                  ? parseInt(stats.accepted_shares) || 0
+                  : (parseInt(stats.shares_good) || 0);
+                document.getElementById('shares-rejected').textContent = (typeof stats.rejected_shares !== "undefined")
+                  ? parseInt(stats.rejected_shares) || 0
+                  : (parseInt(stats.shares_rejected) || 0);
+                document.getElementById('difficulty').textContent = typeof stats.difficulty !== "undefined" ? stats.difficulty : "-";
                 document.getElementById('uptime').textContent = formatUptime(parseFloat(stats.uptime) || 0);
                 
                 // Update system resources with validation

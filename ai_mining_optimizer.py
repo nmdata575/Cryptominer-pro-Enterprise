@@ -21,6 +21,7 @@ import hashlib
 import os
 import random
 from collections import deque
+from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
@@ -92,7 +93,11 @@ class AIDatabase:
     """Advanced AI database with 15GB capacity"""
     
     def __init__(self, db_path: str = "ai_mining_data.db", max_size_gb: int = 15):
-        self.db_path = db_path
+        # Always resolve to absolute path relative to this script
+        db_path = Path(db_path)
+        if not db_path.is_absolute():
+            db_path = Path(__file__).parent / db_path
+        self.db_path = str(db_path)
         self.max_size_bytes = max_size_gb * 1024 * 1024 * 1024  # 15GB
         self.connection = None
         self._initialize_database()

@@ -118,6 +118,16 @@ class PoolConnectionProxy:
         self.shares_accepted = 0
         self.shares_rejected = 0
         self.last_share_time = 0
+
+        # Reconnection state
+        self._reconnect_attempts = 0
+        self._max_reconnects = 5
+        self._exponential_backoff = [1, 2, 4, 8, 16]
+        self._fatal_reconnect_error = False
+
+    def _reset_reconnect_state(self):
+        self._reconnect_attempts = 0
+        self._fatal_reconnect_error = False
         
     def _parse_pool_url(self):
         """Parse pool URL to extract host and port"""
@@ -142,6 +152,7 @@ class PoolConnectionProxy:
         protocol_logger.info(f"🚀 Starting connection proxy to {self.host}:{self.port}")
         
         if self._connect_to_pool():
+            self._reset_reconnect_state()
             self.running = True
             self.submission_thread = threading.Thread(target=self._share_submission_worker, daemon=True)
             self.submission_thread.start()
@@ -164,6 +175,7 @@ class PoolConnectionProxy:
         """Stop the connection proxy"""
         protocol_logger.info("🛑 Stopping connection proxy")
         self.running = False
+        self._reset_reconnect_state()
         if self.socket:
             try:
                 self.socket.close()
@@ -361,7 +373,7 @@ class PoolConnectionProxy:
             return False
     
     def _share_submission_worker(self):
-        """Worker thread that processes share submissions sequentially"""
+        """Worker thread that processes share submissions sequentially, now with resilient reconnects"""
         protocol_logger.info("🔄 Share submission worker started")
         
         while self.running:
@@ -369,11 +381,14 @@ class PoolConnectionProxy:
                 # Get next share from queue
                 share_data = self.share_queue.get(timeout=1)
                 
-                if not self.connected or not self.authorized:
-                    protocol_logger.warning("⚠️ Not connected/authorized, attempting reconnection")
+                if not self.connected or not self.authorized or self._fatal_reconnect_error:
+                    protocol_logger.warning("⚠️ Not connected/authorized, attempting reconnection before submitting share")
                     if not self._reconnect():
+                        protocol_logger.error("❌ Reconnection failed; share cannot be submitted, dropping share.")
+                        self.shares_rejected += 1
+                        self.share_queue.task_done()
                         continue
-                
+
                 # Submit share with detailed logging
                 success = self._submit_share_to_pool(
                     share_data['job_id'],
@@ -454,38 +469,72 @@ class PoolConnectionProxy:
             return False
     
     def _reconnect(self) -> bool:
-        """Reconnect to pool if connection is lost"""
-        protocol_logger.info("🔄 Attempting reconnection...")
-        self.stop()
-        time.sleep(2)  # Brief pause before reconnection
-        return self._connect_to_pool()
+        """
+        Attempt to reconnect to the pool with capped retries and exponential backoff.
+        Log each attempt and only mark fatal after max retries.
+        """
+        if self._fatal_reconnect_error:
+            protocol_logger.error("❌ Fatal error: Max reconnection attempts reached. No further attempts will be made.")
+            return False
+
+        for attempt in range(self._reconnect_attempts, self._max_reconnects):
+            delay = self._exponential_backoff[min(attempt, len(self._exponential_backoff) - 1)]
+            protocol_logger.warning(f"🔄 Reconnect attempt {attempt+1}/{self._max_reconnects} in {delay}s...")
+            time.sleep(delay)
+            self.stop()  # Clean up current socket state before reconnecting
+            success = self._connect_to_pool()
+            if success:
+                protocol_logger.info(f"✅ Reconnection successful after {attempt+1} attempt(s)")
+                self._reset_reconnect_state()
+                return True
+            self._reconnect_attempts += 1
+
+        self._fatal_reconnect_error = True
+        protocol_logger.error("❌ Fatal error: Could not reconnect to pool after maximum attempts. Entering offline mode or waiting for manual intervention.")
+        return False
     
     def _keepalive_worker(self):
-        """Send periodic keepalive messages"""
+        """Send periodic keepalive messages & monitor connection health with reconnection logic"""
         while self.running:
             try:
-                time.sleep(60)  # Every minute
-                if self.connected and self.authorized:
+                # Use 30s interval for more responsive detection (as requested)
+                time.sleep(30)
+                if self.connected and self.authorized and not self._fatal_reconnect_error:
                     current_time = time.time()
-                    if current_time - self.last_activity > 45:  # If no activity for 45 seconds
+                    if current_time - self.last_activity > 25:  # If no activity for 25 seconds
                         keepalive_msg = {
                             "id": int(current_time * 1000),
                             "method": "keepalive",
                             "params": []
                         }
                         protocol_logger.debug("💓 Sending keepalive")
-                        response = self._send_receive_message(keepalive_msg, timeout=5)
+                        response = None
+                        try:
+                            response = self._send_receive_message(keepalive_msg, timeout=5)
+                        except Exception as e:
+                            protocol_logger.warning(f"⚠️ Keepalive socket error: {e}")
+                            response = None
                         if not response:
-                            protocol_logger.warning("⚠️ Keepalive failed, connection may be lost")
+                            protocol_logger.warning("⚠️ Keepalive failed or no response, attempting reconnection...")
+                            # Attempt reconnection; if fails, enter offline mode
+                            if not self._reconnect():
+                                protocol_logger.error("❌ Could not reconnect after keepalive failure. Entering offline mode or waiting for manual intervention.")
             except Exception as e:
                 protocol_logger.debug(f"Keepalive error: {e}")
     
     def _job_listener_worker(self):
-        """Listen for job notifications from pool in background"""
+        """Listen for job notifications from pool in background, with resilience to disconnection"""
         protocol_logger.info("🎯 Job listener worker started")
         
-        while self.running and self.connected:
+        while self.running:
             try:
+                if not self.connected or self._fatal_reconnect_error:
+                    protocol_logger.warning("⚠️ Job listener detected lost connection or fatal error; attempting reconnection...")
+                    if not self._reconnect():
+                        protocol_logger.error("❌ Job listener could not reconnect; will pause listening and retry.")
+                        time.sleep(5)
+                        continue
+
                 # Listen for incoming messages from pool (job notifications, etc.)
                 if not self.socket:
                     time.sleep(1)
@@ -501,7 +550,7 @@ class PoolConnectionProxy:
                     if not data:
                         protocol_logger.warning("🔌 Socket closed during job listening")
                         self.connected = False
-                        break
+                        continue
                     
                     self.last_activity = time.time()
                     

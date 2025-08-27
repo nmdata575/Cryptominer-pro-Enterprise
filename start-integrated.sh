@@ -125,9 +125,9 @@ if ! pip install --upgrade pip; then
     exit 1
 fi
 
-log_info "Installing Python dependencies from requirements.txt..."
-if ! pip install -r requirements.txt; then
-    log_error "Failed to install Python dependencies"
+log_info "Installing Python dependencies from requirements.txt (prefer binary wheels)..."
+if ! pip install --prefer-binary --only-binary=:all: -r requirements.txt; then
+    log_error "Failed to install Python dependencies (binary wheels not available for some packages)"
     exit 1
 fi
 

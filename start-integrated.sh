@@ -195,7 +195,17 @@ if [[ -d "frontend" ]]; then
     if [[ -d "frontend/build" ]]; then
         log_info "Starting CryptoMiner V21 web dashboard on port $WEB_PORT..."
         cd frontend/build
-        python3 -m http.server "$WEB_PORT" > /dev/null 2>&1 &
+        # Serve with CORS headers using a Python snippet
+        python3 - << 'PYCODE' &
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+import os
+class CORSHandler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        super().end_headers()
+os.chdir('.')
+HTTPServer(('0.0.0.0', int(os.environ.get('WEB_PORT', '$WEB_PORT'))), CORSHandler).serve_forever()
+PYCODE
         DASHBOARD_PID=$!
         cd ../..
         sleep 2

@@ -127,8 +127,11 @@ fi
 
 log_info "Installing Python dependencies from requirements.txt (prefer binary wheels)..."
 if ! pip install --prefer-binary --only-binary=:all: -r requirements.txt; then
-    log_error "Failed to install Python dependencies (binary wheels not available for some packages)"
-    exit 1
+    log_warning "Some dependencies could not be installed as binary wheels. Falling back to normal pip install (may build from source)..."
+    if ! pip install -r requirements.txt; then
+        log_error "Failed to install Python dependencies even after fallback to source builds."
+        exit 1
+    fi
 fi
 
 # Stop any existing processes

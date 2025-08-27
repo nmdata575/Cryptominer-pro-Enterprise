@@ -224,8 +224,8 @@ log_info ""
 log_info "Press Ctrl+C to stop all services"
 log_info ""
 
-# Start with proxy mode for maximum efficiency and capture PID
-python3 cryptominer.py --proxy-mode &
+# Start CryptoMiner and capture PID
+python3 cryptominer.py &
 CRYPTO_PID=$!
 
 # Wait for cryptominer to exit (foreground wait)

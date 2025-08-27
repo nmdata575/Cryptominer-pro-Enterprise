@@ -189,7 +189,7 @@ sleep 1
 if [[ -d "frontend" ]]; then
     log_info "Building React frontend..."
     cd frontend
-    npm install
+    npm install --legacy-peer-deps
     npm run build
     cd ..
     if [[ -d "frontend/build" ]]; then

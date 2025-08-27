@@ -28,6 +28,7 @@ pydantic==2.5.0
 
 # Networking and Protocols
 aiohttp==3.8.6
+motor==4.0.0
 websockets
 motor==4.0.0
 motor==4.0.0

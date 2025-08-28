@@ -37,10 +37,10 @@ import pymongo
 # System monitoring
 import psutil
 
-# Import consolidated modules using absolute package to survive reload contexts
-from backend.mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
-from backend.ai_system import ai_system
-from backend.utils import (
+# Import consolidated modules (relative within backend package)
+from .mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
+from .ai_system import ai_system
+from .utils import (
     validate_wallet_address, 
     get_system_info, 
     get_coin_presets,
@@ -49,7 +49,7 @@ from backend.utils import (
 )
 
 # Import V30 Enterprise components
-from backend.enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
+from .enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
 
 # Environment
 from dotenv import load_dotenv
@@ -204,6 +204,12 @@ async def lifespan(app: FastAPI):
             db_client.close()
     except Exception as e:
         logger.error(f"Shutdown error: {e}")
+
+# ============================================================================
+# Attach lifespan context to the app
+# ============================================================================
+
+app.router.lifespan_context = lifespan
 
 # ============================================================================
 # API ENDPOINTS
@@ -711,7 +717,7 @@ async def update_custom_coin(coin_id: str, coin: CustomCoin):
         
         coin_data = coin.dict()
         coin_data["symbol"] = coin_data["symbol"].upper()  # Normalize symbol
-        coin_data["updated_at"] = datetime.utcnow()
+        coin_data["updated_at"] = datetime.now(timezone.utc)
         
         result = await db.custom_coins.update_one(
             {"_id": ObjectId(coin_id)},

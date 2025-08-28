@@ -13,10 +13,12 @@ import json
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 
-# Ensure local backend modules are importable when uvicorn reloader changes CWD
+# Ensure package imports work regardless of CWD or uvicorn reloader context
 CURRENT_DIR = os.path.dirname(__file__)
-if CURRENT_DIR and CURRENT_DIR not in sys.path:
-    sys.path.append(CURRENT_DIR)
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+for p in (PROJECT_ROOT, CURRENT_DIR):
+    if p and p not in sys.path:
+        sys.path.insert(0, p)
 
 # FastAPI and WebSocket imports
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
@@ -35,10 +37,10 @@ import pymongo
 # System monitoring
 import psutil
 
-# Import consolidated modules (package-relative)
-from .mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
-from .ai_system import ai_system
-from .utils import (
+# Import consolidated modules using absolute package to survive reload contexts
+from backend.mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
+from backend.ai_system import ai_system
+from backend.utils import (
     validate_wallet_address, 
     get_system_info, 
     get_coin_presets,
@@ -47,7 +49,7 @@ from .utils import (
 )
 
 # Import V30 Enterprise components
-from .enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
+from backend.enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
 
 # Environment
 from dotenv import load_dotenv

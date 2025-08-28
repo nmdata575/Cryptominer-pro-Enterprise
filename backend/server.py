@@ -10,13 +10,16 @@ import logging
 import time
 import json
 from typing import Dict, List, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 # FastAPI and WebSocket imports
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from contextlib import asynccontextmanager
 import uvicorn
 
 # Database imports
@@ -55,7 +58,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="CryptoMiner Pro API",
     description="Advanced Cryptocurrency Mining System with AI Optimization",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=None  # Placeholder; will set after defining lifespan()
 )
 
 # CORS configuration
@@ -140,57 +144,58 @@ class CustomCoin(BaseModel):
     description: Optional[str] = ""
 
 # ============================================================================
-# DATABASE SETUP
+# LIFESPAN: STARTUP/SHUTDOWN
 # ============================================================================
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database connection and AI system"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """App lifespan handling startup and shutdown without deprecated on_event."""
     global db_client, db, v30_control_system
-    
+
+    # Startup
     try:
         db_client = AsyncIOMotorClient(MONGO_URL)
         db = db_client[DATABASE_NAME]
-        
+
         # Test connection
-        await db_client.admin.command('ping')
+        await db_client.admin.command("ping")
         logger.info("Database connected successfully")
-        
+
         # Create indexes
         await db.mining_stats.create_index([("timestamp", pymongo.DESCENDING)])
         await db.mining_configs.create_index([("name", pymongo.ASCENDING)], unique=True)
-        
+
         # Start AI system
         ai_system.start_ai_system()
         logger.info("AI system started")
-        
-        # Initialize V30 Enterprise System
+
+        # Initialize V30 Enterprise System handle (lazy start later)
         v30_control_system = CentralControlSystem()
-        # Note: V30 system will be initialized when first accessed to avoid port conflicts
         logger.info("V30 Enterprise System ready for initialization")
-        
     except Exception as e:
         logger.error(f"Startup error: {e}")
 
-@app.on_event("shutdown") 
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    global db_client, v30_control_system
-    
-    # Stop mining
-    if mining_engine.is_mining:
-        mining_engine.stop_mining()
-    
-    # Stop V30 system
-    if v30_control_system and v30_control_system.is_running:
-        await v30_control_system.shutdown_system()
-    
-    # Stop AI system
-    ai_system.stop_ai_system()
-    
-    # Close database connection
-    if db_client:
-        db_client.close()
+    # Yield control to application
+    yield
+
+    # Shutdown
+    try:
+        # Stop mining
+        if mining_engine.is_mining:
+            mining_engine.stop_mining()
+
+        # Stop V30 system
+        if v30_control_system and v30_control_system.is_running:
+            await v30_control_system.shutdown_system()
+
+        # Stop AI system
+        ai_system.stop_ai_system()
+
+        # Close database connection
+        if db_client:
+            db_client.close()
+    except Exception as e:
+        logger.error(f"Shutdown error: {e}")
 
 # ============================================================================
 # API ENDPOINTS
@@ -201,7 +206,7 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "version": "v30",
         "edition": "Enterprise",
         "ai_system": ai_system.status.is_active,
@@ -506,7 +511,7 @@ async def save_pool_configuration(pool: SavedPool):
                 raise HTTPException(status_code=400, detail=f"Invalid wallet address: {message}")
         
         pool_data = pool.dict()
-        pool_data["created_at"] = datetime.utcnow()
+        pool_data["created_at"] = datetime.now(timezone.utc)
         pool_data["last_used"] = None
         
         result = await db.saved_pools.insert_one(pool_data)
@@ -539,7 +544,7 @@ async def update_saved_pool(pool_id: str, pool: SavedPool):
         from bson import ObjectId
         
         pool_data = pool.dict()
-        pool_data["updated_at"] = datetime.utcnow()
+        pool_data["updated_at"] = datetime.now(timezone.utc)
         
         result = await db.saved_pools.update_one(
             {"_id": ObjectId(pool_id)},
@@ -597,7 +602,7 @@ async def use_saved_pool(pool_id: str):
         # Update last used timestamp
         result = await db.saved_pools.update_one(
             {"_id": ObjectId(pool_id)},
-            {"$set": {"last_used": datetime.utcnow()}}
+            {"$set": {"last_used": datetime.now(timezone.utc)}}
         )
         
         if result.matched_count == 0:
@@ -670,7 +675,7 @@ async def create_custom_coin(coin: CustomCoin):
         
         coin_data = coin.dict()
         coin_data["symbol"] = coin_data["symbol"].upper()  # Normalize symbol
-        coin_data["created_at"] = datetime.utcnow()
+        coin_data["created_at"] = datetime.now(timezone.utc)
         coin_data["usage_count"] = 0
         
         result = await db.custom_coins.insert_one(coin_data)

@@ -35,10 +35,10 @@ import pymongo
 # System monitoring
 import psutil
 
-# Import consolidated modules
-from mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
-from ai_system import ai_system
-from utils import (
+# Import consolidated modules (package-relative)
+from .mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
+from .ai_system import ai_system
+from .utils import (
     validate_wallet_address, 
     get_system_info, 
     get_coin_presets,
@@ -47,7 +47,7 @@ from utils import (
 )
 
 # Import V30 Enterprise components
-from enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
+from .enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
 
 # Environment
 from dotenv import load_dotenv

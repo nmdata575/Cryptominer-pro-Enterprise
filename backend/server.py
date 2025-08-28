@@ -5,12 +5,18 @@ Integrates with consolidated mining_engine, ai_system, and utils modules
 """
 
 import os
+import sys
 import asyncio
 import logging
 import time
 import json
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
+
+# Ensure local backend modules are importable when uvicorn reloader changes CWD
+CURRENT_DIR = os.path.dirname(__file__)
+if CURRENT_DIR and CURRENT_DIR not in sys.path:
+    sys.path.append(CURRENT_DIR)
 
 # FastAPI and WebSocket imports
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks

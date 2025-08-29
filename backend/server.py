@@ -16,10 +16,9 @@ from datetime import datetime, timezone
 # Ensure package imports work regardless of CWD or uvicorn reloader context
 CURRENT_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
-# Prefer backend directory over project root to avoid shadowing by similarly named top-level modules
-for p in (CURRENT_DIR, PROJECT_ROOT):
-    if p and p not in sys.path:
-        sys.path.insert(0, p)
+# Ensure the project root is first on sys.path so 'backend.*' imports resolve
+if PROJECT_ROOT and PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 # FastAPI and WebSocket imports
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
@@ -38,31 +37,17 @@ import pymongo
 # System monitoring
 import psutil
 
-# Import consolidated modules with robust fallback for different launch modes
-try:
-    # When imported as a package (uvicorn backend.server:app)
-    from .mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
-    from .ai_system import ai_system
-    from .utils import (
-        validate_wallet_address, 
-        get_system_info, 
-        get_coin_presets,
-        validate_mining_config,
-        performance_monitor
-    )
-    from .enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
-except Exception:
-    # When launched with --app-dir backend (module path: server:app)
-    from mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
-    from ai_system import ai_system
-    from utils import (
-        validate_wallet_address, 
-        get_system_info, 
-        get_coin_presets,
-        validate_mining_config,
-        performance_monitor
-    )
-    from enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
+# Import consolidated modules using absolute package path
+from backend.mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
+from backend.ai_system import ai_system
+from backend.utils import (
+    validate_wallet_address, 
+    get_system_info, 
+    get_coin_presets,
+    validate_mining_config,
+    performance_monitor
+)
+from backend.enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
 
 # Environment
 from dotenv import load_dotenv

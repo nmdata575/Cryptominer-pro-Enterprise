@@ -1571,7 +1571,7 @@ class CentralControlSystem:
             
             # Start local mining if requested
             if include_local:
-                from mining_engine import mining_engine, CoinConfig
+                from backend.mining_engine import mining_engine, CoinConfig
                 
                 local_coin_config = CoinConfig(**coin_config)
                 success, message = mining_engine.start_mining(
@@ -1608,7 +1608,7 @@ class CentralControlSystem:
             logger.info("Stopping distributed mining...")
             
             # Stop local mining
-            from mining_engine import mining_engine
+            from backend.mining_engine import mining_engine
             mining_engine.stop_mining()
             
             # Update stats

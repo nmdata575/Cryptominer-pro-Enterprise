@@ -16,7 +16,8 @@ from datetime import datetime, timezone
 # Ensure package imports work regardless of CWD or uvicorn reloader context
 CURRENT_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
-for p in (PROJECT_ROOT, CURRENT_DIR):
+# Prefer backend directory over project root to avoid shadowing by similarly named top-level modules
+for p in (CURRENT_DIR, PROJECT_ROOT):
     if p and p not in sys.path:
         sys.path.insert(0, p)
 

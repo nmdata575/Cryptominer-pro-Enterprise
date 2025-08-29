@@ -22,7 +22,6 @@ import signal
 import psutil
 from pathlib import Path
 
-
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -34,31 +33,31 @@ def clean_wallet_format(wallet_address):
     """Clean wallet format by removing prefixes like 'solo:' for zeropool.io compatibility"""
     if not wallet_address:
         return wallet_address
-    
+
     # Remove common prefixes that cause authentication issues
     prefixes_to_remove = ['solo:', 'pool:', 'prop:']
-    
+
     for prefix in prefixes_to_remove:
         if wallet_address.startswith(prefix):
             cleaned = wallet_address[len(prefix):]
             logger.info(f"🧹 Cleaned wallet format: removed '{prefix}' prefix")
             return cleaned
-    
+
     return wallet_address
 
 def load_mining_config():
     """Load mining configuration from mining_config.env file"""
     config_file = Path("/app/mining_config.env")
     mining_config = {}
-    
+
     if config_file.exists():
         # Load the mining config file
         load_dotenv(str(config_file))
-        
+
         # Get wallet and clean the format for zeropool.io compatibility
         raw_wallet = os.getenv("WALLET", "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8")
         cleaned_wallet = clean_wallet_format(raw_wallet)
-        
+
         mining_config = {
             "coin": os.getenv("COIN", "XMR"),
             "wallet": cleaned_wallet,
@@ -70,7 +69,7 @@ def load_mining_config():
             "ai_enabled": os.getenv("AI_ENABLED", "true").lower() == "true",
             "ai_learning_rate": float(os.getenv("AI_LEARNING_RATE", "1.0"))
         }
-        
+
         logger.info(f"📁 Loaded mining config from {config_file}")
         logger.info(f"   Coin: {mining_config['coin']}")
         logger.info(f"   Pool: {mining_config['pool']}")
@@ -92,7 +91,7 @@ def load_mining_config():
             "ai_enabled": True,
             "ai_learning_rate": 1.0
         }
-    
+
     return mining_config
 
 # Global variable for mining configuration
@@ -108,6 +107,15 @@ app = FastAPI(title="CryptoMiner V21 API", description="Advanced Multi-Algorithm
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Add simple health endpoint
+@api_router.get("/health")
+async def api_health():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "v21"
+    }
 
 # Global mining stats storage (in production this would be in MongoDB)
 mining_stats = {
@@ -137,9 +145,9 @@ is_mining_active = False
 async def kill_mining_processes():
     """Kill all existing mining processes (async version)"""
     global mining_process, is_mining_active
-    
+
     logger.info("🛑 Attempting to kill mining processes...")
-    
+
     # Kill the specific process if we have it
     if mining_process and mining_process.poll() is None:
         try:
@@ -147,14 +155,14 @@ async def kill_mining_processes():
             try:
                 # Use asyncio.wait_for to prevent hanging
                 await asyncio.wait_for(
-                    asyncio.to_thread(mining_process.wait), 
+                    asyncio.to_thread(mining_process.wait),
                     timeout=3.0
                 )
             except asyncio.TimeoutError:
                 mining_process.kill()  # Force kill if still running
                 try:
                     await asyncio.wait_for(
-                        asyncio.to_thread(mining_process.wait), 
+                        asyncio.to_thread(mining_process.wait),
                         timeout=2.0
                     )
                 except asyncio.TimeoutError:
@@ -162,7 +170,7 @@ async def kill_mining_processes():
             logger.info("✅ Managed mining process terminated")
         except Exception as e:
             logger.error(f"Error terminating managed process: {e}")
-    
+
     # Find and kill any cryptominer processes (but NOT our backend server)
     killed_processes = []
     try:
@@ -178,12 +186,12 @@ async def kill_mining_processes():
                 pass
     except Exception as e:
         logger.error(f"Error enumerating processes: {e}")
-    
+
     # Wait for processes to terminate, then force kill if needed (async)
     if killed_processes:
         try:
             await asyncio.sleep(2)  # Give processes time to terminate gracefully
-            
+
             for pid in killed_processes:
                 try:
                     proc = psutil.Process(pid)
@@ -194,10 +202,10 @@ async def kill_mining_processes():
                     pass  # Process already gone
         except Exception as e:
             logger.error(f"Error during force kill phase: {e}")
-    
+
     mining_process = None
     is_mining_active = False
-    
+
     # Update stats to reflect stopped state
     mining_stats.update({
         "pool_connected": False,
@@ -205,46 +213,46 @@ async def kill_mining_processes():
         "threads": 0,
         "last_update": datetime.utcnow()
     })
-    
+
     return len(killed_processes)
 
 async def start_mining_process(config):
     """Start the actual cryptominer.py process"""
     global mining_process, is_mining_active
-    
+
     try:
         # Kill any existing processes first
         killed_count = await kill_mining_processes()
         if killed_count > 0:
             logger.info(f"Killed {killed_count} existing mining processes")
-        
+
         # Prepare command
         app_dir = Path(__file__).parent.parent  # Go up to /app directory
         crypto_script = app_dir / "cryptominer.py"
-        
+
         if not crypto_script.exists():
             raise FileNotFoundError(f"cryptominer.py not found at {crypto_script}")
-        
+
         # Build command arguments using the loaded default config as fallbacks
-        cmd = [
-            "python3", str(crypto_script),
-            "--coin", config.get("coin", default_mining_config.get("coin", "XMR")),
-            "--wallet", config.get("wallet", default_mining_config.get("wallet", "XMR_PLACEHOLDER_WALLET")),
-            "--pool", config.get("pool", default_mining_config.get("pool", "stratum+tcp://pool.supportxmr.com:3333")),
-            "--intensity", str(config.get("intensity", default_mining_config.get("intensity", 80))),
-            "--threads", str(config.get("threads", default_mining_config.get("threads", "auto")))
+        cmd = [\
+            "python3", str(crypto_script),\
+            "--coin", config.get("coin", default_mining_config.get("coin", "XMR")),\
+            "--wallet", config.get("wallet", default_mining_config.get("wallet", "XMR_PLACEHOLDER_WALLET")),\
+            "--pool", config.get("pool", default_mining_config.get("pool", "stratum+tcp://pool.supportxmr.com:3333")),\
+            "--intensity", str(config.get("intensity", default_mining_config.get("intensity", 80))),\
+            "--threads", str(config.get("threads", default_mining_config.get("threads", "auto")))\
         ]
-        
+
         # Only use proxy mode for Scrypt coins (LTC, DOGE), not for RandomX coins (XMR, AEON)
         coin = config.get("coin", default_mining_config.get("coin", "XMR")).upper()
         if coin not in ["XMR", "AEON"]:
             cmd.append("--proxy-mode")  # Use proxy mode only for non-RandomX coins
-        
+
         if config.get("password"):
             cmd.extend(["--password", config.get("password")])
-        
+
         logger.info(f"Starting mining process with command: {' '.join(cmd)}")
-        
+
         # Start the process
         mining_process = subprocess.Popen(
             cmd,
@@ -253,9 +261,9 @@ async def start_mining_process(config):
             stderr=subprocess.PIPE,
             text=True
         )
-        
+
         is_mining_active = True
-        
+
         # Update stats to reflect started state
         mining_stats.update({
             "pool_connected": True,
@@ -265,10 +273,10 @@ async def start_mining_process(config):
             "hashrate": config.get("threads", 8) * 150,  # Estimate initial hashrate
             "last_update": datetime.utcnow()
         })
-        
+
         logger.info(f"✅ Mining process started with PID: {mining_process.pid}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Failed to start mining process: {e}")
         is_mining_active = False
@@ -392,12 +400,12 @@ async def get_mining_stats():
 async def update_mining_stats(stats: Dict[str, Any]):
     """Update mining statistics from the mining engine"""
     global mining_stats
-    
+
     try:
         # Use the same sanitization function
         cleaned_stats = sanitize_stats_data(stats)
         mining_stats.update(cleaned_stats)
-        
+
         return {"status": "success", "message": "Stats updated successfully"}
     except Exception as e:
         logger.error(f"Error updating mining stats: {e}")
@@ -416,37 +424,37 @@ async def get_mining_config():
 async def update_mining_config(config: MiningConfig):
     """Update mining configuration"""
     global mining_stats
-    
+
     if config.coin:
         mining_stats["coin"] = config.coin
     if config.intensity is not None:
-        mining_stats["intensity"] = config.intensity  
+        mining_stats["intensity"] = config.intensity
     if config.threads is not None:
         mining_stats["threads"] = config.threads
-    
+
     return {"status": "config updated", "config": config.dict()}
 
 @api_router.get("/mining/history")
 async def get_mining_history(limit: int = 100):
     """Get mining statistics history"""
     history = await db.mining_stats.find().sort("timestamp", -1).limit(limit).to_list(limit)
-    
+
     # Convert ObjectId to string for JSON serialization
     for record in history:
         if '_id' in record:
             record['_id'] = str(record['_id'])
-    
+
     return history
 
 @api_router.get("/mining/coins")
 async def get_available_coins():
     """Get list of available coins for mining"""
     return {
-        "coins": [
-            {"symbol": "LTC", "name": "Litecoin", "algorithm": "Scrypt"},
-            {"symbol": "DOGE", "name": "Dogecoin", "algorithm": "Scrypt"},
-            {"symbol": "VTC", "name": "Vertcoin", "algorithm": "Scrypt"},
-            {"symbol": "XMR", "name": "Monero", "algorithm": "RandomX"}
+        "coins": [\
+            {"symbol": "LTC", "name": "Litecoin", "algorithm": "Scrypt"},\
+            {"symbol": "DOGE", "name": "Dogecoin", "algorithm": "Scrypt"},\
+            {"symbol": "VTC", "name": "Vertcoin", "algorithm": "Scrypt"},\
+            {"symbol": "XMR", "name": "Monero", "algorithm": "RandomX"}\
         ]
     }
 
@@ -454,21 +462,21 @@ async def get_available_coins():
 async def control_mining(request: Dict[str, Any]):
     """Control mining operations (start/stop/restart) - Always uses mining_config.env settings"""
     global mining_process, is_mining_active
-    
+
     action = request.get("action")
     web_config = request.get("config", {})
-    
+
     if action == "start":
         # Always kill any existing mining processes first to prevent conflicts
         if is_mining_active or mining_process:
             logger.info("🛑 Killing existing mining processes before starting new one")
             killed_count = await kill_mining_processes()
             logger.info(f"🛑 Killed {killed_count} existing processes")
-            
+
         # ALWAYS use configuration from mining_config.env file as primary source
         # Only allow web interface to override non-critical settings like threads/intensity
         file_config = load_mining_config()  # Fresh load to get latest values
-        
+
         # Create final config - prioritize mining_config.env for critical settings
         final_config = {
             "coin": file_config.get("coin", "XMR"),  # Always from file
@@ -481,11 +489,11 @@ async def control_mining(request: Dict[str, Any]):
             "web_enabled": file_config.get("web_enabled", True),
             "ai_enabled": file_config.get("ai_enabled", True)
         }
-        
+
         logger.info(f"🔒 Using mining_config.env settings: coin={final_config['coin']}, pool={final_config['pool']}")
-        
+
         success = await start_mining_process(final_config)
-        
+
         if success:
             # Log the control action
             await db.mining_control_log.insert_one({
@@ -495,21 +503,21 @@ async def control_mining(request: Dict[str, Any]):
                 "status": "executed",
                 "process_id": mining_process.pid if mining_process else None
             })
-            
+
             return {
-                "status": "success", 
-                "message": f"Mining started successfully (PID: {mining_process.pid})", 
+                "status": "success",
+                "message": f"Mining started successfully (PID: {mining_process.pid})",
                 "config": final_config
             }
         else:
             return {"status": "error", "message": "Failed to start mining process"}
-    
+
     elif action == "stop":
         if not is_mining_active:
             return {"status": "error", "message": "Mining is not currently running"}
-        
+
         killed_count = await kill_mining_processes()
-        
+
         # Log the control action
         await db.mining_control_log.insert_one({
             "action": "stop",
@@ -517,21 +525,21 @@ async def control_mining(request: Dict[str, Any]):
             "status": "executed",
             "killed_processes": killed_count
         })
-        
+
         return {
-            "status": "success", 
+            "status": "success",
             "message": f"Mining stopped successfully (killed {killed_count} processes)"
         }
-    
+
     elif action == "restart":
         # Stop first
         if is_mining_active:
             killed_count = await kill_mining_processes()
             logger.info(f"Restart: killed {killed_count} processes")
-        
+
         # ALWAYS use configuration from mining_config.env file as primary source
         file_config = load_mining_config()  # Fresh load to get latest values
-        
+
         # Create final config - prioritize mining_config.env for critical settings
         final_config = {
             "coin": file_config.get("coin", "XMR"),  # Always from file
@@ -544,12 +552,12 @@ async def control_mining(request: Dict[str, Any]):
             "web_enabled": file_config.get("web_enabled", True),
             "ai_enabled": file_config.get("ai_enabled", True)
         }
-        
+
         logger.info(f"🔒 Using mining_config.env settings: coin={final_config['coin']}, pool={final_config['pool']}")
-        
+
         # Start with final config
         success = await start_mining_process(final_config)
-        
+
         if success:
             # Log the control action
             await db.mining_control_log.insert_one({
@@ -559,15 +567,15 @@ async def control_mining(request: Dict[str, Any]):
                 "status": "executed",
                 "process_id": mining_process.pid if mining_process else None
             })
-            
+
             return {
-                "status": "success", 
-                "message": f"Mining restarted successfully (PID: {mining_process.pid})", 
+                "status": "success",
+                "message": f"Mining restarted successfully (PID: {mining_process.pid})",
                 "config": final_config
             }
         else:
             return {"status": "error", "message": "Failed to restart mining process"}
-    
+
     else:
         return {"status": "error", "message": f"Unknown action: {action}"}
 
@@ -575,7 +583,7 @@ async def control_mining(request: Dict[str, Any]):
 async def get_mining_status():
     """Get current mining process status"""
     global mining_process, is_mining_active
-    
+
     # Check if the process is still running
     if mining_process:
         if mining_process.poll() is None:
@@ -583,7 +591,7 @@ async def get_mining_status():
         else:
             is_mining_active = False
             mining_process = None
-    
+
     return {
         "is_active": is_mining_active,
         "process_id": mining_process.pid if mining_process and mining_process.poll() is None else None,
@@ -597,11 +605,11 @@ async def get_multi_algorithm_stats():
     try:
         # Import multi-algorithm engine (would be initialized globally in production)
         from multi_algorithm_engine import MultiAlgorithmMiningEngine
-        
+
         # For now, return simulated comprehensive stats
         comprehensive_stats = {
             'current_algorithm': 'RandomX',
-            'current_coin': 'XMR', 
+            'current_coin': 'XMR',
             'is_mining': mining_stats.get('pool_connected', False),
             'total_uptime': 3600,  # 1 hour
             'current_stats': {
@@ -653,9 +661,9 @@ async def get_multi_algorithm_stats():
             'cpu_friendly_coins': ['XMR', 'AEON', 'ETN'],
             'auto_switching': True
         }
-        
+
         return comprehensive_stats
-        
+
     except Exception as e:
         logger.error(f"Error getting multi-algorithm stats: {e}")
         return {
@@ -681,9 +689,9 @@ async def switch_mining_algorithm(request: Dict[str, Any]):
         pool = request.get("pool", "pool.supportxmr.com:3333")
         threads = request.get("threads", 8)
         intensity = request.get("intensity", 80)
-        
+
         logger.info(f"Switching to {algorithm} for {coin}")
-        
+
         # Simulate algorithm switch
         mining_stats.update({
             'coin': coin,
@@ -694,7 +702,7 @@ async def switch_mining_algorithm(request: Dict[str, Any]):
             'hashrate': threads * (1200 if algorithm == 'RandomX' else 2500 if algorithm == 'Scrypt' else 800),
             'last_update': datetime.utcnow()
         })
-        
+
         # Log the switch
         await db.mining_control_log.insert_one({
             "action": "switch_algorithm",
@@ -704,14 +712,14 @@ async def switch_mining_algorithm(request: Dict[str, Any]):
             "timestamp": datetime.utcnow(),
             "status": "executed"
         })
-        
+
         return {
             "status": "success",
             "message": f"Successfully switched to {algorithm} for {coin}",
             "algorithm": algorithm,
             "coin": coin
         }
-        
+
     except Exception as e:
         logger.error(f"Error switching algorithm: {e}")
         return {
@@ -724,38 +732,38 @@ async def get_ai_recommendation():
     """Get AI algorithm recommendation"""
     try:
         # Simulate AI recommendation based on current conditions
-        recommendations = [
-            {
-                "algorithm": "RandomX",
-                "coin": "XMR", 
-                "hashrate": 1200,
-                "efficiency": 8.0,
-                "confidence": 87,
-                "reason": "Optimal for current CPU configuration and power efficiency"
-            },
-            {
-                "algorithm": "Scrypt",
-                "coin": "LTC",
-                "hashrate": 2500,
-                "efficiency": 16.7,
-                "confidence": 73,
-                "reason": "Higher hashrate but increased power consumption"
-            },
-            {
-                "algorithm": "CryptoNight",
-                "coin": "AEON",
-                "hashrate": 800,
-                "efficiency": 5.3,
-                "confidence": 62,
-                "reason": "Lower power consumption for battery-powered devices"
-            }
+        recommendations = [\
+            {\
+                "algorithm": "RandomX",\
+                "coin": "XMR",\
+                "hashrate": 1200,\
+                "efficiency": 8.0,\
+                "confidence": 87,\
+                "reason": "Optimal for current CPU configuration and power efficiency"\
+            },\
+            {\
+                "algorithm": "Scrypt",\
+                "coin": "LTC",\
+                "hashrate": 2500,\
+                "efficiency": 16.7,\
+                "confidence": 73,\
+                "reason": "Higher hashrate but increased power consumption"\
+            },\
+            {\
+                "algorithm": "CryptoNight",\
+                "coin": "AEON",\
+                "hashrate": 800,\
+                "efficiency": 5.3,\
+                "confidence": 62,\
+                "reason": "Lower power consumption for battery-powered devices"\
+            }\
         ]
-        
+
         # Return best recommendation
         best_recommendation = max(recommendations, key=lambda x: x['confidence'])
-        
+
         return best_recommendation
-        
+
     except Exception as e:
         logger.error(f"Error getting AI recommendation: {e}")
         return {
@@ -771,23 +779,23 @@ async def get_ai_recommendation():
 async def get_control_log(limit: int = 50):
     """Get mining control action log"""
     log_entries = await db.mining_control_log.find().sort("timestamp", -1).limit(limit).to_list(limit)
-    
+
     # Convert ObjectId to string for JSON serialization
     for entry in log_entries:
         if '_id' in entry:
             entry['_id'] = str(entry['_id'])
-    
+
     return log_entries
 
 @api_router.get("/mining/pools")
 async def get_popular_pools():
     """Get list of popular mining pools"""
     return {
-        "pools": [
-            {"name": "LitecoinPool", "url": "stratum+tcp://stratum.litecoinpool.org:3333", "coin": "LTC"},
-            {"name": "Prohashing", "url": "stratum+tcp://prohashing.com:3333", "coin": "MULTI"},
-            {"name": "F2Pool", "url": "stratum+tcp://ltc.f2pool.com:4444", "coin": "LTC"},
-            {"name": "ViaBTC", "url": "stratum+tcp://ltc.viabtc.com:3333", "coin": "LTC"}
+        "pools": [\
+            {"name": "LitecoinPool", "url": "stratum+tcp://stratum.litecoinpool.org:3333", "coin": "LTC"},\
+            {"name": "Prohashing", "url": "stratum+tcp://prohashing.com:3333", "coin": "MULTI"},\
+            {"name": "F2Pool", "url": "stratum+tcp://ltc.f2pool.com:4444", "coin": "LTC"},\
+            {"name": "ViaBTC", "url": "stratum+tcp://ltc.viabtc.com:3333", "coin": "LTC"}\
         ]
     }
 
@@ -795,7 +803,7 @@ async def get_popular_pools():
 async def get_system_info():
     """Get system information"""
     import psutil
-    
+
     return {
         "cpu_count": psutil.cpu_count(),
         "memory_total": psutil.virtual_memory().total,

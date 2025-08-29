@@ -151,6 +151,21 @@ class CustomCoin(BaseModel):
     wallet_format: str = "Standard"
     description: Optional[str] = ""
 
+class MiningStatsUpdate(BaseModel):
+    hashrate: Optional[float] = None
+    accepted_shares: Optional[int] = None
+    rejected_shares: Optional[int] = None
+    blocks_found: Optional[int] = None
+    uptime: Optional[float] = None
+    cpu_usage: Optional[float] = None
+    memory_usage: Optional[float] = None
+    efficiency: Optional[float] = None
+    last_share_time: Optional[float] = None
+    active_threads: Optional[int] = None
+    total_threads: Optional[int] = None
+    threads_per_core: Optional[float] = None
+    enterprise_metrics: Optional[Dict[str, Any]] = None
+
 # ============================================================================
 # LIFESPAN: STARTUP/SHUTDOWN
 # ============================================================================
@@ -309,6 +324,48 @@ async def stop_mining():
         "success": success,
         "message": message
     }
+
+@app.post("/api/mining/update-stats")
+async def update_mining_stats(update: MiningStatsUpdate):
+    """Accept miner-reported stats (for remote nodes or external miners)"""
+    try:
+        data = update.dict(exclude_none=True)
+
+        # Update in-memory stats
+        if hasattr(mining_engine, "stats_lock"):
+            lock = mining_engine.stats_lock
+        else:
+            lock = None
+
+        if lock:
+            lock.acquire()
+        try:
+            # Merge fields onto dataclass
+            for k, v in data.items():
+                if k == "enterprise_metrics" and isinstance(v, dict):
+                    mining_engine.stats.enterprise_metrics.update(v)
+                else:
+                    if hasattr(mining_engine.stats, k):
+                        setattr(mining_engine.stats, k, v)
+            # Heuristic to mark mining active
+            if "hashrate" in data or "active_threads" in data:
+                mining_engine.is_mining = True
+        finally:
+            if lock:
+                lock.release()
+
+        # Persist to DB if available
+        if db is not None:
+            status = mining_engine.get_mining_status()
+            await db.mining_stats.insert_one({
+                "timestamp": datetime.now(timezone.utc),
+                "stats": status["stats"]
+            })
+
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"update-stats error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/mining/ai-insights")
 async def get_ai_insights():

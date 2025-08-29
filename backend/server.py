@@ -1,1151 +1,844 @@
-#!/usr/bin/env python3
-"""
-CryptoMiner Pro - Consolidated FastAPI Server
-Integrates with consolidated mining_engine, ai_system, and utils modules
-"""
-
+from fastapi import FastAPI, APIRouter
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from dotenv import load_dotenv
+from starlette.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import sys
-import asyncio
+import pkgutil
+if not hasattr(pkgutil, 'ImpImporter'):
+    pkgutil.ImpImporter = pkgutil.zipimporter
 import logging
-import time
-import json
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone
-
-# Ensure package imports work regardless of CWD or uvicorn reloader context
-CURRENT_DIR = os.path.dirname(__file__)
-PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
-# Ensure the project root is first on sys.path so 'backend.*' imports resolve
-if PROJECT_ROOT and PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
-# FastAPI and WebSocket imports
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 from pydantic import BaseModel, Field
-from contextlib import asynccontextmanager
-import uvicorn
-
-# Database imports
-from motor.motor_asyncio import AsyncIOMotorClient
-import pymongo
-
-# System monitoring
+from typing import List, Dict, Any, Optional
+import uuid
+from datetime import datetime
+import json
+import asyncio
+import subprocess
+import signal
 import psutil
+from pathlib import Path
 
-# Import consolidated modules using absolute package path
-from backend.mining_engine import mining_engine, pool_manager, MiningStats, CoinConfig
-from backend.ai_system import ai_system
-from backend.utils import (
-    validate_wallet_address, 
-    get_system_info, 
-    get_coin_presets,
-    validate_mining_config,
-    performance_monitor
-)
-from backend.enterprise_v30 import EnterpriseV30License, EnterpriseHardwareValidator, CentralControlSystem
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
-# Environment
-from dotenv import load_dotenv
-load_dotenv()
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI
-app = FastAPI(
-    title="CryptoMiner Pro API",
-    description="Advanced Cryptocurrency Mining System with AI Optimization",
-    version="2.0.0",
-    lifespan=None  # Placeholder; will set after defining lifespan()
-)
+def clean_wallet_format(wallet_address):
+    """Clean wallet format by removing prefixes like 'solo:' for zeropool.io compatibility"""
+    if not wallet_address:
+        return wallet_address
 
-# CORS configuration
+    # Remove common prefixes that cause authentication issues
+    prefixes_to_remove = ['solo:', 'pool:', 'prop:']
+
+    for prefix in prefixes_to_remove:
+        if wallet_address.startswith(prefix):
+            cleaned = wallet_address[len(prefix):]
+            logger.info(f"🧹 Cleaned wallet format: removed '{prefix}' prefix")
+            return cleaned
+
+    return wallet_address
+
+def load_mining_config():
+    """Load mining configuration from mining_config.env file"""
+    config_file = Path("/app/mining_config.env")
+    mining_config = {}
+
+    if config_file.exists():
+        # Load the mining config file
+        load_dotenv(str(config_file))
+
+        # Get wallet and clean the format for zeropool.io compatibility
+        raw_wallet = os.getenv("WALLET", "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8")
+        cleaned_wallet = clean_wallet_format(raw_wallet)
+
+        mining_config = {
+            "coin": os.getenv("COIN", "XMR"),
+            "wallet": cleaned_wallet,
+            "pool": os.getenv("POOL", "stratum+tcp://pool.supportxmr.com:3333"),
+            "password": os.getenv("PASSWORD", "x"),
+            "intensity": int(os.getenv("INTENSITY", "80")),
+            "threads": os.getenv("THREADS", "auto"),
+            "web_enabled": os.getenv("WEB_ENABLED", "true").lower() == "true",
+            "ai_enabled": os.getenv("AI_ENABLED", "true").lower() == "true",
+            "ai_learning_rate": float(os.getenv("AI_LEARNING_RATE", "1.0"))
+        }
+
+        logger.info(f"📁 Loaded mining config from {config_file}")
+        logger.info(f"   Coin: {mining_config['coin']}")
+        logger.info(f"   Pool: {mining_config['pool']}")
+        logger.info(f"   Wallet: {mining_config['wallet'][:20]}...{mining_config['wallet'][-20:]}")
+        logger.info(f"   Intensity: {mining_config['intensity']}%")
+        logger.info(f"   Threads: {mining_config['threads']}")
+    else:
+        logger.warning(f"⚠️ Mining config file not found: {config_file}")
+        # Use default XMR configuration with cleaned wallet format
+        default_wallet = "4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"
+        mining_config = {
+            "coin": "XMR",
+            "wallet": default_wallet,  # Already cleaned format
+            "pool": "stratum+tcp://pool.supportxmr.com:3333",
+            "password": "x",
+            "intensity": 80,
+            "threads": "auto",
+            "web_enabled": True,
+            "ai_enabled": True,
+            "ai_learning_rate": 1.0
+        }
+
+    return mining_config
+
+# Global variable for mining configuration
+default_mining_config = load_mining_config()
+
+# MongoDB connection
+mongo_url = os.environ['MONGO_URL']
+client = AsyncIOMotorClient(mongo_url)
+db = client[os.environ['DB_NAME']]
+
+# Create the main app without a prefix
+app = FastAPI(title="CryptoMiner V21 API", description="Advanced Multi-Algorithm CPU Mining Platform API")
+
+# Create a router with the /api prefix
+api_router = APIRouter(prefix="/api")
+
+# Add simple health endpoint
+@api_router.get("/health")
+async def api_health():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "v21"
+    }
+
+# Global mining stats storage (in production this would be in MongoDB)
+mining_stats = {
+    "hashrate": 0.0,
+    "threads": 0,
+    "intensity": 80,
+    "coin": "XMR",
+    "pool_connected": False,
+    "accepted_shares": 0,
+    "rejected_shares": 0,
+    "uptime": 0.0,
+    "difficulty": 1.0,
+    "ai_learning": 0.0,
+    "ai_optimization": 0.0,
+    "last_update": datetime.utcnow(),
+    # Enhanced proxy fields for connection proxy architecture
+    "shares_accepted": 0,
+    "shares_submitted": 0,
+    "queue_size": 0,
+    "last_share_time": 0
+}
+
+# Global process management
+mining_process = None
+is_mining_active = False
+
+async def kill_mining_processes():
+    """Kill all existing mining processes (async version)"""
+    global mining_process, is_mining_active
+
+    logger.info("🛑 Attempting to kill mining processes...")
+
+    # Kill the specific process if we have it
+    if mining_process and mining_process.poll() is None:
+        try:
+            mining_process.terminate()
+            try:
+                # Use asyncio.wait_for to prevent hanging
+                await asyncio.wait_for(
+                    asyncio.to_thread(mining_process.wait),
+                    timeout=3.0
+                )
+            except asyncio.TimeoutError:
+                mining_process.kill()  # Force kill if still running
+                try:
+                    await asyncio.wait_for(
+                        asyncio.to_thread(mining_process.wait),
+                        timeout=2.0
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning("Process may still be running after force kill")
+            logger.info("✅ Managed mining process terminated")
+        except Exception as e:
+            logger.error(f"Error terminating managed process: {e}")
+
+    # Find and kill any cryptominer processes (but NOT our backend server)
+    killed_processes = []
+    try:
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                cmdline = ' '.join(proc.info['cmdline'] or [])
+                # Only kill cryptominer processes, not the backend API server
+                if ('cryptominer' in cmdline and 'python' in cmdline):
+                    proc.terminate()
+                    killed_processes.append(proc.info['pid'])
+                    logger.info(f"Terminated cryptominer process {proc.info['pid']}: {cmdline}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+    except Exception as e:
+        logger.error(f"Error enumerating processes: {e}")
+
+    # Wait for processes to terminate, then force kill if needed (async)
+    if killed_processes:
+        try:
+            await asyncio.sleep(2)  # Give processes time to terminate gracefully
+
+            for pid in killed_processes:
+                try:
+                    proc = psutil.Process(pid)
+                    if proc.is_running():
+                        proc.kill()
+                        logger.info(f"Force killed process {pid}")
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass  # Process already gone
+        except Exception as e:
+            logger.error(f"Error during force kill phase: {e}")
+
+    mining_process = None
+    is_mining_active = False
+
+    # Update stats to reflect stopped state
+    mining_stats.update({
+        "pool_connected": False,
+        "hashrate": 0,
+        "threads": 0,
+        "last_update": datetime.utcnow()
+    })
+
+    return len(killed_processes)
+
+async def start_mining_process(config):
+    """Start the actual cryptominer.py process"""
+    global mining_process, is_mining_active
+
+    try:
+        # Kill any existing processes first
+        killed_count = await kill_mining_processes()
+        if killed_count > 0:
+            logger.info(f"Killed {killed_count} existing mining processes")
+
+        # Prepare command
+        app_dir = Path(__file__).parent.parent  # Go up to /app directory
+        crypto_script = app_dir / "cryptominer.py"
+
+        if not crypto_script.exists():
+            raise FileNotFoundError(f"cryptominer.py not found at {crypto_script}")
+
+        # Build command arguments using the loaded default config as fallbacks
+        cmd = [\
+            "python3", str(crypto_script),\
+            "--coin", config.get("coin", default_mining_config.get("coin", "XMR")),\
+            "--wallet", config.get("wallet", default_mining_config.get("wallet", "XMR_PLACEHOLDER_WALLET")),\
+            "--pool", config.get("pool", default_mining_config.get("pool", "stratum+tcp://pool.supportxmr.com:3333")),\
+            "--intensity", str(config.get("intensity", default_mining_config.get("intensity", 80))),\
+            "--threads", str(config.get("threads", default_mining_config.get("threads", "auto")))\
+        ]
+
+        # Only use proxy mode for Scrypt coins (LTC, DOGE), not for RandomX coins (XMR, AEON)
+        coin = config.get("coin", default_mining_config.get("coin", "XMR")).upper()
+        if coin not in ["XMR", "AEON"]:
+            cmd.append("--proxy-mode")  # Use proxy mode only for non-RandomX coins
+
+        if config.get("password"):
+            cmd.extend(["--password", config.get("password")])
+
+        logger.info(f"Starting mining process with command: {' '.join(cmd)}")
+
+        # Start the process
+        mining_process = subprocess.Popen(
+            cmd,
+            cwd=str(app_dir),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        is_mining_active = True
+
+        # Update stats to reflect started state
+        mining_stats.update({
+            "pool_connected": True,
+            "threads": config.get("threads", 8),
+            "intensity": config.get("intensity", 80),
+            "coin": config.get("coin", "LTC"),
+            "hashrate": config.get("threads", 8) * 150,  # Estimate initial hashrate
+            "last_update": datetime.utcnow()
+        })
+
+        logger.info(f"✅ Mining process started with PID: {mining_process.pid}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to start mining process: {e}")
+        is_mining_active = False
+        return False
+
+# Define Models
+class StatusCheck(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    client_name: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class StatusCheckCreate(BaseModel):
+    client_name: str
+
+class MiningStats(BaseModel):
+    hashrate: float
+    threads: int
+    intensity: int
+    coin: str
+    pool_connected: bool
+    accepted_shares: int
+    rejected_shares: int
+    uptime: float
+    difficulty: float
+    ai_learning: float
+    ai_optimization: float
+    last_update: datetime
+    # Enhanced proxy fields for connection proxy architecture
+    shares_accepted: Optional[int] = 0
+    shares_submitted: Optional[int] = 0
+    queue_size: Optional[int] = 0
+    last_share_time: Optional[int] = 0
+
+class MiningConfig(BaseModel):
+    coin: Optional[str] = None
+    intensity: Optional[int] = None
+    threads: Optional[int] = None
+
+# Add your routes to the router instead of directly to app
+@api_router.get("/")
+async def root():
+    return {"message": "CryptoMiner V21 API", "status": "running"}
+
+@api_router.post("/status", response_model=StatusCheck)
+async def create_status_check(input: StatusCheckCreate):
+    status_dict = input.dict()
+    status_obj = StatusCheck(**status_dict)
+    _ = await db.status_checks.insert_one(status_obj.dict())
+    return status_obj
+
+@api_router.get("/status", response_model=List[StatusCheck])
+async def get_status_checks():
+    status_checks = await db.status_checks.find().to_list(1000)
+    return [StatusCheck(**status_check) for status_check in status_checks]
+
+# CryptoMiner Pro V30 API endpoints
+@api_router.get("/mining/config-debug")
+async def get_mining_config_debug():
+    """Debug endpoint to see raw mining config"""
+    return {"default_mining_config": default_mining_config}
+
+@api_router.get("/mining/stats-debug")
+async def get_mining_stats_debug():
+    """Debug endpoint to see raw mining stats"""
+    return {"raw_stats": mining_stats, "type_info": {k: type(v).__name__ for k, v in mining_stats.items()}}
+
+def sanitize_stats_data(stats):
+    """Sanitize mining stats to prevent data corruption"""
+    cleaned = {}
+    for key, value in stats.items():
+        if isinstance(value, str):
+            # Fix the auto duplication bug
+            if "auto" in value and len(value) > 10:
+                cleaned[key] = 0 if key in ['threads', 'hashrate'] else "auto"
+            elif value == "auto":
+                cleaned[key] = 0 if key in ['threads', 'hashrate'] else value
+            else:
+                try:
+                    # Try to convert string numbers to proper types
+                    if key in ['threads', 'intensity']:
+                        cleaned[key] = int(float(value))
+                    elif key in ['hashrate', 'cpu_usage', 'memory_usage', 'uptime']:
+                        cleaned[key] = float(value)
+                    else:
+                        cleaned[key] = value
+                except (ValueError, TypeError):
+                    cleaned[key] = 0 if key in ['threads', 'hashrate', 'intensity', 'cpu_usage', 'memory_usage', 'uptime'] else value
+        else:
+            cleaned[key] = value if value is not None else 0
+    return cleaned
+
+@api_router.get("/mining/stats", response_model=MiningStats)
+async def get_mining_stats():
+    """Get current mining statistics"""
+    try:
+        sanitized_stats = sanitize_stats_data(mining_stats)
+        return MiningStats(**sanitized_stats)
+    except Exception as e:
+        logger.error(f"Stats validation error: {e}")
+        # Return safe default values
+        return MiningStats(
+            hashrate=0.0,
+            threads=0,
+            intensity=80,
+            coin="XMR",
+            pool_connected=False,
+            accepted_shares=0,
+            rejected_shares=0,
+            uptime=0.0,
+            difficulty=1.0,
+            ai_learning=0.0,
+            ai_optimization=0.0,
+            last_update=datetime.utcnow(),
+            shares_accepted=0,
+            shares_submitted=0,
+            queue_size=0,
+            last_share_time=0
+        )
+
+@api_router.post("/mining/update-stats")
+async def update_mining_stats(stats: Dict[str, Any]):
+    """Update mining statistics from the mining engine"""
+    global mining_stats
+
+    try:
+        # Use the same sanitization function
+        cleaned_stats = sanitize_stats_data(stats)
+        mining_stats.update(cleaned_stats)
+
+        return {"status": "success", "message": "Stats updated successfully"}
+    except Exception as e:
+        logger.error(f"Error updating mining stats: {e}")
+        return {"status": "error", "message": str(e)}
+
+@api_router.get("/mining/config")
+async def get_mining_config():
+    """Get current mining configuration"""
+    return {
+        "coin": mining_stats.get("coin", "LTC"),
+        "intensity": mining_stats.get("intensity", 80),
+        "threads": mining_stats.get("threads", 4)
+    }
+
+@api_router.post("/mining/config")
+async def update_mining_config(config: MiningConfig):
+    """Update mining configuration"""
+    global mining_stats
+
+    if config.coin:
+        mining_stats["coin"] = config.coin
+    if config.intensity is not None:
+        mining_stats["intensity"] = config.intensity
+    if config.threads is not None:
+        mining_stats["threads"] = config.threads
+
+    return {"status": "config updated", "config": config.dict()}
+
+@api_router.get("/mining/history")
+async def get_mining_history(limit: int = 100):
+    """Get mining statistics history"""
+    history = await db.mining_stats.find().sort("timestamp", -1).limit(limit).to_list(limit)
+
+    # Convert ObjectId to string for JSON serialization
+    for record in history:
+        if '_id' in record:
+            record['_id'] = str(record['_id'])
+
+    return history
+
+@api_router.get("/mining/coins")
+async def get_available_coins():
+    """Get list of available coins for mining"""
+    return {
+        "coins": [\
+            {"symbol": "LTC", "name": "Litecoin", "algorithm": "Scrypt"},\
+            {"symbol": "DOGE", "name": "Dogecoin", "algorithm": "Scrypt"},\
+            {"symbol": "VTC", "name": "Vertcoin", "algorithm": "Scrypt"},\
+            {"symbol": "XMR", "name": "Monero", "algorithm": "RandomX"}\
+        ]
+    }
+
+@api_router.post("/mining/control")
+async def control_mining(request: Dict[str, Any]):
+    """Control mining operations (start/stop/restart) - Always uses mining_config.env settings"""
+    global mining_process, is_mining_active
+
+    action = request.get("action")
+    web_config = request.get("config", {})
+
+    if action == "start":
+        # Always kill any existing mining processes first to prevent conflicts
+        if is_mining_active or mining_process:
+            logger.info("🛑 Killing existing mining processes before starting new one")
+            killed_count = await kill_mining_processes()
+            logger.info(f"🛑 Killed {killed_count} existing processes")
+
+        # ALWAYS use configuration from mining_config.env file as primary source
+        # Only allow web interface to override non-critical settings like threads/intensity
+        file_config = load_mining_config()  # Fresh load to get latest values
+
+        # Create final config - prioritize mining_config.env for critical settings
+        final_config = {
+            "coin": file_config.get("coin", "XMR"),  # Always from file
+            "wallet": file_config.get("wallet", "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"),  # Always from file
+            "pool": file_config.get("pool", "stratum+tcp://pool.supportxmr.com:3333"),  # Always from file
+            "password": file_config.get("password", "x"),  # Always from file
+            # Allow web interface to override performance settings only
+            "intensity": web_config.get("intensity", file_config.get("intensity", 80)),
+            "threads": web_config.get("threads", file_config.get("threads", "auto")),
+            "web_enabled": file_config.get("web_enabled", True),
+            "ai_enabled": file_config.get("ai_enabled", True)
+        }
+
+        logger.info(f"🔒 Using mining_config.env settings: coin={final_config['coin']}, pool={final_config['pool']}")
+
+        success = await start_mining_process(final_config)
+
+        if success:
+            # Log the control action
+            await db.mining_control_log.insert_one({
+                "action": "start",
+                "config": final_config,
+                "timestamp": datetime.utcnow(),
+                "status": "executed",
+                "process_id": mining_process.pid if mining_process else None
+            })
+
+            return {
+                "status": "success",
+                "message": f"Mining started successfully (PID: {mining_process.pid})",
+                "config": final_config
+            }
+        else:
+            return {"status": "error", "message": "Failed to start mining process"}
+
+    elif action == "stop":
+        if not is_mining_active:
+            return {"status": "error", "message": "Mining is not currently running"}
+
+        killed_count = await kill_mining_processes()
+
+        # Log the control action
+        await db.mining_control_log.insert_one({
+            "action": "stop",
+            "timestamp": datetime.utcnow(),
+            "status": "executed",
+            "killed_processes": killed_count
+        })
+
+        return {
+            "status": "success",
+            "message": f"Mining stopped successfully (killed {killed_count} processes)"
+        }
+
+    elif action == "restart":
+        # Stop first
+        if is_mining_active:
+            killed_count = await kill_mining_processes()
+            logger.info(f"Restart: killed {killed_count} processes")
+
+        # ALWAYS use configuration from mining_config.env file as primary source
+        file_config = load_mining_config()  # Fresh load to get latest values
+
+        # Create final config - prioritize mining_config.env for critical settings
+        final_config = {
+            "coin": file_config.get("coin", "XMR"),  # Always from file
+            "wallet": file_config.get("wallet", "solo.4793trzeyXigW8qj9JZU1bVUuohVqn76EBpXUEJdDxJS5tAP4rjAdS7PzWFXzV3MtE3b9MKxMeHmE5X8J2oBk7cyNdE65j8"),  # Always from file
+            "pool": file_config.get("pool", "stratum+tcp://pool.supportxmr.com:3333"),  # Always from file
+            "password": file_config.get("password", "x"),  # Always from file
+            # Allow web interface to override performance settings only
+            "intensity": web_config.get("intensity", file_config.get("intensity", 80)),
+            "threads": web_config.get("threads", file_config.get("threads", "auto")),
+            "web_enabled": file_config.get("web_enabled", True),
+            "ai_enabled": file_config.get("ai_enabled", True)
+        }
+
+        logger.info(f"🔒 Using mining_config.env settings: coin={final_config['coin']}, pool={final_config['pool']}")
+
+        # Start with final config
+        success = await start_mining_process(final_config)
+
+        if success:
+            # Log the control action
+            await db.mining_control_log.insert_one({
+                "action": "restart",
+                "config": final_config,
+                "timestamp": datetime.utcnow(),
+                "status": "executed",
+                "process_id": mining_process.pid if mining_process else None
+            })
+
+            return {
+                "status": "success",
+                "message": f"Mining restarted successfully (PID: {mining_process.pid})",
+                "config": final_config
+            }
+        else:
+            return {"status": "error", "message": "Failed to restart mining process"}
+
+    else:
+        return {"status": "error", "message": f"Unknown action: {action}"}
+
+@api_router.get("/mining/status")
+async def get_mining_status():
+    """Get current mining process status"""
+    global mining_process, is_mining_active
+
+    # Check if the process is still running
+    if mining_process:
+        if mining_process.poll() is None:
+            is_mining_active = True
+        else:
+            is_mining_active = False
+            mining_process = None
+
+    return {
+        "is_active": is_mining_active,
+        "process_id": mining_process.pid if mining_process and mining_process.poll() is None else None,
+        "pool_connected": mining_stats.get("pool_connected", False),
+        "last_update": mining_stats.get("last_update")
+    }
+
+@api_router.get("/mining/multi-stats")
+async def get_multi_algorithm_stats():
+    """Get comprehensive multi-algorithm mining statistics"""
+    try:
+        # Import multi-algorithm engine (would be initialized globally in production)
+        from multi_algorithm_engine import MultiAlgorithmMiningEngine
+
+        # For now, return simulated comprehensive stats
+        comprehensive_stats = {
+            'current_algorithm': 'RandomX',
+            'current_coin': 'XMR',
+            'is_mining': mining_stats.get('pool_connected', False),
+            'total_uptime': 3600,  # 1 hour
+            'current_stats': {
+                'hashrate': mining_stats.get('hashrate', 0),
+                'threads': mining_stats.get('threads', 0),
+                'intensity': mining_stats.get('intensity', 80),
+                'accepted_shares': mining_stats.get('accepted_shares', 0),
+                'rejected_shares': mining_stats.get('rejected_shares', 0),
+                'difficulty': mining_stats.get('difficulty', 1000),
+                'temperature': 65.0,
+                'power_consumption': 150.0,
+                'efficiency': mining_stats.get('hashrate', 0) / max(150.0, 1)
+            },
+            'algorithm_comparison': {
+                'RandomX': {
+                    'hashrate': 1200.0,
+                    'efficiency': 8.0,
+                    'accepted_shares': 45,
+                    'uptime': 3600
+                },
+                'Scrypt': {
+                    'hashrate': 2500.0,
+                    'efficiency': 16.7,
+                    'accepted_shares': 78,
+                    'uptime': 1800
+                },
+                'CryptoNight': {
+                    'hashrate': 800.0,
+                    'efficiency': 5.3,
+                    'accepted_shares': 23,
+                    'uptime': 900
+                }
+            },
+            'ai_stats': {
+                'learning_progress': 85.6,
+                'optimization_progress': 72.3,
+                'predictive_success_rate': 0.68,
+                'database_size_mb': 450.2,
+                'total_predictions': 156,
+                'recommended_algorithm': 'RandomX',
+                'models_trained': {
+                    'hashrate_model': True,
+                    'efficiency_model': True,
+                    'predictive_engine': True
+                }
+            },
+            'supported_algorithms': ['RandomX', 'Scrypt', 'CryptoNight'],
+            'supported_coins': ['XMR', 'LTC', 'DOGE', 'AEON', 'ETN'],
+            'cpu_friendly_coins': ['XMR', 'AEON', 'ETN'],
+            'auto_switching': True
+        }
+
+        return comprehensive_stats
+
+    except Exception as e:
+        logger.error(f"Error getting multi-algorithm stats: {e}")
+        return {
+            'current_algorithm': None,
+            'current_coin': None,
+            'is_mining': False,
+            'total_uptime': 0,
+            'current_stats': {},
+            'algorithm_comparison': {},
+            'ai_stats': {},
+            'supported_algorithms': [],
+            'supported_coins': [],
+            'cpu_friendly_coins': [],
+            'auto_switching': False
+        }
+
+@api_router.post("/mining/switch-algorithm")
+async def switch_mining_algorithm(request: Dict[str, Any]):
+    """Switch to a different mining algorithm"""
+    try:
+        algorithm = request.get("algorithm", "RandomX")
+        coin = request.get("coin", "XMR")
+        pool = request.get("pool", "pool.supportxmr.com:3333")
+        threads = request.get("threads", 8)
+        intensity = request.get("intensity", 80)
+
+        logger.info(f"Switching to {algorithm} for {coin}")
+
+        # Simulate algorithm switch
+        mining_stats.update({
+            'coin': coin,
+            'algorithm': algorithm,
+            'threads': threads,
+            'intensity': intensity,
+            'pool_connected': True,
+            'hashrate': threads * (1200 if algorithm == 'RandomX' else 2500 if algorithm == 'Scrypt' else 800),
+            'last_update': datetime.utcnow()
+        })
+
+        # Log the switch
+        await db.mining_control_log.insert_one({
+            "action": "switch_algorithm",
+            "algorithm": algorithm,
+            "coin": coin,
+            "config": request,
+            "timestamp": datetime.utcnow(),
+            "status": "executed"
+        })
+
+        return {
+            "status": "success",
+            "message": f"Successfully switched to {algorithm} for {coin}",
+            "algorithm": algorithm,
+            "coin": coin
+        }
+
+    except Exception as e:
+        logger.error(f"Error switching algorithm: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to switch algorithm: {str(e)}"
+        }
+
+@api_router.get("/mining/ai-recommendation")
+async def get_ai_recommendation():
+    """Get AI algorithm recommendation"""
+    try:
+        # Simulate AI recommendation based on current conditions
+        recommendations = [\
+            {\
+                "algorithm": "RandomX",\
+                "coin": "XMR",\
+                "hashrate": 1200,\
+                "efficiency": 8.0,\
+                "confidence": 87,\
+                "reason": "Optimal for current CPU configuration and power efficiency"\
+            },\
+            {\
+                "algorithm": "Scrypt",\
+                "coin": "LTC",\
+                "hashrate": 2500,\
+                "efficiency": 16.7,\
+                "confidence": 73,\
+                "reason": "Higher hashrate but increased power consumption"\
+            },\
+            {\
+                "algorithm": "CryptoNight",\
+                "coin": "AEON",\
+                "hashrate": 800,\
+                "efficiency": 5.3,\
+                "confidence": 62,\
+                "reason": "Lower power consumption for battery-powered devices"\
+            }\
+        ]
+
+        # Return best recommendation
+        best_recommendation = max(recommendations, key=lambda x: x['confidence'])
+
+        return best_recommendation
+
+    except Exception as e:
+        logger.error(f"Error getting AI recommendation: {e}")
+        return {
+            "algorithm": "RandomX",
+            "coin": "XMR",
+            "hashrate": 1000,
+            "efficiency": 6.7,
+            "confidence": 50,
+            "reason": "Default recommendation due to system error"
+        }
+
+@api_router.get("/mining/control-log")
+async def get_control_log(limit: int = 50):
+    """Get mining control action log"""
+    log_entries = await db.mining_control_log.find().sort("timestamp", -1).limit(limit).to_list(limit)
+
+    # Convert ObjectId to string for JSON serialization
+    for entry in log_entries:
+        if '_id' in entry:
+            entry['_id'] = str(entry['_id'])
+
+    return log_entries
+
+@api_router.get("/mining/pools")
+async def get_popular_pools():
+    """Get list of popular mining pools"""
+    return {
+        "pools": [\
+            {"name": "LitecoinPool", "url": "stratum+tcp://stratum.litecoinpool.org:3333", "coin": "LTC"},\
+            {"name": "Prohashing", "url": "stratum+tcp://prohashing.com:3333", "coin": "MULTI"},\
+            {"name": "F2Pool", "url": "stratum+tcp://ltc.f2pool.com:4444", "coin": "LTC"},\
+            {"name": "ViaBTC", "url": "stratum+tcp://ltc.viabtc.com:3333", "coin": "LTC"}\
+        ]
+    }
+
+@api_router.get("/system/info")
+async def get_system_info():
+    """Get system information"""
+    import psutil
+
+    return {
+        "cpu_count": psutil.cpu_count(),
+        "memory_total": psutil.virtual_memory().total,
+        "memory_available": psutil.virtual_memory().available,
+        "disk_usage": psutil.disk_usage('/').percent,
+        "load_average": psutil.getloadavg() if hasattr(psutil, 'getloadavg') else [0, 0, 0]
+    }
+
+# Include the router in the main app
+app.include_router(api_router)
+
+# Serve static files
+static_dir = ROOT_DIR / "static"
+static_dir.mkdir(exist_ok=True)
+
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+# Root route to serve the dashboard
+@app.get("/")
+async def read_dashboard():
+    """Serve the main dashboard"""
+    dashboard_path = static_dir / "index.html"
+    if dashboard_path.exists():
+        return FileResponse(str(dashboard_path))
+    else:
+        return {"message": "CryptoMiner V21 Dashboard", "status": "Dashboard file not found"}
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
     allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Database configuration
-MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-REMOTE_DB_ENABLED = os.getenv("REMOTE_DB_ENABLED", "false").lower() == "true"
-REMOTE_MONGO_URL = os.getenv("REMOTE_MONGO_URL", "mongodb://localhost:27017")
-
-# Use remote database if enabled
-if REMOTE_DB_ENABLED and REMOTE_MONGO_URL != "mongodb://localhost:27017":
-    MONGO_URL = REMOTE_MONGO_URL
-    logger.info(f"Using remote database: {REMOTE_MONGO_URL[:20]}...")
-
-DATABASE_NAME = os.getenv("DATABASE_NAME", "crypto_miner_db")
-
-# Global variables
-db_client: Optional[AsyncIOMotorClient] = None
-db = None
-connected_websockets: List[WebSocket] = []
-
-# V30 Enterprise System
-v30_control_system: Optional[CentralControlSystem] = None
-enterprise_license_system = EnterpriseV30License()
-hardware_validator = EnterpriseHardwareValidator()
-
-# Pydantic models
-class MiningConfig(BaseModel):
-    coin: Dict[str, Any]
-    mode: str = "solo"
-    threads: int = 4
-    intensity: float = 1.0
-    auto_optimize: bool = True
-    ai_enabled: bool = True
-    wallet_address: str = ""
-    pool_username: Optional[str] = None
-    pool_password: Optional[str] = "x"
-    custom_pool_address: Optional[str] = None
-    custom_pool_port: Optional[int] = None
-    custom_rpc_host: Optional[str] = None
-    custom_rpc_port: Optional[int] = None
-    custom_rpc_username: Optional[str] = None
-    custom_rpc_password: Optional[str] = None
-    auto_thread_detection: bool = True
-    thread_profile: str = "standard"
-    # Enterprise configurations
-    enterprise_mode: bool = False
-    target_cpu_utilization: float = 1.0
-    thread_scaling_enabled: bool = True
-
-class WalletAddress(BaseModel):
-    address: str
-    coin_symbol: str
-
-class SavedPool(BaseModel):
-    name: str
-    coin_symbol: str
-    wallet_address: str
-    pool_address: str
-    pool_port: int
-    pool_password: str = "x"
-    pool_username: Optional[str] = None
-    description: Optional[str] = ""
-
-class CustomCoin(BaseModel):
-    name: str
-    symbol: str
-    algorithm: str = "Scrypt"
-    block_reward: float = 25.0
-    block_time: int = 150
-    difficulty: float = 1000.0
-    scrypt_params: dict = {"n": 1024, "r": 1, "p": 1}
-    network_hashrate: str = "Unknown"
-    wallet_format: str = "Standard"
-    description: Optional[str] = ""
-
-class MiningStatsUpdate(BaseModel):
-    hashrate: Optional[float] = None
-    accepted_shares: Optional[int] = None
-    rejected_shares: Optional[int] = None
-    blocks_found: Optional[int] = None
-    uptime: Optional[float] = None
-    cpu_usage: Optional[float] = None
-    memory_usage: Optional[float] = None
-    efficiency: Optional[float] = None
-    last_share_time: Optional[float] = None
-    active_threads: Optional[int] = None
-    total_threads: Optional[int] = None
-    threads_per_core: Optional[float] = None
-    enterprise_metrics: Optional[Dict[str, Any]] = None
-
-# ============================================================================
-# LIFESPAN: STARTUP/SHUTDOWN
-# ============================================================================
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """App lifespan handling startup and shutdown without deprecated on_event."""
-    global db_client, db, v30_control_system
-
-    # Startup
-    try:
-        db_client = AsyncIOMotorClient(MONGO_URL)
-        db = db_client[DATABASE_NAME]
-
-        # Test connection
-        await db_client.admin.command("ping")
-        logger.info("Database connected successfully")
-
-        # Create indexes
-        await db.mining_stats.create_index([("timestamp", pymongo.DESCENDING)])
-        await db.mining_configs.create_index([("name", pymongo.ASCENDING)], unique=True)
-
-        # Start AI system
-        ai_system.start_ai_system()
-        logger.info("AI system started")
-
-        # Initialize V30 Enterprise System handle (lazy start later)
-        v30_control_system = CentralControlSystem()
-        logger.info("V30 Enterprise System ready for initialization")
-    except Exception as e:
-        logger.error(f"Startup error: {e}")
-
-    # Yield control to application
-    yield
-
-    # Shutdown
-    try:
-        # Stop mining
-        if mining_engine.is_mining:
-            mining_engine.stop_mining()
-
-        # Stop V30 system
-        if v30_control_system and v30_control_system.is_running:
-            await v30_control_system.shutdown_system()
-
-        # Stop AI system
-        ai_system.stop_ai_system()
-
-        # Close database connection
-        if db_client:
-            db_client.close()
-    except Exception as e:
-        logger.error(f"Shutdown error: {e}")
-
-# ============================================================================
-# Attach lifespan context to the app
-# ============================================================================
-
-app.router.lifespan_context = lifespan
-
-# ============================================================================
-# API ENDPOINTS
-# ============================================================================
-
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "version": "v30",
-        "edition": "Enterprise",
-        "ai_system": ai_system.status.is_active,
-        "mining_active": mining_engine.is_mining,
-        "v30_system": v30_control_system.is_running if v30_control_system else False
-    }
-
-@app.get("/api/mining/status")
-async def get_mining_status():
-    """Get current mining status and statistics"""
-    status = mining_engine.get_mining_status()
-    
-    return {
-        "is_mining": status["is_mining"],
-        "stats": status["stats"],
-        "config": status["config"]
-    }
-
-@app.post("/api/mining/start")
-async def start_mining(config: MiningConfig):
-    """Start mining with given configuration"""
-    try:
-        # Convert config to CoinConfig object
-        coin_config = CoinConfig(**config.coin)
-        
-        # Validate wallet address if provided
-        if config.wallet_address and config.wallet_address.strip():
-            is_valid, message = validate_wallet_address(
-                config.wallet_address, 
-                coin_config.symbol
-            )
-            
-            if not is_valid:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Invalid wallet address: {message}"
-                )
-            
-            logger.info(f"Wallet address validated: {config.wallet_address}")
-        elif config.mode == "solo":
-            raise HTTPException(
-                status_code=400,
-                detail="Wallet address is required for solo mining"
-            )
-        
-        # Validate pool credentials for pool mining
-        if config.mode == "pool":
-            if not config.pool_username:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Pool username is required for pool mining"
-                )
-        
-        # Start mining
-        success, message = mining_engine.start_mining(
-            coin_config,
-            config.wallet_address,
-            config.threads
-        )
-        
-        if not success:
-            raise HTTPException(status_code=500, detail=message)
-        
-        return {
-            "success": True,
-            "message": message,
-            "config": config.dict(),
-            "wallet_info": {
-                "address": config.wallet_address,
-                "mode": config.mode,
-                "threads_used": config.threads,
-                "validation": "passed"
-            }
-        }
-    
-    except Exception as e:
-        logger.error(f"Failed to start mining: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/mining/stop")
-async def stop_mining():
-    """Stop mining"""
-    success, message = mining_engine.stop_mining()
-    
-    return {
-        "success": success,
-        "message": message
-    }
-
-@app.post("/api/mining/update-stats")
-async def update_mining_stats(update: MiningStatsUpdate):
-    """Accept miner-reported stats (for remote nodes or external miners)"""
-    try:
-        data = update.dict(exclude_none=True)
-
-        # Update in-memory stats
-        if hasattr(mining_engine, "stats_lock"):
-            lock = mining_engine.stats_lock
-        else:
-            lock = None
-
-        if lock:
-            lock.acquire()
-        try:
-            # Merge fields onto dataclass
-            for k, v in data.items():
-                if k == "enterprise_metrics" and isinstance(v, dict):
-                    mining_engine.stats.enterprise_metrics.update(v)
-                else:
-                    if hasattr(mining_engine.stats, k):
-                        setattr(mining_engine.stats, k, v)
-            # Heuristic to mark mining active
-            if "hashrate" in data or "active_threads" in data:
-                mining_engine.is_mining = True
-        finally:
-            if lock:
-                lock.release()
-
-        # Persist to DB if available
-        if db is not None:
-            status = mining_engine.get_mining_status()
-            await db.mining_stats.insert_one({
-                "timestamp": datetime.now(timezone.utc),
-                "stats": status["stats"]
-            })
-
-        return {"success": True}
-    except Exception as e:
-        logger.error(f"update-stats error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/mining/ai-insights")
-async def get_ai_insights():
-    """Get AI insights and predictions"""
-    try:
-        # Get current mining stats
-        mining_status = mining_engine.get_mining_status()
-        stats = mining_status.get("stats", {})
-        
-        # Get AI insights
-        insights = ai_system.get_ai_insights(
-            current_hashrate=stats.get("hashrate", 0),
-            current_cpu=stats.get("cpu_usage", 0),
-            current_memory=stats.get("memory_usage", 0),
-            threads=1
-        )
-        
-        return {
-            "insights": {
-                "hash_pattern_prediction": insights.hash_pattern_prediction,
-                "network_difficulty_forecast": insights.network_difficulty_forecast,
-                "optimization_suggestions": insights.optimization_suggestions,
-                "pool_performance_analysis": insights.pool_performance_analysis,
-                "efficiency_recommendations": insights.efficiency_recommendations
-            },
-            "predictions": insights.hash_pattern_prediction
-        }
-    
-    except Exception as e:
-        logger.error(f"AI insights error: {e}")
-        return {"error": "AI system not available"}
-
-@app.get("/api/ai/status")
-async def get_ai_status():
-    """Get AI system status"""
-    return ai_system.get_system_status()
-
-@app.post("/api/ai/auto-optimize")
-async def auto_optimize():
-    """Trigger AI auto-optimization"""
-    # This would trigger AI optimization logic
-    return {"success": True, "message": "Auto-optimization triggered"}
-
-@app.get("/api/coins/presets")
-async def get_coin_presets_endpoint():
-    """Get predefined coin configurations"""
-    presets = get_coin_presets()
-    return {"presets": presets}
-
-@app.post("/api/validate_wallet")
-async def validate_wallet_endpoint(wallet: WalletAddress):
-    """Validate wallet address"""
-    is_valid, message = validate_wallet_address(wallet.address, wallet.coin_symbol)
-    
-    return {
-        "valid": is_valid,
-        "message": message if not is_valid else "Address is valid",
-        "format": "validated" if is_valid else "invalid"
-    }
-
-@app.post("/api/pool/test-connection")
-async def test_pool_connection(request: dict):
-    """Test pool or RPC connection"""
-    try:
-        pool_address = request.get("pool_address")
-        pool_port = request.get("pool_port")
-        connection_type = request.get("type", "pool")
-        
-        if not pool_address or not pool_port:
-            raise HTTPException(status_code=400, detail="Pool address and port are required")
-        
-        if connection_type == "pool":
-            result = pool_manager.test_pool_connection(pool_address, pool_port)
-        else:  # RPC
-            username = request.get("username", "")
-            password = request.get("password", "")
-            result = pool_manager.test_rpc_connection(pool_address, pool_port, username, password)
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"Pool connection test error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/system/cpu-info")
-async def get_cpu_info():
-    """Get detailed CPU information including enterprise capabilities"""
-    try:
-        system_detector = mining_engine.system_detector
-        system_detector.refresh_system_info()
-        
-        cpu_info = {
-            "physical_cores": system_detector.cpu_info.get("physical_cores", 1),
-            "logical_cores": system_detector.cpu_info.get("logical_cores", 1),
-            "frequency": system_detector.cpu_info.get("frequency", {}),
-            "architecture": system_detector.cpu_info.get("architecture", "unknown"),
-            "max_safe_threads": system_detector.system_capabilities.get("max_safe_threads", 1),
-            "enterprise_mode": system_detector.system_capabilities.get("enterprise_mode", False),
-            "optimal_thread_density": system_detector.system_capabilities.get("optimal_thread_density", 1.0),
-            "total_memory_gb": system_detector.system_capabilities.get("total_memory_gb", 1),
-            "available_memory_gb": system_detector.system_capabilities.get("available_memory_gb", 1),
-            "recommended_threads": {
-                "low": system_detector.get_recommended_threads(0.25),
-                "medium": system_detector.get_recommended_threads(0.5),
-                "high": system_detector.get_recommended_threads(0.75),
-                "maximum": system_detector.get_recommended_threads(1.0)
-            }
-        }
-        
-        return cpu_info
-        
-    except Exception as e:
-        logger.error(f"CPU info error: {e}")
-        # Fallback to basic info
-        return {
-            "physical_cores": psutil.cpu_count(logical=False) or 1,
-            "logical_cores": psutil.cpu_count(logical=True) or 1,
-            "frequency": {},
-            "architecture": "unknown",
-            "max_safe_threads": psutil.cpu_count(logical=True) or 1,
-            "enterprise_mode": False,
-            "optimal_thread_density": 1.0,
-            "error": str(e)
-        }
-
-@app.post("/api/test-db-connection")
-async def test_database_connection(request: dict):
-    """Test connection to a MongoDB database URL"""
-    try:
-        database_url = request.get("database_url")
-        if not database_url:
-            raise HTTPException(status_code=400, detail="Database URL is required")
-        
-        # Test connection
-        test_client = AsyncIOMotorClient(database_url, serverSelectionTimeoutMS=5000)
-        
-        # Attempt to connect and ping
-        await test_client.admin.command('ping')
-        
-        # Close test connection
-        test_client.close()
-        
-        return {
-            "success": True,
-            "message": "Database connection successful",
-            "url": database_url[:20] + "..." if len(database_url) > 20 else database_url
-        }
-        
-    except Exception as e:
-        logger.error(f"Database connection test failed: {e}")
-        return {
-            "success": False,
-            "error": str(e),
-            "message": "Database connection failed"
-        }
-
-@app.get("/api/system/stats")
-async def get_system_stats():
-    """Get system resource statistics"""
-    try:
-        stats = get_system_info()
-        
-        return {
-            "cpu_usage": stats["cpu"]["usage"],
-            "memory_usage": stats["memory"]["percentage"],
-            "disk_usage": stats["disk"]["percentage"],
-            "uptime": stats["uptime"],
-            "cores": stats["cpu"]["cores"]
-        }
-        
-    except Exception as e:
-        logger.error(f"System stats error: {e}")
-        return {"error": str(e)}
-
-# ============================================================================
-# SAVED POOLS API ENDPOINTS
-# ============================================================================
-
-@app.get("/api/pools/saved")
-async def get_saved_pools():
-    """Get all saved pool configurations"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        pools = []
-        async for pool in db.saved_pools.find().sort("name", 1):
-            # Convert ObjectId to string for JSON serialization
-            pool["_id"] = str(pool["_id"])
-            pools.append(pool)
-        
-        return {"pools": pools, "count": len(pools)}
-        
-    except Exception as e:
-        logger.error(f"Get saved pools error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/pools/saved")
-async def save_pool_configuration(pool: SavedPool):
-    """Save a new pool configuration"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        # Check if pool name already exists
-        existing = await db.saved_pools.find_one({"name": pool.name})
-        if existing:
-            raise HTTPException(status_code=400, detail="Pool name already exists")
-        
-        # Validate wallet address
-        if pool.wallet_address:
-            is_valid, message = validate_wallet_address(pool.wallet_address, pool.coin_symbol)
-            if not is_valid:
-                raise HTTPException(status_code=400, detail=f"Invalid wallet address: {message}")
-        
-        pool_data = pool.dict()
-        pool_data["created_at"] = datetime.now(timezone.utc)
-        pool_data["last_used"] = None
-        
-        result = await db.saved_pools.insert_one(pool_data)
-        
-        return {
-            "success": True,
-            "message": "Pool configuration saved successfully",
-            "pool_id": str(result.inserted_id)
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Save pool error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.put("/api/pools/saved/{pool_id}")
-async def update_saved_pool(pool_id: str, pool: SavedPool):
-    """Update an existing saved pool configuration"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        # Validate wallet address
-        if pool.wallet_address:
-            is_valid, message = validate_wallet_address(pool.wallet_address, pool.coin_symbol)
-            if not is_valid:
-                raise HTTPException(status_code=400, detail=f"Invalid wallet address: {message}")
-        
-        from bson import ObjectId
-        
-        pool_data = pool.dict()
-        pool_data["updated_at"] = datetime.now(timezone.utc)
-        
-        result = await db.saved_pools.update_one(
-            {"_id": ObjectId(pool_id)},
-            {"$set": pool_data}
-        )
-        
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Pool configuration not found")
-        
-        return {
-            "success": True,
-            "message": "Pool configuration updated successfully"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Update pool error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.delete("/api/pools/saved/{pool_id}")
-async def delete_saved_pool(pool_id: str):
-    """Delete a saved pool configuration"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        from bson import ObjectId
-        
-        result = await db.saved_pools.delete_one({"_id": ObjectId(pool_id)})
-        
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Pool configuration not found")
-        
-        return {
-            "success": True,
-            "message": "Pool configuration deleted successfully"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Delete pool error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/pools/saved/{pool_id}/use")
-async def use_saved_pool(pool_id: str):
-    """Mark a saved pool as recently used and return its configuration"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        from bson import ObjectId
-        
-        # Update last used timestamp
-        result = await db.saved_pools.update_one(
-            {"_id": ObjectId(pool_id)},
-            {"$set": {"last_used": datetime.now(timezone.utc)}}
-        )
-        
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Pool configuration not found")
-        
-        # Get the updated pool configuration
-        pool = await db.saved_pools.find_one({"_id": ObjectId(pool_id)})
-        if not pool:
-            raise HTTPException(status_code=404, detail="Pool configuration not found")
-        
-        # Convert to dict and format for mining config
-        pool["_id"] = str(pool["_id"])
-        
-        return {
-            "success": True,
-            "pool": pool,
-            "mining_config": {
-                "coin": {
-                    "symbol": pool["coin_symbol"],
-                    "custom_pool_address": pool["pool_address"],
-                    "custom_pool_port": pool["pool_port"]
-                },
-                "wallet_address": pool["wallet_address"],
-                "pool_username": pool.get("pool_username", pool["wallet_address"]),
-                "pool_password": pool["pool_password"],
-                "mode": "pool"
-            }
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Use saved pool error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ============================================================================
-# CUSTOM COINS API ENDPOINTS
-# ============================================================================
-
-@app.get("/api/coins/custom")
-async def get_custom_coins():
-    """Get all custom coin configurations"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        coins = []
-        async for coin in db.custom_coins.find().sort("name", 1):
-            # Convert ObjectId to string for JSON serialization
-            coin["_id"] = str(coin["_id"])
-            coins.append(coin)
-        
-        return {"coins": coins, "count": len(coins)}
-        
-    except Exception as e:
-        logger.error(f"Get custom coins error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/coins/custom")
-async def create_custom_coin(coin: CustomCoin):
-    """Create a new custom coin configuration"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        # Check if coin symbol already exists
-        existing = await db.custom_coins.find_one({"symbol": coin.symbol.upper()})
-        if existing:
-            raise HTTPException(status_code=400, detail="Coin symbol already exists")
-        
-        coin_data = coin.dict()
-        coin_data["symbol"] = coin_data["symbol"].upper()  # Normalize symbol
-        coin_data["created_at"] = datetime.now(timezone.utc)
-        coin_data["usage_count"] = 0
-        
-        result = await db.custom_coins.insert_one(coin_data)
-        
-        return {
-            "success": True,
-            "message": "Custom coin created successfully",
-            "coin_id": str(result.inserted_id)
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Create custom coin error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.put("/api/coins/custom/{coin_id}")
-async def update_custom_coin(coin_id: str, coin: CustomCoin):
-    """Update an existing custom coin configuration"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        from bson import ObjectId
-        
-        coin_data = coin.dict()
-        coin_data["symbol"] = coin_data["symbol"].upper()  # Normalize symbol
-        coin_data["updated_at"] = datetime.now(timezone.utc)
-        
-        result = await db.custom_coins.update_one(
-            {"_id": ObjectId(coin_id)},
-            {"$set": coin_data}
-        )
-        
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Custom coin not found")
-        
-        return {
-            "success": True,
-            "message": "Custom coin updated successfully"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Update custom coin error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.delete("/api/coins/custom/{coin_id}")
-async def delete_custom_coin(coin_id: str):
-    """Delete a custom coin configuration"""
-    try:
-        if db is None:
-            raise HTTPException(status_code=500, detail="Database not connected")
-        
-        from bson import ObjectId
-        
-        result = await db.custom_coins.delete_one({"_id": ObjectId(coin_id)})
-        
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Custom coin not found")
-        
-        return {
-            "success": True,
-            "message": "Custom coin deleted successfully"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Delete custom coin error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/coins/all")
-async def get_all_coins():
-    """Get both preset and custom coins combined"""
-    try:
-        # Get preset coins
-        presets_dict = get_coin_presets()
-        presets = []
-        
-        # Convert preset dict to list and mark as not custom
-        for key, preset in presets_dict.items():
-            preset_copy = preset.copy()
-            preset_copy["is_custom"] = False
-            preset_copy["preset_key"] = key
-            presets.append(preset_copy)
-        
-        # Get custom coins
-        custom_coins = []
-        if db is not None:
-            async for coin in db.custom_coins.find().sort("name", 1):
-                coin["_id"] = str(coin["_id"])
-                coin["is_custom"] = True
-                custom_coins.append(coin)
-        
-        return {
-            "preset_coins": presets,
-            "custom_coins": custom_coins,
-            "total_count": len(presets) + len(custom_coins)
-        }
-        
-    except Exception as e:
-        logger.error(f"Get all coins error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ============================================================================
-# V30 ENTERPRISE API ENDPOINTS
-# ============================================================================
-
-@app.post("/api/v30/license/validate")
-async def validate_v30_license(request: dict):
-    """Validate V30 Enterprise license key"""
-    try:
-        license_key = request.get("license_key")
-        if not license_key:
-            raise HTTPException(status_code=400, detail="License key required")
-        
-        validation = enterprise_license_system.validate_license(license_key)
-        return validation
-        
-    except Exception as e:
-        logger.error(f"License validation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/v30/license/activate")
-async def activate_v30_license(request: dict):
-    """Activate V30 Enterprise license"""
-    try:
-        license_key = request.get("license_key")
-        node_info = request.get("node_info", {})
-        
-        if not license_key:
-            raise HTTPException(status_code=400, detail="License key required")
-        
-        activation = enterprise_license_system.activate_license(license_key, node_info)
-        return activation
-        
-    except Exception as e:
-        logger.error(f"License activation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v30/hardware/validate")
-async def validate_v30_hardware():
-    """Validate enterprise hardware requirements"""
-    try:
-        validation_result = hardware_validator.comprehensive_validation()
-        return validation_result
-        
-    except Exception as e:
-        logger.error(f"Hardware validation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/v30/system/initialize")
-async def initialize_v30_system():
-    """Initialize V30 Enterprise system"""
-    global v30_control_system
-    
-    try:
-        if not v30_control_system:
-            v30_control_system = CentralControlSystem()
-        
-        if v30_control_system.is_running:
-            return {"success": True, "message": "V30 system already running"}
-        
-        init_result = await v30_control_system.initialize_system()
-        return init_result
-        
-    except Exception as e:
-        logger.error(f"V30 system initialization error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v30/system/status")
-async def get_v30_system_status():
-    """Get V30 Enterprise system status"""
-    try:
-        if not v30_control_system:
-            return {
-                "initialized": False,
-                "message": "V30 system not initialized"
-            }
-        
-        status = v30_control_system.get_system_status()
-        return status
-        
-    except Exception as e:
-        logger.error(f"V30 system status error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/v30/mining/distributed/start")
-async def start_v30_distributed_mining(request: dict):
-    """Start V30 distributed mining"""
-    global v30_control_system
-    
-    try:
-        if not v30_control_system or not v30_control_system.is_running:
-            raise HTTPException(
-                status_code=400, 
-                detail="V30 system not initialized. Call /api/v30/system/initialize first."
-            )
-        
-        coin_config = request.get("coin_config", {})
-        wallet_address = request.get("wallet_address", "")
-        include_local = request.get("include_local", True)
-        
-        if not coin_config or not wallet_address:
-            raise HTTPException(
-                status_code=400, 
-                detail="coin_config and wallet_address required"
-            )
-        
-        result = await v30_control_system.start_distributed_mining(
-            coin_config, wallet_address, include_local
-        )
-        
-        return result
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"V30 distributed mining start error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/v30/mining/distributed/stop")
-async def stop_v30_distributed_mining():
-    """Stop V30 distributed mining"""
-    global v30_control_system
-    
-    try:
-        if not v30_control_system:
-            raise HTTPException(status_code=400, detail="V30 system not initialized")
-        
-        result = await v30_control_system.stop_distributed_mining()
-        return result
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"V30 distributed mining stop error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v30/nodes/list")
-async def list_v30_nodes():
-    """List all connected V30 mining nodes"""
-    try:
-        if not v30_control_system or not v30_control_system.distributed_server:
-            return {"nodes": [], "total": 0}
-        
-        node_manager = v30_control_system.distributed_server.node_manager
-        nodes_data = []
-        
-        for node_id, node_info in node_manager.nodes.items():
-            nodes_data.append({
-                "node_id": node_id,
-                "hostname": node_info.hostname,
-                "ip_address": node_info.ip_address,
-                "status": node_info.status,
-                "connected_time": node_info.connected_time,
-                "last_heartbeat": node_info.last_heartbeat,
-                "system_specs": node_info.system_specs,
-                "capabilities": node_info.capabilities
-            })
-        
-        return {
-            "nodes": nodes_data,
-            "total": len(nodes_data),
-            "active": len([n for n in nodes_data if n["status"] == "connected"])
-        }
-        
-    except Exception as e:
-        logger.error(f"V30 nodes list error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v30/stats/comprehensive")
-async def get_v30_comprehensive_stats():
-    """Get comprehensive V30 system statistics"""
-    try:
-        if not v30_control_system:
-            return {"error": "V30 system not initialized"}
-        
-        # Force stats update
-        await v30_control_system._update_system_stats()
-        
-        status = v30_control_system.get_system_status()
-        return status
-        
-    except Exception as e:
-        logger.error(f"V30 comprehensive stats error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v30/updates/remote-node")
-async def get_remote_node_update():
-    """Get latest remote node update information"""
-    try:
-        # In production, this would check actual versions and serve updates
-        current_version = "1.0.0"
-        latest_version = "1.0.0"
-        
-        update_info = {
-            "current_version": current_version,
-            "latest_version": latest_version,
-            "update_available": False,
-            "update_url": f"/api/v30/downloads/remote-node/{latest_version}",
-            "changelog": [
-                "Initial V30 remote node release",
-                "Distributed mining support",
-                "Automatic updates",
-                "GPU detection",
-                "Enterprise licensing"
-            ],
-            "requirements": {
-                "min_python": "3.8",
-                "min_server_version": "30.0.0"
-            },
-            "release_date": "2025-01-08",
-            "size_bytes": 37282
-        }
-        
-        return update_info
-        
-    except Exception as e:
-        logger.error(f"Remote node update check error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/v30/downloads/remote-node/{version}")
-async def download_remote_node(version: str):
-    """Download remote node package"""
-    try:
-        # In production, this would serve the actual package file
-        # For now, return download information
-        
-        if version == "1.0.0":
-            return {
-                "message": "Remote node download",
-                "version": version,
-                "filename": f"v30-remote-node-v{version}.tar.gz",
-                "download_instructions": [
-                    "1. Download the package from your V30 server",
-                    "2. Extract: tar -xzf v30-remote-node-v1.0.0.tar.gz",
-                    "3. Run installer: sudo ./install.sh", 
-                    "4. Configure with your license key",
-                    "5. Start the service: sudo systemctl start cryptominer-v30-node"
-                ]
-            }
-        else:
-            raise HTTPException(status_code=404, detail="Version not found")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Remote node download error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ============================================================================
-# WEBSOCKET CONNECTION
-# ============================================================================
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket endpoint for real-time updates"""
-    await websocket.accept()
-    connected_websockets.append(websocket)
-    
-    try:
-        while True:
-            # Send mining updates
-            mining_status = mining_engine.get_mining_status()
-            
-            await websocket.send_json({
-                "type": "mining_update",
-                "timestamp": time.time(),
-                "stats": mining_status["stats"],
-                "is_mining": mining_status["is_mining"]
-            })
-            
-            # Send system stats
-            system_stats = await get_system_stats()
-            await websocket.send_json({
-                "type": "system_update", 
-                "timestamp": time.time(),
-                "data": system_stats
-            })
-            
-            await asyncio.sleep(2)  # Update every 2 seconds
-            
-    except WebSocketDisconnect:
-        connected_websockets.remove(websocket)
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
-        if websocket in connected_websockets:
-            connected_websockets.remove(websocket)
-
-# ============================================================================
-# MAIN APPLICATION RUNNER
-# ============================================================================
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "server:app",
-        host="0.0.0.0", 
-        port=8001,
-        reload=False,
-        log_level="info"
-    )
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()
